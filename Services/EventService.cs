@@ -8,48 +8,40 @@ public class EventService : IEventService
     private readonly List<Event> _events = [];
     private readonly Lock locker = new();
 
-    public EventResponseDto? GetById(Guid id)
+    public Event? GetById(Guid id)
     {
         using (locker.EnterScope())
         {
-            return _events
-                .FirstOrDefault(e => e.Id == id)
-                ?.MapToResponseDto();
+            return _events.FirstOrDefault(e => e.Id == id);
         }
     }
 
-    public IEnumerable<EventResponseDto> GetAll()
+    public IEnumerable<Event> GetAll()
     {
         using (locker.EnterScope())
         {
-            return [.. _events.Select(i => i.MapToResponseDto())];
+            return _events;
         }
     }
 
-    public EventResponseDto Add(EventRequestDto item)
+    public Event Add(Event @event)
     {
         using (locker.EnterScope())
         {
-            string lowerItemTitle = item.Title.ToLower();
-            if (_events.Any(e => e.Title.ToLower() == lowerItemTitle))
-            {
-                throw new ArgumentException($"Event with Title '{item.Title}' already exist");
-            }
-
             var newId = Guid.NewGuid();
             while (_events.Any(e => e.Id == newId))
             {
                 newId = Guid.NewGuid();
             }
 
-            EventResponseDto newEvent = new()
+            Event newEvent = new()
             {
                 Id = newId,
-                Title = item.Title,
-                Description = item.Description,
-                StartAt = item.StartAt,
-                EndAt = item.EndAt
-            }; 
+                Title = @event.Title,
+                Description = @event.Description,
+                StartAt = @event.StartAt,
+                EndAt = @event.EndAt
+            };
 
             _events.Add(newEvent);
 
@@ -57,23 +49,16 @@ public class EventService : IEventService
         }
     }
 
-    public bool Update(Guid id, EventRequestDto item)
+    public bool Update(Event @event)
     {
         using (locker.EnterScope())
         {
             bool updated = false;
 
-            var index = _events.FindIndex(e => e.Id == id);
+            var index = _events.FindIndex(e => e.Id == @event.Id);
             if (index != -1)
             {
-                _events[index] = new()
-                {
-                    Id = id,
-                    Title = item.Title,
-                    Description = item.Description,
-                    StartAt = item.StartAt,
-                    EndAt = item.EndAt
-                };
+                _events[index] = @event;
                 updated = true;
             }
 

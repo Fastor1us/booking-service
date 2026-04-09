@@ -1,5 +1,6 @@
 using EventApi.Interfaces;
 using EventApi.Models;
+using EventApi.Models.Dtos;
 using EventApi.Services;
 
 namespace EventApi;
@@ -21,15 +22,39 @@ public static class Extensions
         return services;
     }
 
-    public static EventResponseDto MapToResponseDto(this Event item)
+    public static Event MapToEvent(this PostEventDto @event)
+    {
+        return new Event
+        {
+            Id = Guid.Empty,
+            Title = @event.Title,
+            Description = @event.Description,
+            StartAt = @event.StartAt,
+            EndAt = @event.EndAt
+        };
+    }
+
+    public static Event MapToEvent(this PutEventDto @event, Guid id)
+    {
+        return new Event
+        {
+            Id = id,
+            Title = @event.Title,
+            Description = @event.Description,
+            StartAt = @event.StartAt,
+            EndAt = @event.EndAt
+        };
+    }
+
+    public static EventResponseDto MapToResponseDto(this Event @event)
     {
         return new EventResponseDto
         {
-            Id = item.Id,
-            Title = item.Title,
-            Description = item.Description,
-            StartAt = item.StartAt,
-            EndAt = item.EndAt
+            Id = @event.Id,
+            Title = @event.Title,
+            Description = @event.Description,
+            StartAt = @event.StartAt,
+            EndAt = @event.EndAt
         };
     }
 }
