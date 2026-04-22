@@ -1,6 +1,14 @@
-# Event API
+======================>
+TODO:
+1) описание
+2) проверка старта команд dotnet
+<======================
 
-Простое REST API для управления событиями CRUD-операциями
+
+# Booking API
+
+REST API для бронирования событий
+
 
 ## 📋 Требования
 
@@ -11,15 +19,15 @@
 
 - Восстановление зависимостей
 ```bash
-dotnet restore
+dotnet restore --project ./src/BookingApi.csproj 
 ```
 - Сборка проекта
 ```bash
-dotnet build
+dotnet build --project ./src/BookingApi.csproj 
 ```
 - Запуск приложения
 ```bash
-dotnet run
+dotnet run --project ./src/BookingApi.csproj 
 ```
 
 ## 🧪 Тестирование

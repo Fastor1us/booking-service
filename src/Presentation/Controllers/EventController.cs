@@ -1,9 +1,8 @@
-using EventApi.Interfaces;
-using EventApi.Models;
-using EventApi.Models.Dtos;
+using BookingApi.Application.Interfaces;
+using BookingApi.Domain.Models.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
-namespace EventApi.Controllers;
+namespace BookingApi.Presentation.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

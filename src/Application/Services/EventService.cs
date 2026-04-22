@@ -1,8 +1,10 @@
-using EventApi.Interfaces;
-using EventApi.Models;
+using BookingApi.Application.Interfaces;
+using BookingApi.Domain.Models;
 
-namespace EventApi.Services;
+namespace BookingApi.Application.Services;
 
+// TODO: 
+// Валидируем, выкидываем ошибки, прокидываем пагинацию в репозиторий
 public class EventService : IEventService
 {
     private readonly List<Event> _events = [];

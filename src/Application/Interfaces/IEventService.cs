@@ -1,6 +1,6 @@
-using EventApi.Models;
+using BookingApi.Domain.Models;
 
-namespace EventApi.Interfaces;
+namespace BookingApi.Application.Interfaces;
 
 public interface IEventService
 {

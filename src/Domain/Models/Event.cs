@@ -1,16 +1,10 @@
-using System.ComponentModel.DataAnnotations;
+namespace BookingApi.Domain.Models;
 
-namespace EventApi.Models.Dtos;
-
-public class EventResponseDto
+public class Event
 {
-    [Required]
     public required Guid Id { get; set; }
-    [Required]
     public required string Title { get; set; }
     public string? Description { get; set; }
-    [Required]
     public required DateTime StartAt { get; set; }
-    [Required]
     public required DateTime EndAt { get; set; }
 }

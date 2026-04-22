@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace EventApi.Models.Dtos;
+namespace BookingApi.Domain.Models.Dtos;
 
 public abstract class EventRequestDto : IValidatableObject
 {

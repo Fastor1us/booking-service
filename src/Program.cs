@@ -1,4 +1,4 @@
-using EventApi;
+using BookingApi;
 
 var builder = WebApplication.CreateBuilder(args);
 

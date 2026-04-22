@@ -1,9 +1,9 @@
-using EventApi.Interfaces;
-using EventApi.Models;
-using EventApi.Models.Dtos;
-using EventApi.Services;
+using BookingApi.Application.Interfaces;
+using BookingApi.Application.Services;
+using BookingApi.Domain.Models;
+using BookingApi.Domain.Models.Dtos;
 
-namespace EventApi;
+namespace BookingApi;
 
 public static class Extensions
 {
