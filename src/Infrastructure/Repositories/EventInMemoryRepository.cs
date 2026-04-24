@@ -1,4 +1,5 @@
 using BookingApi.Application.Interfaces;
+using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 
 namespace BookingApi.Infrastructure.Repositories;
@@ -6,50 +7,62 @@ namespace BookingApi.Infrastructure.Repositories;
 // базовые проверки на null (без проверок бизнес правил)
 public class EventInMemoryRepository : IEventRepository
 {
-    private readonly List<Event> _events = [];
-    private readonly Lock _locker = new();
+    private readonly Dictionary<Guid, Event> _events = [];
+    private readonly Lock locker = new();
 
-    public Event? GetById(Guid id)
+    public Event GetById(Guid id)
     {
-        using (_locker.EnterScope())
-            return _events.FirstOrDefault(e => e.Id == id);
+        using (locker.EnterScope())
+        {
+            return _events.GetValueOrDefault(id) ??
+                throw new EventNotFoundException(id);
+        }
     }
 
     public IEnumerable<Event> GetAll()
     {
-        using (_locker.EnterScope())
-            return _events.ToList();
+        using (locker.EnterScope())
+        {
+            return [.. _events.Values];
+        }
     }
 
     public void Add(Event @event)
     {
-        using (_locker.EnterScope())
+        using (locker.EnterScope())
         {
-            _events.Add(@event);
+            var newId = Guid.NewGuid();
+
+            Event newEvent = new()
+            {
+                Id = newId,
+                Title = @event.Title,
+                Description = @event.Description,
+                StartAt = @event.StartAt,
+                EndAt = @event.EndAt
+            };
+
+            _events.TryAdd(newId, newEvent);
         }
     }
 
-    public bool Update(Event @event)
+    public void Update(Event @event)
     {
-        using (_locker.EnterScope())
+        using (locker.EnterScope())
         {
-            var index = _events.FindIndex(e => e.Id == @event.Id);
-            if (index == -1) return false;
-
-            _events[index] = @event;
-            return true;
+            if (_events.TryGetValue(@event.Id, out Event? existedEvent))
+                _events[@event.Id] = @event;
+            else
+                throw new EventNotFoundException(@event.Id);
         }
     }
 
-    public bool Remove(Guid id)
+    public void Remove(Guid id)
     {
-        using (_locker.EnterScope())
+        using (locker.EnterScope())
         {
-            var index = _events.FindIndex(e => e.Id == id);
-            if (index == -1) return false;
-
-            _events.RemoveAt(index);
-            return true;
+            if (!_events.Remove(id))
+                throw new EventNotFoundException(id);
         }
     }
 }
