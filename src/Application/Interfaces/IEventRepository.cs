@@ -6,7 +6,7 @@ public interface IEventRepository
 {
     public Event GetById(Guid id);
     public IEnumerable<Event> GetAll();
-    public void Add(Event @event);
+    public Guid Add(Event @event);
     public void Update(Event @event);
     public void Remove(Guid id);
 }

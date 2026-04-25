@@ -1,43 +1,43 @@
 using BookingApi.Application.Interfaces;
-using BookingApi.Domain.Models.Dtos;
+using BookingApi.Presentation.Dtos;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi.Presentation.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/events")]
 public class EventController(IEventService eventService) : ControllerBase
 {
-    [HttpGet("events/{id:guid}")]
+    [HttpGet("{id:guid}")]
     public ActionResult<EventResponseDto> GetById([FromRoute] Guid id)
     {
-        var @event = eventService.GetById(id);
-
-        return @event != null ? Ok(@event.MapToResponseDto()) : NotFound();
+        return Ok(eventService.GetById(id).MapToResponseDto());
     }
 
-    [HttpGet("events")]
+    [HttpGet]
     public ActionResult<IEnumerable<EventResponseDto>> GetAll()
     {
         return Ok(eventService.GetAll().Select(e => e.MapToResponseDto()));
     }
 
-    [HttpPost("events")]
+    [HttpPost]
     public ActionResult<EventResponseDto> Add([FromBody] PostEventDto @event)
     {
         var createdEvent = eventService.Add(@event.MapToEvent());
         return CreatedAtAction(nameof(GetById), new { id = createdEvent.Id }, createdEvent);
     }
 
-    [HttpPut("events/{id:guid}")]
+    [HttpPut("{id:guid}")]
     public ActionResult<EventResponseDto> Put([FromBody] PutEventDto @event, [FromRoute] Guid id)
     {
-        return eventService.Update(@event.MapToEvent(id)) ? NoContent() : NotFound();
+        eventService.Update(@event.MapToEvent(id));
+        return NoContent();
     }
 
-    [HttpDelete("events/{id:guid}")]
+    [HttpDelete("{id:guid}")]
     public IActionResult Remove([FromRoute] Guid id)
     {
-        return eventService.Remove(id) ? NoContent() : NotFound();
+        eventService.Remove(id);
+        return NoContent();
     }
 }

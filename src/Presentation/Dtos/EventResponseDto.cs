@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BookingApi.Domain.Models.Dtos;
+namespace BookingApi.Presentation.Dtos;
 
 public class EventResponseDto
 {

@@ -4,7 +4,6 @@ using BookingApi.Domain.Models;
 
 namespace BookingApi.Infrastructure.Repositories;
 
-// базовые проверки на null (без проверок бизнес правил)
 public class EventInMemoryRepository : IEventRepository
 {
     private readonly Dictionary<Guid, Event> _events = [];
@@ -27,7 +26,7 @@ public class EventInMemoryRepository : IEventRepository
         }
     }
 
-    public void Add(Event @event)
+    public Guid Add(Event @event)
     {
         using (locker.EnterScope())
         {
@@ -43,6 +42,7 @@ public class EventInMemoryRepository : IEventRepository
             };
 
             _events.TryAdd(newId, newEvent);
+            return newId;
         }
     }
 

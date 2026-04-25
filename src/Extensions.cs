@@ -1,7 +1,10 @@
+using System.Text.Json;
 using BookingApi.Application.Interfaces;
 using BookingApi.Application.Services;
 using BookingApi.Domain.Models;
-using BookingApi.Domain.Models.Dtos;
+using BookingApi.Infrastructure.Repositories;
+using BookingApi.Presentation.Dtos;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi;
 
@@ -9,7 +12,24 @@ public static class Extensions
 {
     public static IServiceCollection AddPresentation(this IServiceCollection services)
     {
-        services.AddControllers();
+        services.AddControllers()
+            .ConfigureApiBehaviorOptions(options =>
+            {
+                options.InvalidModelStateResponseFactory = context =>
+                {
+                    var errors = context.ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage);
+
+                    var errorResponse = new ErrorResponseDto
+                    {
+                        Title = "One or more validation errors occurred.",
+                        Details = [.. errors]
+                    };
+
+                    return new BadRequestObjectResult(errorResponse);
+                };
+            });
         services.AddSwaggerGen();
 
         return services;
@@ -18,6 +38,13 @@ public static class Extensions
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddSingleton<IEventService, EventService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddRepositories(this IServiceCollection services)
+    {
+        services.AddSingleton<IEventRepository, EventInMemoryRepository>();
 
         return services;
     }
