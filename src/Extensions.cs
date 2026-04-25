@@ -1,10 +1,9 @@
-using System.Text.Json;
 using BookingApi.Application.Interfaces;
 using BookingApi.Application.Services;
+using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 using BookingApi.Infrastructure.Repositories;
 using BookingApi.Presentation.Dtos;
-using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi;
 
@@ -21,13 +20,8 @@ public static class Extensions
                         .SelectMany(v => v.Errors)
                         .Select(e => e.ErrorMessage);
 
-                    var errorResponse = new ErrorResponseDto
-                    {
-                        Title = "One or more validation errors occurred.",
-                        Details = [.. errors]
-                    };
-
-                    return new BadRequestObjectResult(errorResponse);
+                    var errorMessage = "One or more validation errors occurred.";
+                    throw new ModelValidationException(errorMessage, errors);
                 };
             });
         services.AddSwaggerGen();

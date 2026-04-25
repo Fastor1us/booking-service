@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Presentation.Dtos;
 
@@ -24,26 +25,37 @@ public class GlobalExceptionHandlingMiddleware(
 
     private async Task HandleException(HttpContext httpContext, Exception ex)
     {
-        _logger.LogError(
-            ex,
-            "Unhandled exception. Method={Method}, Path={Path}, RequestId={RequestId}",
-            httpContext.Request.Method,
-            httpContext.Request.Path,
-            httpContext.Request.Headers["x-request-id"]);
+        var statusCode = MapStatusCode(ex);
+
+        // Full stack trace only for inner server errors
+        if (statusCode == StatusCodes.Status500InternalServerError)
+        {
+            _logger.LogError(
+                ex,
+                "Unhandled exception. Method={Method}, Path={Path}",
+                httpContext.Request.Method,
+                httpContext.Request.Path);
+        }
 
         if (httpContext.Response.HasStarted)
         {
             return;
         }
 
-        var statusCode = MapStatusCode(ex);
-
         httpContext.Response.StatusCode = statusCode;
         httpContext.Response.ContentType = "application/json";
 
+        List<string> details = [];
+
+        if (ex is ModelValidationException validationEx)
+        {
+            details.AddRange(validationEx.Details);
+        }
+
         var error = new ErrorResponseDto
         {
-            Title = ex.Message
+            Title = ex.Message,
+            Details = details
         };
 
         await httpContext.Response.WriteAsJsonAsync(error);
@@ -52,7 +64,7 @@ public class GlobalExceptionHandlingMiddleware(
     private static int MapStatusCode(Exception ex)
        => ex switch
        {
-        //    ValidationException ve => StatusCodes.Status400BadRequest,
+           ValidationException ve => StatusCodes.Status400BadRequest,
            NotFoundException nfe => StatusCodes.Status404NotFound,
            _ => StatusCodes.Status500InternalServerError
        };
