@@ -1,9 +1,7 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
-using BookingApi.Domain.Models;
 using BookingApi.Infrastructure.Repositories;
-using BookingApi.Presentation.Dtos;
 
 namespace BookingApi;
 
@@ -41,41 +39,5 @@ public static class Extensions
         services.AddSingleton<IEventRepository, EventInMemoryRepository>();
 
         return services;
-    }
-
-    public static Event MapToEvent(this PostEventDto @event)
-    {
-        return new Event
-        {
-            Id = Guid.Empty,
-            Title = @event.Title,
-            Description = @event.Description,
-            StartAt = @event.StartAt,
-            EndAt = @event.EndAt
-        };
-    }
-
-    public static Event MapToEvent(this PutEventDto @event, Guid id)
-    {
-        return new Event
-        {
-            Id = id,
-            Title = @event.Title,
-            Description = @event.Description,
-            StartAt = @event.StartAt,
-            EndAt = @event.EndAt
-        };
-    }
-
-    public static EventResponseDto MapToResponseDto(this Event @event)
-    {
-        return new EventResponseDto
-        {
-            Id = @event.Id,
-            Title = @event.Title,
-            Description = @event.Description,
-            StartAt = @event.StartAt,
-            EndAt = @event.EndAt
-        };
     }
 }

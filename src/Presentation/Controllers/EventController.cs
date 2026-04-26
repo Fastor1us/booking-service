@@ -1,5 +1,8 @@
 using BookingApi.Application.Interfaces;
+using BookingApi.Domain.Models;
 using BookingApi.Presentation.Dtos;
+using BookingApi.Presentation.Filters;
+using BookingApi.Presentation.Mappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi.Presentation.Controllers;
@@ -15,9 +18,17 @@ public class EventController(IEventService eventService) : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<EventResponseDto>> GetAll()
+    public ActionResult<PaginatedEventsResponseDto> GetAll(
+        [FromQuery] string? title, [FromQuery] DateTime? from, [FromQuery] DateTime? to,
+        [FromQuery] int? page, [FromQuery] int? pageSize)
     {
-        return Ok(eventService.GetAll().Select(e => e.MapToResponseDto()));
+        PaginationParams paginationParams = new(page, pageSize);
+
+        PaginatedEventsResponseDto pagedEvents = eventService
+            .GetAll(new(title, from, to), paginationParams)
+            .MapToPaginatedResponseDto(paginationParams);
+
+        return Ok(pagedEvents);
     }
 
     [HttpPost]

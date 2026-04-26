@@ -18,11 +18,29 @@ public class EventInMemoryRepository : IEventRepository
         }
     }
 
-    public IEnumerable<Event> GetAll()
+    public PagedEvents GetPaged(
+        IQueryable<Event> query,
+        int pageIndex,
+        int pageSize)
     {
         using (locker.EnterScope())
         {
-            return [.. _events.Values];
+            var totalCount = query.Count();
+
+            var items = query
+                .Skip((pageIndex - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new(items, totalCount);
+        }
+    }
+
+    public IQueryable<Event> GetQueryable()
+    {
+        using (locker.EnterScope())
+        {
+            return _events.Values.AsQueryable();
         }
     }
 
