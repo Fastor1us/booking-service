@@ -1,5 +1,4 @@
 using BookingApi.Application.Interfaces;
-using BookingApi.Domain.Models;
 using BookingApi.Presentation.Dtos;
 using BookingApi.Presentation.Filters;
 using BookingApi.Presentation.Mappers;

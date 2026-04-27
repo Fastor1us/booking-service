@@ -19,7 +19,8 @@ public class EventService(IEventRepository _eventRepository)
 
         if (!string.IsNullOrEmpty(filter.Title))
         {
-            query = query.Where(e => e.Title.Contains(filter.Title));
+            query = query.Where(e => e.Title.Contains(
+                filter.Title, StringComparison.OrdinalIgnoreCase));
         }
 
         if (filter.From.HasValue)

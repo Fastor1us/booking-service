@@ -9,6 +9,32 @@ public class EventInMemoryRepository : IEventRepository
     private readonly Dictionary<Guid, Event> _events = [];
     private readonly Lock locker = new();
 
+    public EventInMemoryRepository()
+    {
+        // [x] Use to generate base events! UwU
+        // UNCOMMENT THIS BLOCK TO POPULATE THE REPOSITORY WITH TEST DATA
+        // (20 events with sequential dates)
+
+        // int length = 20;
+
+        // var events = Enumerable.Range(1, length).Select((index) =>
+        // {
+        //     Guid guid = Guid.NewGuid();
+        //     DateTime date = DateTime.Now;
+        //     return new Event
+        //     {
+        //         Id = guid,
+        //         Title = "Title #" + index.ToString(),
+        //         StartAt = date.AddDays(-1 * (length - index)),
+        //         EndAt = date.AddDays(-1 * (length - index - 1))
+        //     };
+        // });
+        // foreach (var @event in events)
+        // {
+        //     _events.TryAdd(@event.Id, @event);
+        // }
+    }
+
     public Event GetById(Guid id)
     {
         using (locker.EnterScope())

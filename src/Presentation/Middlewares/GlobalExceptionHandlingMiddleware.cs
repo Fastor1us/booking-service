@@ -25,7 +25,7 @@ public class GlobalExceptionHandlingMiddleware(
 
     private async Task HandleException(HttpContext httpContext, Exception ex)
     {
-        var statusCode = MapStatusCode(ex);
+        int statusCode = MapStatusCode(ex);
 
         // Full stack trace only for inner server errors
         if (statusCode == StatusCodes.Status500InternalServerError)
@@ -64,8 +64,8 @@ public class GlobalExceptionHandlingMiddleware(
     private static int MapStatusCode(Exception ex)
        => ex switch
        {
-           ValidationException ve => StatusCodes.Status400BadRequest,
-           NotFoundException nfe => StatusCodes.Status404NotFound,
+           ValidationException => StatusCodes.Status400BadRequest,
+           NotFoundException => StatusCodes.Status404NotFound,
            _ => StatusCodes.Status500InternalServerError
        };
 }
