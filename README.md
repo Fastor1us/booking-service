@@ -1,35 +1,35 @@
-======================>
-TODO:
-1) описание
-2) проверка старта команд dotnet
-<======================
-
-
 # Booking API
 
-REST API для бронирования событий
+REST API to booking events
 
+Solution includes following projects:
+- ./api/BookingApi.csproj
+- ./tests/BookingTests.csproj
 
-## 📋 Требования
+## 📋 Requirements
 
 - [.NET 10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
 - CLI / IDE
 
-## 🚀 Быстрый старт
+## 🚀 Quick start
 
-- Восстановление зависимостей
+- Recovering dependencies
 ```bash
 dotnet restore --project ./src/BookingApi.csproj 
 ```
-- Сборка проекта
+- Build project
 ```bash
 dotnet build --project ./src/BookingApi.csproj 
 ```
-- Запуск приложения
+- Run project
 ```bash
 dotnet run --project ./src/BookingApi.csproj 
 ```
 
-## 🧪 Тестирование
-После запуска приложения через команду <code>dotnet run</code> доступен 
-[Swagger UI](http://localhost:5142/swagger/index.html)
+## 🧪 Testing
+Use [Swagger UI](http://localhost:5142/swagger/index.html) after ```dotnet run --project ./src/BookingApi.csproj```
+
+- Run project with Tests
+```bash
+dotnet test
+```
