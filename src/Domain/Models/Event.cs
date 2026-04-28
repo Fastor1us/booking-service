@@ -1,4 +1,4 @@
-namespace EventApi.Models;
+namespace BookingApi.Domain.Models;
 
 public class Event
 {

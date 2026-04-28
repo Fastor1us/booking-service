@@ -1,27 +1,11 @@
-using EventApi.Interfaces;
-using EventApi.Models;
-using EventApi.Models.Dtos;
-using EventApi.Services;
+using BookingApi.Domain.Models;
+using BookingApi.Presentation.Dtos;
+using BookingApi.Presentation.Filters;
 
-namespace EventApi;
+namespace BookingApi.Presentation.Mappers;
 
-public static class Extensions
+public static class EventMapperExtension
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services)
-    {
-        services.AddControllers();
-        services.AddSwaggerGen();
-
-        return services;
-    }
-
-    public static IServiceCollection AddApplication(this IServiceCollection services)
-    {
-        services.AddSingleton<IEventService, EventService>();
-
-        return services;
-    }
-
     public static Event MapToEvent(this PostEventDto @event)
     {
         return new Event
@@ -56,5 +40,23 @@ public static class Extensions
             StartAt = @event.StartAt,
             EndAt = @event.EndAt
         };
+    }
+
+    public static PaginatedEventsResponseDto MapToPaginatedResponseDto(
+        this PagedEvents pagedEvents, PaginationParams paginationParams)
+    {
+        return new PaginatedEventsResponseDto
+        {
+            Items = pagedEvents.Items.MapToResponseDto(),
+            TotalCount = pagedEvents.TotalCount,
+            PageIndex = paginationParams.PageIndex,
+            ItemsCount = pagedEvents.Items.Count()
+        };
+    }
+
+    public static IEnumerable<EventResponseDto> MapToResponseDto(
+        this IEnumerable<Event> @events)
+    {
+        return @events.Select(e => e.MapToResponseDto());
     }
 }
