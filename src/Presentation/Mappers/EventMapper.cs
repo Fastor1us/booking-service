@@ -49,7 +49,8 @@ public static class EventMapperExtension
         {
             Items = pagedEvents.Items.MapToResponseDto(),
             TotalCount = pagedEvents.TotalCount,
-            PageIndex = paginationParams.PageIndex
+            PageIndex = paginationParams.PageIndex,
+            ItemsCount = pagedEvents.Items.Count()
         };
     }
 

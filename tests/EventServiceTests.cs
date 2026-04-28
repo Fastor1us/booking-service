@@ -10,7 +10,7 @@ namespace BookingTests;
 public class EventServiceTests
 {
     [Fact]
-    public void Add_ReturnsAddedEvent()
+    public void Add_ValidEvent_ReturnsAddedEvent()
     {
         // Arrange
         Event @event = EventFactory.CreateEvent();
@@ -35,7 +35,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetAll_ReturnsPagedEvents()
+    public void GetAll_WithValidPagination_ReturnsPagedEvents()
     {
         // Arrange
         List<Event> events = EventFactory.CreateEvents(20);
@@ -59,7 +59,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetById_ReturnsCorrentEvent()
+    public void GetById_ExistingId_ReturnsCorrectEvent()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -82,7 +82,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void Update_DoesNotThrowException()
+    public void Update_ExistingEvent_DoesNotThrowException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -106,7 +106,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void Remove_DoesNotThrowException()
+    public void Remove_ExistingId_DoesNotThrowException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -128,7 +128,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetAll_ReturnsCorrectEvents_WhenFilterByTitle()
+    public void GetAll_WithTitleFilter_ReturnsMatchingEvents()
     {
         // Arrange
         string filterTitle = "Title #1";
@@ -154,7 +154,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetAll_ReturnsCorrectEvents_WhenFilterByDates()
+    public void GetAll_WithDateRangeFilter_ReturnsEventsWithinRange()
     {
         // Arrange
         DateTime invalidStartAt = DateTime.Now.AddDays(-5);
@@ -192,7 +192,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetAll_ReturnsCorrectEvents_WhenFilterByTitleAndDates()
+    public void GetAll_WithTitleAndDateRangeFilter_ReturnsMatchingEventsWithinRange()
     {
         // Arrange
         string filterTitle = "The Bohemians";
@@ -232,7 +232,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetById_ThrowsError_WhenCallWithUnexistedId()
+    public void GetById_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -253,7 +253,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void Update_ThrowsError_WhenCallWithUnexistedId()
+    public void Update_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -275,7 +275,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void Remove_ThrowsError_WhenCallWithUnexistedId()
+    public void Remove_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -296,7 +296,7 @@ public class EventServiceTests
         Assert.Equal(exception.Message, $"Event with Id '{guid}' was not found.");
     }
 
-    #region 
+    #region Helper Methods
     private static void AssertEventsEqual(Event expected, Event actual)
     {
         Assert.Equal(expected.Id, actual.Id);

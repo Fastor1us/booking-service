@@ -1,59 +1,31 @@
 using System.ComponentModel.DataAnnotations;
-using System.Reflection;
 
 namespace BookingApi.Presentation.Dtos;
 
 public abstract class EventRequestDto : IValidatableObject
 {
-    [Required] public string Title { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
-    [Required] public DateTime StartAt { get; set; }
-    [Required] public DateTime EndAt { get; set; }
+    public DateTime StartAt { get; set; }
+    public DateTime EndAt { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        // Здесь только бизнес-логика, не требующая проверки required
-        if (EndAt <= StartAt)
-        {
+        if (string.IsNullOrWhiteSpace(Title))
             yield return new ValidationResult(
-                "EndAt must be later than StartAt",
-                [nameof(EndAt)]
-            );
-        }
+                "Title is required", [nameof(Title)]);
 
-        foreach (var property in GetType().GetProperties())
-        {
-            var value = property.GetValue(this);
+        if (StartAt == default)
+            yield return new ValidationResult(
+                "StartAt must be a valid date and time", [nameof(StartAt)]);
 
-            if (property.GetCustomAttribute<RequiredAttribute>() != null)
-            {
-                if (value == null)
-                {
-                    yield return new ValidationResult(
-                        $"{property.Name} is required",
-                        [property.Name]
-                    );
-                }
+        if (EndAt == default)
+            yield return new ValidationResult(
+                "EndAt must be a valid date and time", [nameof(EndAt)]);
 
-                // Проверка для DateTime
-                if (value is DateTime dateTime && dateTime == default)
-                {
-                    yield return new ValidationResult(
-                        $"{property.Name} must be a valid date and time",
-                        [property.Name]
-                    );
-                }
-
-                // Проверка для string
-                if (value is string str && string.IsNullOrWhiteSpace(str))
-                {
-                    yield return new ValidationResult(
-                        $"{property.Name} is required",
-                        [property.Name]
-                    );
-                }
-            }
-        }
+        if (EndAt <= StartAt && StartAt != default && EndAt != default)
+            yield return new ValidationResult(
+                "EndAt must be later than StartAt", [nameof(EndAt)]);
     }
 }
 
