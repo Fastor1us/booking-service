@@ -94,7 +94,8 @@ GET /api/events?title=workshop&from=2024-01-01&to=2024-12-31&page=2&pageSize=20
     }
   ],
   "totalCount": 1,
-  "pageIndex": 1
+  "pageIndex": 1,
+  "itemsCount": 1
 }
 ```
 
