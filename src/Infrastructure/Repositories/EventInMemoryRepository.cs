@@ -77,7 +77,7 @@ public class EventInMemoryRepository : IEventRepository
         };
 
         if (!_events.TryAdd(newId, newEvent))
-            throw new InvalidOperationException($"Failed to add event with id {newId}");
+            throw new InvalidOperationException($"Event with id '{newId}' already exist");
 
         return await Task.FromResult(newId);
     }
