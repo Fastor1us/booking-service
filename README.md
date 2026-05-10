@@ -118,6 +118,7 @@ All errors return a consistent JSON format with appropriate HTTP status codes.
 |-------------|-------------|-------------|
 | 400 Bad Request | Invalid request data | - Validation errors (missing required fields, invalid dates)<br>- Invalid filter parameters (`to` date before `from`)<br>- Invalid pagination parameters (page < 1, pageSize outside 5-50) |
 | 404 Not Found | Resource not found | Event with specified ID doesn't exist |
+| 409 Conflict | Resource conflict | ID conflict |
 | 500 Internal Server Error | Server error | Unhandled exceptions in the application |
 
 ### Example Error Response (400 Bad Request)
@@ -146,6 +147,15 @@ All errors return a consistent JSON format with appropriate HTTP status codes.
 ```json
 {
   "title": "Event with id '3fa85f64-5717-4562-b3fc-2c963f66afa6' was not found",
+  "details": []
+}
+```
+
+### Example Error Response (409 Conflict)
+
+```json
+{
+  "title": "Event with id '3fa85f64-5717-4562-b3fc-2c963f66afa6' already exist",
   "details": []
 }
 ```
