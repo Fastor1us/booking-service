@@ -1,13 +1,13 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
+using System.Collections.Concurrent;
 
 namespace BookingApi.Infrastructure.Repositories;
 
 public class EventInMemoryRepository : IEventRepository
 {
-    private readonly Dictionary<Guid, Event> _events = [];
-    private readonly Lock locker = new();
+    private readonly ConcurrentDictionary<Guid, Event> _events = new();
 
     public EventInMemoryRepository()
     {
@@ -35,78 +35,66 @@ public class EventInMemoryRepository : IEventRepository
         // }
     }
 
-    public Event GetById(Guid id)
+    public async Task<Event> GetById(Guid id)
     {
-        using (locker.EnterScope())
-        {
-            return _events.GetValueOrDefault(id) ??
-                throw new EventNotFoundException(id);
-        }
+        if (_events.TryGetValue(id, out var @event))
+            return await Task.FromResult(@event);
+
+        throw new EventNotFoundException(id);
     }
 
-    public PagedEvents GetPaged(
+    public async Task<PagedEvents> GetPaged(
         IQueryable<Event> query,
         int pageIndex,
         int pageSize)
     {
-        using (locker.EnterScope())
-        {
-            var totalCount = query.Count();
+        var totalCount = query.Count();
 
-            var items = query
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+        var items = query
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
 
-            return new(items, totalCount);
-        }
+        return await Task.FromResult(new PagedEvents(items, totalCount));
     }
 
-    public IQueryable<Event> GetQueryable()
+    public async Task<IQueryable<Event>> GetQueryable()
     {
-        using (locker.EnterScope())
-        {
-            return _events.Values.AsQueryable();
-        }
+        return await Task.FromResult(_events.Values.AsQueryable());
     }
 
-    public Guid Add(Event @event)
+    public async Task<Guid> Add(Event @event)
     {
-        using (locker.EnterScope())
+        var newId = Guid.NewGuid();
+
+        var newEvent = new Event
         {
-            var newId = Guid.NewGuid();
+            Id = newId,
+            Title = @event.Title,
+            Description = @event.Description,
+            StartAt = @event.StartAt,
+            EndAt = @event.EndAt
+        };
 
-            Event newEvent = new()
-            {
-                Id = newId,
-                Title = @event.Title,
-                Description = @event.Description,
-                StartAt = @event.StartAt,
-                EndAt = @event.EndAt
-            };
+        if (!_events.TryAdd(newId, newEvent))
+            throw new InvalidOperationException($"Failed to add event with id {newId}");
 
-            _events.TryAdd(newId, newEvent);
-            return newId;
-        }
+        return await Task.FromResult(newId);
     }
 
-    public void Update(Event @event)
+    public async Task Update(Event @event)
     {
-        using (locker.EnterScope())
-        {
-            if (_events.TryGetValue(@event.Id, out Event? existedEvent))
-                _events[@event.Id] = @event;
-            else
-                throw new EventNotFoundException(@event.Id);
-        }
+        if (!_events.TryUpdate(@event.Id, @event, _events[@event.Id]))
+            throw new EventNotFoundException(@event.Id);
+
+        await Task.CompletedTask;
     }
 
-    public void Remove(Guid id)
+    public async Task Remove(Guid id)
     {
-        using (locker.EnterScope())
-        {
-            if (!_events.Remove(id))
-                throw new EventNotFoundException(id);
-        }
+        if (!_events.TryRemove(id, out _))
+            throw new EventNotFoundException(id);
+
+        await Task.CompletedTask;
     }
 }

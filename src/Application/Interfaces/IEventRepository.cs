@@ -4,13 +4,13 @@ namespace BookingApi.Application.Interfaces;
 
 public interface IEventRepository
 {
-    public Event GetById(Guid id);
-    PagedEvents GetPaged(
+    public Task<Event> GetById(Guid id);
+    public Task<PagedEvents> GetPaged(
        IQueryable<Event> query,
        int pageIndex,
        int pageSize);
-    IQueryable<Event> GetQueryable();
-    public Guid Add(Event @event);
-    public void Update(Event @event);
-    public void Remove(Guid id);
+    public Task<IQueryable<Event>> GetQueryable();
+    public Task<Guid> Add(Event @event);
+    public Task Update(Event @event);
+    public Task Remove(Guid id);
 }

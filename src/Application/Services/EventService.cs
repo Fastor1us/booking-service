@@ -7,15 +7,15 @@ namespace BookingApi.Application.Services;
 public class EventService(IEventRepository _eventRepository)
     : IEventService
 {
-    public Event GetById(Guid id)
+    public Task<Event> GetById(Guid id)
     {
         return _eventRepository.GetById(id);
     }
 
-    public PagedEvents GetAll(
+    public async Task<PagedEvents> GetAll(
         EventFilter filter, PaginationParams paginationParams)
     {
-        var query = _eventRepository.GetQueryable();
+        var query = await _eventRepository.GetQueryable();
 
         if (!string.IsNullOrEmpty(filter.Title))
         {
@@ -33,7 +33,7 @@ public class EventService(IEventRepository _eventRepository)
             query = query.Where(e => e.EndAt <= filter.To);
         }
 
-        var res = _eventRepository.GetPaged(
+        var res = await _eventRepository.GetPaged(
             query,
             paginationParams.PageIndex,
             paginationParams.PageSize);
@@ -41,19 +41,19 @@ public class EventService(IEventRepository _eventRepository)
         return new(res.Items, res.TotalCount);
     }
 
-    public Event Add(Event @event)
+    public async Task<Event> Add(Event @event)
     {
-        var id = _eventRepository.Add(@event);
-        return _eventRepository.GetById(id);
+        var id = await _eventRepository.Add(@event);
+        return await _eventRepository.GetById(id);
     }
 
-    public void Update(Event @event)
+    public Task Update(Event @event)
     {
-        _eventRepository.Update(@event);
+        return _eventRepository.Update(@event);
     }
 
-    public void Remove(Guid id)
+    public Task Remove(Guid id)
     {
-        _eventRepository.Remove(id);
+        return _eventRepository.Remove(id);
     }
 }

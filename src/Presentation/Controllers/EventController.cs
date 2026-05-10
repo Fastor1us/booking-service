@@ -11,43 +11,43 @@ namespace BookingApi.Presentation.Controllers;
 public class EventController(IEventService eventService) : ControllerBase
 {
     [HttpGet("{id:guid}")]
-    public ActionResult<EventResponseDto> GetById([FromRoute] Guid id)
+    public async Task<ActionResult<EventResponseDto>> GetById([FromRoute] Guid id)
     {
-        return Ok(eventService.GetById(id).MapToResponseDto());
+        return Ok((await eventService.GetById(id)).MapToResponseDto());
     }
 
     [HttpGet]
-    public ActionResult<PaginatedEventsResponseDto> GetAll(
+    public async Task<ActionResult<PaginatedEventsResponseDto>> GetAll(
         [FromQuery] string? title, [FromQuery] DateTime? from, [FromQuery] DateTime? to,
         [FromQuery] int? page, [FromQuery] int? pageSize)
     {
         PaginationParams paginationParams = new(page, pageSize);
 
-        PaginatedEventsResponseDto pagedEvents = eventService
-            .GetAll(new(title, from, to), paginationParams)
+        PaginatedEventsResponseDto pagedEvents = (await eventService
+            .GetAll(new(title, from, to), paginationParams))
             .MapToPaginatedResponseDto(paginationParams);
 
         return Ok(pagedEvents);
     }
 
     [HttpPost]
-    public ActionResult<EventResponseDto> Add([FromBody] PostEventDto @event)
+    public async Task<ActionResult<EventResponseDto>> Add([FromBody] PostEventDto @event)
     {
-        var createdEvent = eventService.Add(@event.MapToEvent());
+        var createdEvent = await eventService.Add(@event.MapToEvent());
         return CreatedAtAction(nameof(GetById), new { id = createdEvent.Id }, createdEvent);
     }
 
     [HttpPut("{id:guid}")]
-    public ActionResult<EventResponseDto> Put([FromBody] PutEventDto @event, [FromRoute] Guid id)
+    public async Task<ActionResult<EventResponseDto>> Put([FromBody] PutEventDto @event, [FromRoute] Guid id)
     {
-        eventService.Update(@event.MapToEvent(id));
+        await eventService.Update(@event.MapToEvent(id));
         return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
-    public IActionResult Remove([FromRoute] Guid id)
+    public async Task<IActionResult> Remove([FromRoute] Guid id)
     {
-        eventService.Remove(id);
+        await eventService.Remove(id);
         return NoContent();
     }
 }

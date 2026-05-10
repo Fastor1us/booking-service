@@ -10,7 +10,7 @@ namespace BookingTests;
 public class EventServiceTests
 {
     [Fact]
-    public void Add_ValidEvent_ReturnsAddedEvent()
+    public async Task Add_ValidEvent_ReturnsAddedEvent()
     {
         // Arrange
         Event @event = EventFactory.CreateEvent();
@@ -18,16 +18,16 @@ public class EventServiceTests
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
             .Setup(repository => repository.Add(It.IsAny<Event>()))
-            .Returns(@event.Id);
+            .ReturnsAsync(@event.Id);
         mockRepository
             .Setup(repository => repository.GetById(
                 It.Is<Guid>(e => e == @event.Id)))
-            .Returns(@event);
+            .ReturnsAsync(@event);
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = eventService.Add(@event);
+        var res = await eventService.Add(@event);
 
         // Assert
         Assert.NotNull(res);
@@ -35,7 +35,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetAll_WithValidPagination_ReturnsPagedEvents()
+    public async Task GetAll_WithValidPagination_ReturnsPagedEvents()
     {
         // Arrange
         List<Event> events = EventFactory.CreateEvents(20);
@@ -45,12 +45,12 @@ public class EventServiceTests
         mockRepository
             .Setup(repository => repository.GetPaged(
                 It.IsAny<IQueryable<Event>>(), 2, 5))
-            .Returns(new PagedEvents(expectedEvents, 5));
+            .ReturnsAsync(new PagedEvents(expectedEvents, 5));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = eventService.GetAll(new(null, null, null), new(2, 5));
+        var res = await eventService.GetAll(new(null, null, null), new(2, 5));
 
         // Assert
         Assert.Equal(5, res.TotalCount);
@@ -59,7 +59,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetById_ExistingId_ReturnsCorrectEvent()
+    public async Task GetById_ExistingId_ReturnsCorrectEvent()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -69,12 +69,12 @@ public class EventServiceTests
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
             .Setup(repository => repository.GetById(It.Is<Guid>(e => e == guid)))
-            .Returns(@event);
+            .ReturnsAsync(@event);
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = eventService.GetById(guid);
+        var res = await eventService.GetById(guid);
 
         // Assert
         Assert.NotNull(res);
@@ -82,7 +82,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void Update_ExistingEvent_DoesNotThrowException()
+    public async Task Update_ExistingEvent_DoesNotThrowException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -97,7 +97,7 @@ public class EventServiceTests
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = Record.Exception(() => eventService.Update(@event));
+        var exception = await Record.ExceptionAsync(() => eventService.Update(@event));
 
         // Assert
         Assert.Null(exception);
@@ -106,7 +106,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void Remove_ExistingId_DoesNotThrowException()
+    public async Task Remove_ExistingId_DoesNotThrowException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -119,7 +119,7 @@ public class EventServiceTests
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = Record.Exception(() => eventService.Remove(guid));
+        var exception = await Record.ExceptionAsync(() => eventService.Remove(guid));
 
         // Assert
         Assert.Null(exception);
@@ -128,7 +128,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetAll_WithTitleFilter_ReturnsMatchingEvents()
+    public async Task GetAll_WithTitleFilter_ReturnsMatchingEvents()
     {
         // Arrange
         string filterTitle = "Title #1";
@@ -140,12 +140,12 @@ public class EventServiceTests
         mockRepository
             .Setup(repository => repository.GetPaged(
                 It.IsAny<IQueryable<Event>>(), 1, 10))
-            .Returns(new PagedEvents(expectedEvents, 1));
+            .ReturnsAsync(new PagedEvents(expectedEvents, 1));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = eventService.GetAll(
+        var res = await eventService.GetAll(
             new(filterTitle, null, null), new(1, 10));
 
         // Assert
@@ -154,7 +154,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetAll_WithDateRangeFilter_ReturnsEventsWithinRange()
+    public async Task GetAll_WithDateRangeFilter_ReturnsEventsWithinRange()
     {
         // Arrange
         DateTime invalidStartAt = DateTime.Now.AddDays(-5);
@@ -176,12 +176,12 @@ public class EventServiceTests
         mockRepository
             .Setup(repository => repository.GetPaged(
                 It.IsAny<IQueryable<Event>>(), 1, 10))
-            .Returns(new PagedEvents(events.Skip(1).Take(2), 2));
+            .ReturnsAsync(new PagedEvents(events.Skip(1).Take(2), 2));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = eventService.GetAll(
+        var res = await eventService.GetAll(
             new(null, validStartAt, validEndAt),
             new(1, 10));
 
@@ -192,7 +192,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetAll_WithTitleAndDateRangeFilter_ReturnsMatchingEventsWithinRange()
+    public async Task GetAll_WithTitleAndDateRangeFilter_ReturnsMatchingEventsWithinRange()
     {
         // Arrange
         string filterTitle = "The Bohemians";
@@ -216,12 +216,12 @@ public class EventServiceTests
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
             .Setup(repository => repository.GetPaged(It.IsAny<IQueryable<Event>>(), 1, 10))
-            .Returns(new PagedEvents(events.Skip(1).Take(2), 2));
+            .ReturnsAsync(new PagedEvents(events.Skip(1).Take(2), 2));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = eventService.GetAll(
+        var res = await eventService.GetAll(
             new(filterTitle, validStartAt, validEndAt),
             new(1, 10));
 
@@ -232,7 +232,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void GetById_NonExistentId_ThrowsEventNotFoundException()
+    public async Task GetById_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -245,7 +245,7 @@ public class EventServiceTests
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = Record.Exception(() => eventService.GetById(guid));
+        var exception = await Record.ExceptionAsync(() => eventService.GetById(guid));
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
@@ -253,7 +253,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void Update_NonExistentId_ThrowsEventNotFoundException()
+    public async Task Update_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -267,7 +267,7 @@ public class EventServiceTests
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = Record.Exception(() => eventService.Update(@event));
+        var exception = await Record.ExceptionAsync(() => eventService.Update(@event));
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
@@ -275,7 +275,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public void Remove_NonExistentId_ThrowsEventNotFoundException()
+    public async Task Remove_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -289,7 +289,7 @@ public class EventServiceTests
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = Record.Exception(() => eventService.Remove(guid));
+        var exception = await Record.ExceptionAsync(() => eventService.Remove(guid));
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
