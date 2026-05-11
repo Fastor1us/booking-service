@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
 using BookingApi.Application.Interfaces;
 using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
+using BookingApi.Infrastructure.BackgroundServices;
 using BookingApi.Infrastructure.Repositories;
 
 namespace BookingApi;
@@ -21,7 +23,12 @@ public static class Extensions
                     var errorMessage = "One or more validation errors occurred.";
                     throw new ModelValidationException(errorMessage, errors);
                 };
+            })
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
+
         services.AddSwaggerGen();
 
         return services;
@@ -30,13 +37,17 @@ public static class Extensions
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddSingleton<IEventService, EventService>();
+        services.AddSingleton<IBookingService, BookingService>();
 
         return services;
     }
 
-    public static IServiceCollection AddRepositories(this IServiceCollection services)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services.AddSingleton<IEventRepository, EventInMemoryRepository>();
+        services.AddSingleton<IBookingRepository, BookingInMemoryRepository>();
+
+        services.AddHostedService<PendingBookingProcessor>();
 
         return services;
     }

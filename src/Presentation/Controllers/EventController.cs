@@ -8,14 +8,16 @@ namespace BookingApi.Presentation.Controllers;
 
 [ApiController]
 [Route("api/events")]
-public class EventController(IEventService eventService) : ControllerBase
+public class EventController(
+    IEventService eventService,
+    IBookingService bookingService) : ControllerBase
 {
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<EventResponseDto>> GetById(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        var res = await eventService.GetByIdAsync(id, ct);
-        return Ok(res.MapToResponseDto());
+        var @event = await eventService.GetByIdAsync(id, ct);
+        return Ok(@event.MapToResponseDto());
     }
 
     [HttpGet]
@@ -29,30 +31,28 @@ public class EventController(IEventService eventService) : ControllerBase
     {
         PaginationParams paginationParams = new(page, pageSize);
 
-        var res = await eventService
+        var @event = await eventService
             .GetAllAsync(new(title, from, to), paginationParams, ct);
-
-        return Ok(res.MapToPaginatedResponseDto(paginationParams));
+        return Ok(@event.MapToPaginatedResponseDto(paginationParams));
     }
 
     [HttpPost]
     public async Task<ActionResult<EventResponseDto>> Add(
-        [FromBody] PostEventDto @event, CancellationToken ct)
+        [FromBody] PostEventDto eventDto, CancellationToken ct)
     {
-        var createdEvent = await eventService
-            .AddAsync(@event.MapToEvent(), ct);
-
+        var @event = await eventService
+            .AddAsync(eventDto.MapToEvent(), ct);
         return CreatedAtAction(
-            nameof(GetById), new { id = createdEvent.Id }, createdEvent);
+            nameof(GetById), new { id = @event.Id }, @event);
     }
 
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<EventResponseDto>> Put(
-        [FromBody] PutEventDto @event,
+        [FromBody] PutEventDto eventDto,
         [FromRoute] Guid id,
         CancellationToken ct)
     {
-        await eventService.UpdateAsync(@event.MapToEvent(id), ct);
+        await eventService.UpdateAsync(eventDto.MapToEvent(id), ct);
         return NoContent();
     }
 
@@ -62,5 +62,17 @@ public class EventController(IEventService eventService) : ControllerBase
     {
         await eventService.RemoveAsync(id, ct);
         return NoContent();
+    }
+
+    [HttpPost("{id:guid}/book")]
+    public async Task<ActionResult<object>> Book(
+        [FromRoute] Guid id, CancellationToken ct)
+    {
+        var booking = await bookingService.CreateBookingAsync(id, ct);
+        return Accepted(new
+        {
+            bookingId = booking.Id,
+            status = booking.Status
+        });
     }
 }
