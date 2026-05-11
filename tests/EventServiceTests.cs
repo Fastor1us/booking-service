@@ -9,6 +9,8 @@ namespace BookingTests;
 
 public class EventServiceTests
 {
+    private readonly CancellationToken _ct = new CancellationTokenSource().Token;
+
     [Fact]
     public async Task Add_ValidEvent_ReturnsAddedEvent()
     {
@@ -17,17 +19,17 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.Add(It.IsAny<Event>()))
+            .Setup(repository => repository.AddAsync(It.IsAny<Event>(), _ct))
             .ReturnsAsync(@event.Id);
         mockRepository
-            .Setup(repository => repository.GetById(
-                It.Is<Guid>(e => e == @event.Id)))
+            .Setup(repository => repository.GetByIdAsync(
+                It.Is<Guid>(e => e == @event.Id), _ct))
             .ReturnsAsync(@event);
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = await eventService.Add(@event);
+        var res = await eventService.AddAsync(@event, _ct);
 
         // Assert
         Assert.NotNull(res);
@@ -43,14 +45,15 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.GetPaged(
-                It.IsAny<IQueryable<Event>>(), 2, 5))
+            .Setup(repository => repository.GetPagedAsync(
+                It.IsAny<IQueryable<Event>>(), 2, 5, _ct))
             .ReturnsAsync(new PagedEvents(expectedEvents, 5));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = await eventService.GetAll(new(null, null, null), new(2, 5));
+        var res = await eventService.GetAllAsync(
+            new(null, null, null), new(2, 5), _ct);
 
         // Assert
         Assert.Equal(5, res.TotalCount);
@@ -68,13 +71,14 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.GetById(It.Is<Guid>(e => e == guid)))
+            .Setup(repository => repository
+                .GetByIdAsync(It.Is<Guid>(e => e == guid), _ct))
             .ReturnsAsync(@event);
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = await eventService.GetById(guid);
+        var res = await eventService.GetByIdAsync(guid, _ct);
 
         // Assert
         Assert.NotNull(res);
@@ -91,18 +95,21 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.Update(It.Is<Event>(e => e.Id == guid)))
-            .Verifiable();
+            .Setup(repository => repository
+                .UpdateAsync(It.Is<Event>(e => e.Id == guid), _ct))
+            .ReturnsAsync(true);
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = await Record.ExceptionAsync(() => eventService.Update(@event));
+        var exception = await Record
+            .ExceptionAsync(() => eventService.UpdateAsync(@event, _ct));
 
         // Assert
         Assert.Null(exception);
         mockRepository
-            .Verify(repo => repo.Update(It.IsAny<Event>()), Times.Once);
+            .Verify(repo =>
+                repo.UpdateAsync(It.IsAny<Event>(), _ct), Times.Once);
     }
 
     [Fact]
@@ -113,18 +120,21 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.Remove(It.Is<Guid>(g => g == guid)))
-            .Verifiable();
+            .Setup(repository => repository
+                .RemoveAsync(It.Is<Guid>(g => g == guid), _ct))
+            .ReturnsAsync(true);
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = await Record.ExceptionAsync(() => eventService.Remove(guid));
+        var exception = await Record
+            .ExceptionAsync(() => eventService.RemoveAsync(guid, _ct));
 
         // Assert
         Assert.Null(exception);
         mockRepository
-            .Verify(repo => repo.Remove(It.IsAny<Guid>()), Times.Once);
+            .Verify(repo =>
+                repo.RemoveAsync(It.IsAny<Guid>(), _ct), Times.Once);
     }
 
     [Fact]
@@ -138,15 +148,15 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.GetPaged(
-                It.IsAny<IQueryable<Event>>(), 1, 10))
+            .Setup(repository => repository.GetPagedAsync(
+                It.IsAny<IQueryable<Event>>(), 1, 10, _ct))
             .ReturnsAsync(new PagedEvents(expectedEvents, 1));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = await eventService.GetAll(
-            new(filterTitle, null, null), new(1, 10));
+        var res = await eventService.GetAllAsync(
+            new(filterTitle, null, null), new(1, 10), _ct);
 
         // Assert
         Assert.Equal(1, res.TotalCount);
@@ -174,16 +184,15 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.GetPaged(
-                It.IsAny<IQueryable<Event>>(), 1, 10))
+            .Setup(repository => repository.GetPagedAsync(
+                It.IsAny<IQueryable<Event>>(), 1, 10, _ct))
             .ReturnsAsync(new PagedEvents(events.Skip(1).Take(2), 2));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = await eventService.GetAll(
-            new(null, validStartAt, validEndAt),
-            new(1, 10));
+        var res = await eventService.GetAllAsync(
+            new(null, validStartAt, validEndAt), new(1, 10), _ct);
 
         // Assert
         Assert.Equal(2, res.TotalCount);
@@ -215,15 +224,15 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.GetPaged(It.IsAny<IQueryable<Event>>(), 1, 10))
+            .Setup(repository => repository
+                .GetPagedAsync(It.IsAny<IQueryable<Event>>(), 1, 10, _ct))
             .ReturnsAsync(new PagedEvents(events.Skip(1).Take(2), 2));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = await eventService.GetAll(
-            new(filterTitle, validStartAt, validEndAt),
-            new(1, 10));
+        var res = await eventService.GetAllAsync(
+            new(filterTitle, validStartAt, validEndAt), new(1, 10), _ct);
 
         // Assert
         Assert.Equal(2, res.TotalCount);
@@ -239,13 +248,14 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.GetById(guid))
+            .Setup(repository => repository.GetByIdAsync(guid, _ct))
             .Throws(new EventNotFoundException(guid));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = await Record.ExceptionAsync(() => eventService.GetById(guid));
+        var exception = await Record
+            .ExceptionAsync(() => eventService.GetByIdAsync(guid, _ct));
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
@@ -261,13 +271,14 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.Update(@event))
+            .Setup(repository => repository.UpdateAsync(@event, _ct))
             .Throws(new EventNotFoundException(guid));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = await Record.ExceptionAsync(() => eventService.Update(@event));
+        var exception = await Record
+            .ExceptionAsync(() => eventService.UpdateAsync(@event, _ct));
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
@@ -283,13 +294,14 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.Remove(guid))
+            .Setup(repository => repository.RemoveAsync(guid, _ct))
             .Throws(new EventNotFoundException(guid));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var exception = await Record.ExceptionAsync(() => eventService.Remove(guid));
+        var exception = await Record
+            .ExceptionAsync(() => eventService.RemoveAsync(guid, _ct));
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);

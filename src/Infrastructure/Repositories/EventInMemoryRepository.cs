@@ -1,5 +1,4 @@
 using BookingApi.Application.Interfaces;
-using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 using System.Collections.Concurrent;
 
@@ -35,19 +34,23 @@ public class EventInMemoryRepository : IEventRepository
         // }
     }
 
-    public async Task<Event> GetById(Guid id)
+    public Task<Event?> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        if (_events.TryGetValue(id, out var @event))
-            return await Task.FromResult(@event);
+        ct.ThrowIfCancellationRequested();
 
-        throw new EventNotFoundException(id);
+        _events.TryGetValue(id, out var @event);
+
+        return Task.FromResult(@event);
     }
 
-    public async Task<PagedEvents> GetPaged(
+    public Task<PagedEvents> GetPagedAsync(
         IQueryable<Event> query,
         int pageIndex,
-        int pageSize)
+        int pageSize,
+        CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
+
         var totalCount = query.Count();
 
         var items = query
@@ -55,46 +58,50 @@ public class EventInMemoryRepository : IEventRepository
             .Take(pageSize)
             .ToList();
 
-        return await Task.FromResult(new PagedEvents(items, totalCount));
+        return Task.FromResult(new PagedEvents(items, totalCount));
     }
 
-    public async Task<IQueryable<Event>> GetQueryable()
+    public Task<IQueryable<Event>> GetQueryableAsync(CancellationToken ct)
     {
-        return await Task.FromResult(_events.Values.AsQueryable());
+        ct.ThrowIfCancellationRequested();
+
+        return Task.FromResult(_events.Values.AsQueryable());
     }
 
-    public async Task<Guid> Add(Event @event)
+    public Task<Guid> AddAsync(Event @event, CancellationToken ct)
     {
-        var newId = Guid.NewGuid();
+        ct.ThrowIfCancellationRequested();
 
-        var newEvent = new Event
+        var id = Guid.NewGuid();
+
+        if (!_events.TryAdd(id, new Event
         {
-            Id = newId,
+            Id = id,
             Title = @event.Title,
             Description = @event.Description,
             StartAt = @event.StartAt,
             EndAt = @event.EndAt
-        };
+        }))
+        {
+            return AddAsync(@event, ct);
+        }
 
-        if (!_events.TryAdd(newId, newEvent))
-            throw new InvalidOperationException($"Event with id '{newId}' already exist");
-
-        return await Task.FromResult(newId);
+        return Task.FromResult(id);
     }
 
-    public async Task Update(Event @event)
+    public Task<bool> UpdateAsync(Event @event, CancellationToken ct)
     {
-        if (!_events.TryUpdate(@event.Id, @event, _events[@event.Id]))
-            throw new EventNotFoundException(@event.Id);
+        ct.ThrowIfCancellationRequested();
 
-        await Task.CompletedTask;
+        var res = _events.TryUpdate(@event.Id, @event, _events[@event.Id]);
+        return Task.FromResult(res);
     }
 
-    public async Task Remove(Guid id)
+    public Task<bool> RemoveAsync(Guid id, CancellationToken ct)
     {
-        if (!_events.TryRemove(id, out _))
-            throw new EventNotFoundException(id);
+        ct.ThrowIfCancellationRequested();
 
-        await Task.CompletedTask;
+        var res = _events.TryRemove(id, out _);
+        return Task.FromResult(res);
     }
 }

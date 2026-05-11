@@ -17,7 +17,7 @@ public class GlobalExceptionHandlingMiddleware(
         {
             await _next(httpContext);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             await HandleException(httpContext, ex);
         }
@@ -66,7 +66,6 @@ public class GlobalExceptionHandlingMiddleware(
        {
            ValidationException => StatusCodes.Status400BadRequest,
            NotFoundException => StatusCodes.Status404NotFound,
-           ConflictException => StatusCodes.Status409Conflict,
            _ => StatusCodes.Status500InternalServerError
        };
 }
