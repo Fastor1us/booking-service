@@ -65,14 +65,10 @@ public class EventController(
     }
 
     [HttpPost("{id:guid}/book")]
-    public async Task<ActionResult<object>> Book(
+    public async Task<ActionResult<BookingResponseDto>> Book(
         [FromRoute] Guid id, CancellationToken ct)
     {
         var booking = await bookingService.CreateBookingAsync(id, ct);
-        return Accepted(new
-        {
-            bookingId = booking.Id,
-            status = booking.Status
-        });
+        return Accepted(booking.MapToResponseDto());
     }
 }

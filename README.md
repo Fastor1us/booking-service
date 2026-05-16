@@ -1,143 +1,401 @@
 # Booking API
+
 REST API for managing event bookings
 
 ## 📋 Requirements
+
 - [.NET 10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
 - CLI / IDE
 
 ## 🚀 Quick Start
+
 ### Restore dependencies
+
 ```bash
-dotnet restore --project ./src/BookingApi.csproj
+dotnet restore ./src/BookingApi.csproj
 ```
+
 ### Build project
+
 ```bash
-dotnet build --project ./src/BookingApi.csproj
+dotnet build ./src/BookingApi.csproj
 ```
+
 ### Run project
+
 ```bash
 dotnet run --project ./src/BookingApi.csproj
 ```
-After running, access [Swagger UI](http://localhost:5142/swagger/index.html) 
+
+After running, access [Swagger UI](http://localhost:5142/swagger/index.html)
 
 ## 🧪 Testing
+
 ### Run tests
+
 ```bash
 dotnet test
 ```
 
-## 🌑 API Endpoints
-### Events Controller (`/api/events`)
-| Method | Endpoint | Description | Success Response |
-|--------|----------|-------------|------------------|
-| GET | `/api/events/{id}` | Get event by ID | 200 OK |
-| GET | `/api/events` | Get paginated events with filters | 200 OK |
-| POST | `/api/events` | Create new event | 201 Created |
-| PUT | `/api/events/{id}` | Update existing event | 204 No Content |
-| DELETE | `/api/events/{id}` | Delete event | 204 No Content |
+## 🌐 API Endpoints
 
-### GET `/api/events` - Query Parameters
+### 📅 Events Controller (`/api/events`)
 
-| Parameter | Type | Description | Constraints | Default |
-|-----------|------|-------------|-------------|---------|
-| `title` | string | Filter by title (case-insensitive partial match) | - | null |
-| `from` | DateTime | Filter events starting after this date | Must be before `to` | null |
-| `to` | DateTime | Filter events ending before this date | Must be after `from` | null |
-| `page` | int | Page number | ≥ 1 | 1 |
-| `pageSize` | int | Items per page | 5-50 | 10 |
+| Method | Endpoint                | Description                       | Success Response |
+| ------ | ----------------------- | --------------------------------- | ---------------- |
+| GET    | `/api/events/{id}`      | Get event by ID                   | 200 OK           |
+| GET    | `/api/events`           | Get paginated events with filters | 200 OK           |
+| POST   | `/api/events`           | Create new event                  | 201 Created      |
+| PUT    | `/api/events/{id}`      | Update existing event             | 204 No Content   |
+| DELETE | `/api/events/{id}`      | Delete event                      | 204 No Content   |
+| POST   | `/api/events/{id}/book` | Book an event                     | 202 Accepted     |
+
+### 📖 Booking Controller (`/api/bookings`)
+
+| Method | Endpoint             | Description       | Success Response |
+| ------ | -------------------- | ----------------- | ---------------- |
+| GET    | `/api/bookings/{id}` | Get booking by ID | 200 OK           |
+
+### 📊 Query Parameters
+
+#### GET `/api/events` - Query Parameters
+
+| Parameter  | Type     | Description                                      | Constraints          | Default |
+| ---------- | -------- | ------------------------------------------------ | -------------------- | ------- |
+| `title`    | string   | Filter by title (case-insensitive partial match) | -                    | null    |
+| `from`     | DateTime | Filter events starting after this date           | Must be before `to`  | null    |
+| `to`       | DateTime | Filter events ending before this date            | Must be after `from` | null    |
+| `page`     | int      | Page number                                      | ≥ 1                  | 1       |
+| `pageSize` | int      | Items per page                                   | 5-50                 | 10      |
 
 **Example Request:**
+
 ```
 GET /api/events?title=workshop&from=2024-01-01&to=2024-12-31&page=2&pageSize=20
 ```
 
-### Request/Response Models
+### 📦 Detailed endpoints
 
-#### POST `/api/events` & PUT `/api/events/{id}` Body
+### 🎯 GET `/api/events/{id}`
 
-```json
-{
-  "title": "string (required)",
-  "description": "string (optional)",
-  "startAt": "2024-01-01T10:00:00Z (required)",
-  "endAt": "2024-01-01T12:00:00Z (required)"
-}
-```
+Get a single event by its unique identifier.
+
+**Parameters:**
+
+| Name | In   | Type   | Required | Description                    |
+| ---- | ---- | ------ | -------- | ------------------------------ |
+| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
+
+**Responses:**
+
+| Status Code | Description           | Response Type                           |
+| ----------- | --------------------- | --------------------------------------- |
+| 200         | Success               | [`EventResponseDto`](#eventresponsedto) |
+| 404         | Event not found       | [`ErrorResponseDto`](#errorresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
+
+---
+
+### 📋 GET `/api/events`
+
+Get paginated list of events with optional filtering.
+
+**Parameters:**
+
+| Name       | In    | Type       | Required | Description                                      |
+| ---------- | ----- | ---------- | -------- | ------------------------------------------------ |
+| `title`    | query | `string`   | ❌ No    | Filter by title (case-insensitive partial match) |
+| `from`     | query | `DateTime` | ❌ No    | Filter events starting after this date           |
+| `to`       | query | `DateTime` | ❌ No    | Filter events ending before this date            |
+| `page`     | query | `int`      | ❌ No    | Page number (≥ 1)                                |
+| `pageSize` | query | `int`      | ❌ No    | Items per page (5-50)                            |
 
 **Validation Rules:**
-- `endAt` must be later than `startAt`
-- All required fields must be provided and non-empty
 
-#### GET `/api/events/{id}` & POST `/api/events` Response
+- `to` date must be later than `from` date
+- `page` must be at least 1
+- `pageSize` must be between 5 and 50
+
+**Responses:**
+
+| Status Code | Description               | Response Type                                               |
+| ----------- | ------------------------- | ----------------------------------------------------------- |
+| 200         | Success                   | [`PaginatedEventsResponseDto`](#paginatedeventsresponsedto) |
+| 400         | Invalid filter/pagination | [`ErrorResponseDto`](#errorresponsedto)                     |
+| 500         | Internal server error     | [`ErrorResponseDto`](#errorresponsedto)                     |
+
+---
+
+### ➕ POST `/api/events`
+
+Create a new event.
+
+**Request Body:**
+
+| Name       | In   | Type                            | Required | Description         |
+| ---------- | ---- | ------------------------------- | -------- | ------------------- |
+| `eventDto` | body | [`PostEventDto`](#posteventdto) | ✅ Yes   | Event creation data |
+
+**Responses:**
+
+| Status Code | Description           | Response Type                           |
+| ----------- | --------------------- | --------------------------------------- |
+| 201         | Created               | [`EventResponseDto`](#eventresponsedto) |
+| 400         | Validation error      | [`ErrorResponseDto`](#errorresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
+
+---
+
+### ✏️ PUT `/api/events/{id}`
+
+Update an existing event.
+
+**Parameters:**
+
+| Name | In   | Type   | Required | Description                    |
+| ---- | ---- | ------ | -------- | ------------------------------ |
+| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
+
+**Request Body:**
+
+| Name       | In   | Type                          | Required | Description        |
+| ---------- | ---- | ----------------------------- | -------- | ------------------ |
+| `eventDto` | body | [`PutEventDto`](#puteventdto) | ✅ Yes   | Updated event data |
+
+**Responses:**
+
+| Status Code | Description           | Response Type                           |
+| ----------- | --------------------- | --------------------------------------- |
+| 204         | No Content (success)  | -                                       |
+| 400         | Validation error      | [`ErrorResponseDto`](#errorresponsedto) |
+| 404         | Event not found       | [`ErrorResponseDto`](#errorresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
+
+---
+
+### 🗑️ DELETE `/api/events/{id}`
+
+Delete an event.
+
+**Parameters:**
+
+| Name | In   | Type   | Required | Description                    |
+| ---- | ---- | ------ | -------- | ------------------------------ |
+| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
+
+**Responses:**
+
+| Status Code | Description           | Response Type                           |
+| ----------- | --------------------- | --------------------------------------- |
+| 204         | No Content (success)  | -                                       |
+| 404         | Event not found       | [`ErrorResponseDto`](#errorresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
+
+---
+
+### 🎫 POST `/api/events/{id}/book`
+
+Book a ticket for an event. Creates a pending booking request.
+
+**Parameters:**
+
+| Name | In   | Type   | Required | Description                    |
+| ---- | ---- | ------ | -------- | ------------------------------ |
+| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
+
+**Responses:**
+
+| Status Code | Description                  | Response Type                               |
+| ----------- | ---------------------------- | ------------------------------------------- |
+| 202         | Accepted (booking created)   | [`BookingResponseDto`](#bookingresponsedto) |
+| 404         | Event not found              | [`ErrorResponseDto`](#errorresponsedto)     |
+| 500         | Internal server error        | [`ErrorResponseDto`](#errorresponsedto)     |
+
+---
+
+### 🔍 GET `/api/bookings/{id}`
+
+Get booking details by ID.
+
+**Parameters:**
+
+| Name | In   | Type   | Required | Description                      |
+| ---- | ---- | ------ | -------- | -------------------------------- |
+| `id` | path | `guid` | ✅ Yes   | Unique identifier of the booking |
+
+**Responses:**
+
+| Status Code | Description           | Response Type                           |
+| ----------- | --------------------- | --------------------------------------- |
+| 200         | Success               | [`Booking`](#booking-model)             |
+| 404         | Booking not found     | [`ErrorResponseDto`](#errorresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
+
+---
+
+### 📦 Models
+
+### 🎫 `EventResponseDto`
+
+Response model for event data.
+
+| Property      | Type       | Required | Description                |
+| ------------- | ---------- | -------- | -------------------------- |
+| `id`          | `Guid`     | ✅ Yes   | Unique event identifier    |
+| `title`       | `string`   | ✅ Yes   | Event title                |
+| `description` | `string`   | ❌ No    | Optional event description |
+| `startAt`     | `DateTime` | ✅ Yes   | Event start date and time  |
+| `endAt`       | `DateTime` | ✅ Yes   | Event end date and time    |
+
+**Example:**
 
 ```json
 {
   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "title": "string",
-  "description": "string",
-  "startAt": "2024-01-01T10:00:00Z",
-  "endAt": "2024-01-01T12:00:00Z"
+  "title": "Tech Conference 2024",
+  "description": "Annual technology conference",
+  "startAt": "2024-06-15T09:00:00Z",
+  "endAt": "2024-06-17T18:00:00Z"
 }
 ```
 
-#### GET `/api/events` Response (Paginated)
+---
+
+### 📄 `PaginatedEventsResponseDto`
+
+Response model for paginated event list.
+
+| Property     | Type                            | Required | Description                     |
+| ------------ | ------------------------------- | -------- | ------------------------------- |
+| `items`      | `IEnumerable<EventResponseDto>` | ✅ Yes   | List of events for current page |
+| `totalCount` | `int`                           | ✅ Yes   | Total number of events          |
+| `pageIndex`  | `int`                           | ✅ Yes   | Current page number (1-based)   |
+| `itemsCount` | `int`                           | ✅ Yes   | Number of items on this page    |
+
+**Example:**
 
 ```json
 {
   "items": [
     {
       "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "title": "string",
-      "description": "string",
-      "startAt": "2024-01-01T10:00:00Z",
-      "endAt": "2024-01-01T12:00:00Z"
+      "title": "Tech Conference 2024",
+      "description": "Annual technology conference",
+      "startAt": "2024-06-15T09:00:00Z",
+      "endAt": "2024-06-17T18:00:00Z"
     }
   ],
-  "totalCount": 1,
-  "pageIndex": 1,
-  "itemsCount": 1
+  "totalCount": 25,
+  "pageIndex": 2,
+  "itemsCount": 10
 }
 ```
 
-## ❌ Error Handling
+---
 
-All errors return a consistent JSON format with appropriate HTTP status codes.
+### ✨ `PostEventDto`
 
-### Error Response Format
+Request model for creating a new event.
+
+| Property      | Type       | Required | Description                | Constraints                   |
+| ------------- | ---------- | -------- | -------------------------- | ----------------------------- |
+| `title`       | `string`   | ✅ Yes   | Event title                | Not empty, max 200 characters |
+| `description` | `string`   | ❌ No    | Optional event description | Max 1000 characters           |
+| `startAt`     | `DateTime` | ✅ Yes   | Event start date and time  | Must be in the future         |
+| `endAt`       | `DateTime` | ✅ Yes   | Event end date and time    | Must be later than `startAt`  |
+
+---
+
+### 🔄 `PutEventDto`
+
+Request model for updating an existing event.
+
+| Property      | Type       | Required | Description                | Constraints                   |
+| ------------- | ---------- | -------- | -------------------------- | ----------------------------- |
+| `title`       | `string`   | ✅ Yes   | Event title                | Not empty, max 200 characters |
+| `description` | `string`   | ❌ No    | Optional event description | Max 1000 characters           |
+| `startAt`     | `DateTime` | ✅ Yes   | Event start date and time  | Must be in the future         |
+| `endAt`       | `DateTime` | ✅ Yes   | Event end date and time    | Must be later than `startAt`  |
+
+---
+
+### 🎟️ `BookingResponseDto`
+
+Response model for booking creation (returned from `POST /api/events/{id}/book`).
+
+| Property      | Type                                   | Required | Description                   |
+| ------------- | -------------------------------------- | -------- | ----------------------------- |
+| `Id`          | `Guid`                                 | ✅ Yes   | Unique booking identifier     |
+| `eventId`     | `Guid`                                 | ✅ Yes   | Todo                          |
+| `status`      | [`BookingStatus`](#bookingstatus-enum) | ✅ Yes   | Current status of the booking |
+| `createdAt`   | [`BookingStatus`](#bookingstatus-enum) | ✅ Yes   | Todo                          |
+| `processedAt` | [`BookingStatus`](#bookingstatus-enum) | ❌ No    | Todo                          |
+
+**Example:**
 
 ```json
 {
-  "title": "Error description",
-  "details": ["Additional error details"]
+  "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
+  "eventId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "status": "Pending",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "processedAt": null
 }
 ```
 
+---
+
+### 🏷️ `BookingStatus` Enum
+
+| Value       | Description                                     |
+| ----------- | ----------------------------------------------- |
+| `Pending`   | Booking request created, waiting for processing |
+| `Confirmed` | Booking has been confirmed successfully         |
+| `Rejected`  | Booking request was rejected (e.g., event full) |
+
+---
+
+### ❌ `ErrorResponseDto`
+
+Response model for error responses returned by the global exception handling middleware
+
+| Property  | Type                  | Required | Description                                    |
+| --------- | --------------------- | -------- | ---------------------------------------------- |
+| `title`   | `string`              | ✅ Yes   | Short error description or exception message   |
+| `details` | `IEnumerable<string>` | ✅ Yes   | List of detailed error messages (can be empty) |
+
+**Example (Validation Error - 400 Bad Request):**
+
+```json
+{
+  "title": "Invalid filter parameters",
+  "details": ["'To' date must be later than 'From' date"]
+}
+```
+
+---
+
 ### HTTP Status Codes
 
-| Status Code | Description | When Occurs |
-|-------------|-------------|-------------|
-| 400 Bad Request | Invalid request data | - Validation errors (missing required fields, invalid dates)<br>- Invalid filter parameters (`to` date before `from`)<br>- Invalid pagination parameters (page < 1, pageSize outside 5-50) |
-| 404 Not Found | Resource not found | Event with specified ID doesn't exist |
-| 500 Internal Server Error | Server error | Unhandled exceptions in the application |
+| Status Code               | Description          | When Occurs                                                                                                                                                                                |
+| ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 400 Bad Request           | Invalid request data | - Validation errors (missing required fields, invalid dates)<br>- Invalid filter parameters (`to` date before `from`)<br>- Invalid pagination parameters (page < 1, pageSize outside 5-50) |
+| 404 Not Found             | Resource not found   | Event with specified ID doesn't exist                                                                                                                                                      |
+| 500 Internal Server Error | Server error         | Unhandled exceptions in the application                                                                                                                                                    |
 
 ### Example Error Response (400 Bad Request)
 
 ```json
 {
   "title": "Invalid filter parameters",
-  "details": [
-    "'To' date must be later than 'From' date"
-  ]
+  "details": ["'To' date must be later than 'From' date"]
 }
 ```
 
 ```json
 {
   "title": "One or more validation errors occurred.",
-  "details": [
-    "EndAt must be later than StartAt",
-    "Title is required"
-  ]
+  "details": ["EndAt must be later than StartAt", "Title is required"]
 }
 ```
 

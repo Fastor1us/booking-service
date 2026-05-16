@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace BookingApi.Domain.Models;
 
 public class Booking

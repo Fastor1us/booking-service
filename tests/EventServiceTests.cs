@@ -3,6 +3,7 @@ using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 using BookingTests.Helpers;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace BookingTests;
@@ -23,7 +24,7 @@ public class EventServiceTests
             .ReturnsAsync(@event.Id);
         mockRepository
             .Setup(repository => repository.GetByIdAsync(
-                It.Is<Guid>(e => e == @event.Id), _ct))
+                It.Is<Guid>(id => id == @event.Id), _ct))
             .ReturnsAsync(@event);
 
         var eventService = new EventService(mockRepository.Object);
@@ -33,7 +34,7 @@ public class EventServiceTests
 
         // Assert
         Assert.NotNull(res);
-        AssertEventsEqual(@event, res);
+        Assert.True(res.IsEqual(@event));
     }
 
     [Fact]
@@ -57,8 +58,8 @@ public class EventServiceTests
 
         // Assert
         Assert.Equal(5, res.TotalCount);
-        AssertEventsEqual(expectedEvents.First(), res.Items.First());
-        AssertEventsEqual(expectedEvents.Last(), res.Items.Last());
+        Assert.True(res.Items.First().IsEqual(expectedEvents.First()));
+        Assert.True(res.Items.Last().IsEqual(expectedEvents.Last()));
     }
 
     [Fact]
@@ -72,7 +73,7 @@ public class EventServiceTests
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
             .Setup(repository => repository
-                .GetByIdAsync(It.Is<Guid>(e => e == guid), _ct))
+                .GetByIdAsync(It.Is<Guid>(id => id == guid), _ct))
             .ReturnsAsync(@event);
 
         var eventService = new EventService(mockRepository.Object);
@@ -82,7 +83,7 @@ public class EventServiceTests
 
         // Assert
         Assert.NotNull(res);
-        AssertEventsEqual(@event, res);
+        Assert.True(res.IsEqual(@event));
     }
 
     [Fact]
@@ -160,7 +161,7 @@ public class EventServiceTests
 
         // Assert
         Assert.Equal(1, res.TotalCount);
-        AssertEventsEqual(expectedEvents.ElementAt(0), res.Items.First());
+        Assert.True(res.Items.First().IsEqual(expectedEvents.ElementAt(0)));
     }
 
     [Fact]
@@ -196,8 +197,8 @@ public class EventServiceTests
 
         // Assert
         Assert.Equal(2, res.TotalCount);
-        AssertEventsEqual(events.ElementAt(1), res.Items.First());
-        AssertEventsEqual(events.ElementAt(2), res.Items.Last());
+        Assert.True(res.Items.First().IsEqual(events.ElementAt(1)));
+        Assert.True(res.Items.Last().IsEqual(events.ElementAt(2)));
     }
 
     [Fact]
@@ -236,8 +237,8 @@ public class EventServiceTests
 
         // Assert
         Assert.Equal(2, res.TotalCount);
-        AssertEventsEqual(events.ElementAt(1), res.Items.First());
-        AssertEventsEqual(events.ElementAt(2), res.Items.Last());
+        Assert.True(res.Items.First().IsEqual(events.ElementAt(1)));
+        Assert.True(res.Items.Last().IsEqual(events.ElementAt(2)));
     }
 
     [Fact]
@@ -307,14 +308,4 @@ public class EventServiceTests
         Assert.IsType<EventNotFoundException>(exception);
         Assert.Equal(exception.Message, $"Event with Id '{guid}' was not found.");
     }
-
-    #region Helper Methods
-    private static void AssertEventsEqual(Event expected, Event actual)
-    {
-        Assert.Equal(expected.Id, actual.Id);
-        Assert.Equal(expected.Title, actual.Title);
-        Assert.Equal(expected.StartAt, actual.StartAt);
-        Assert.Equal(expected.EndAt, actual.EndAt);
-    }
-    #endregion
 }

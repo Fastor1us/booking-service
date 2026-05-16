@@ -1,5 +1,6 @@
 using BookingApi.Application.Interfaces;
-using BookingApi.Domain.Models;
+using BookingApi.Presentation.Dtos;
+using BookingApi.Presentation.Mappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi.Presentation.Controllers;
@@ -9,9 +10,10 @@ namespace BookingApi.Presentation.Controllers;
 public class BookingController(IBookingService bookingService) : ControllerBase
 {
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<Booking>> GetById(
+    public async Task<ActionResult<BookingResponseDto>> GetById(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        return Ok(await bookingService.GetBookingByIdAsync(id, ct));
+        var booking = await bookingService.GetBookingByIdAsync(id, ct);
+        return Ok(booking.MapToResponseDto());
     }
 }

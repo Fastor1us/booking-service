@@ -12,7 +12,7 @@ public class BookingService(
         Guid eventId, CancellationToken ct)
     {
         _ = await _eventRepository.GetByIdAsync(eventId, ct)
-            ?? throw new BookingNotFoundException(eventId);
+            ?? throw new EventNotFoundException(eventId);
 
         return await _bookingRepository.CreateBookingAsync(eventId, ct);
     }
