@@ -1,13 +1,12 @@
 using BookingApi.Application.Interfaces;
-using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
+using System.Collections.Concurrent;
 
 namespace BookingApi.Infrastructure.Repositories;
 
 public class EventInMemoryRepository : IEventRepository
 {
-    private readonly Dictionary<Guid, Event> _events = [];
-    private readonly Lock locker = new();
+    private readonly ConcurrentDictionary<Guid, Event> _events = new();
 
     public EventInMemoryRepository()
     {
@@ -35,78 +34,74 @@ public class EventInMemoryRepository : IEventRepository
         // }
     }
 
-    public Event GetById(Guid id)
+    public Task<Event?> TryGetByIdAsync(Guid id, CancellationToken ct)
     {
-        using (locker.EnterScope())
-        {
-            return _events.GetValueOrDefault(id) ??
-                throw new EventNotFoundException(id);
-        }
+        ct.ThrowIfCancellationRequested();
+
+        _events.TryGetValue(id, out var @event);
+
+        return Task.FromResult(@event);
     }
 
-    public PagedEvents GetPaged(
+    public Task<PagedEvents> GetPagedAsync(
         IQueryable<Event> query,
         int pageIndex,
-        int pageSize)
+        int pageSize,
+        CancellationToken ct)
     {
-        using (locker.EnterScope())
-        {
-            var totalCount = query.Count();
+        ct.ThrowIfCancellationRequested();
 
-            var items = query
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+        var totalCount = query.Count();
 
-            return new(items, totalCount);
-        }
+        var items = query
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return Task.FromResult(new PagedEvents(items, totalCount));
     }
 
-    public IQueryable<Event> GetQueryable()
+    public Task<IQueryable<Event>> GetQueryableAsync(CancellationToken ct)
     {
-        using (locker.EnterScope())
-        {
-            return _events.Values.AsQueryable();
-        }
+        ct.ThrowIfCancellationRequested();
+
+        return Task.FromResult(_events.Values.AsQueryable());
     }
 
-    public Guid Add(Event @event)
+    public Task<Guid> AddAsync(Event @event, CancellationToken ct)
     {
-        using (locker.EnterScope())
+        ct.ThrowIfCancellationRequested();
+
+        var id = Guid.NewGuid();
+
+        if (!_events.TryAdd(id, new Event
         {
-            var newId = Guid.NewGuid();
-
-            Event newEvent = new()
-            {
-                Id = newId,
-                Title = @event.Title,
-                Description = @event.Description,
-                StartAt = @event.StartAt,
-                EndAt = @event.EndAt
-            };
-
-            _events.TryAdd(newId, newEvent);
-            return newId;
+            Id = id,
+            Title = @event.Title,
+            Description = @event.Description,
+            StartAt = @event.StartAt,
+            EndAt = @event.EndAt
+        }))
+        {
+            return AddAsync(@event, ct);
         }
+
+        return Task.FromResult(id);
     }
 
-    public void Update(Event @event)
+    public Task<bool> TryUpdateAsync(Event @event, CancellationToken ct)
     {
-        using (locker.EnterScope())
-        {
-            if (_events.TryGetValue(@event.Id, out Event? existedEvent))
-                _events[@event.Id] = @event;
-            else
-                throw new EventNotFoundException(@event.Id);
-        }
+        ct.ThrowIfCancellationRequested();
+
+        var res = _events.TryUpdate(@event.Id, @event, _events[@event.Id]);
+        return Task.FromResult(res);
     }
 
-    public void Remove(Guid id)
+    public Task<bool> TryRemoveAsync(Guid id, CancellationToken ct)
     {
-        using (locker.EnterScope())
-        {
-            if (!_events.Remove(id))
-                throw new EventNotFoundException(id);
-        }
+        ct.ThrowIfCancellationRequested();
+
+        var res = _events.TryRemove(id, out _);
+        return Task.FromResult(res);
     }
 }

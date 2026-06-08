@@ -5,11 +5,12 @@ namespace BookingApi.Application.Interfaces;
 
 public interface IEventService
 {
-    public Event GetById(Guid id);
-    public PagedEvents GetAll(
+    public Task<Event> GetByIdAsync(Guid id, CancellationToken ct);
+    public Task<PagedEvents> GetAllAsync(
         EventFilter filter,
-        PaginationParams paginationParams);
-    public Event Add(Event @event);
-    public void Update(Event @event);
-    public void Remove(Guid id);
+        PaginationParams paginationParams,
+        CancellationToken ct);
+    public Task<Event> AddAsync(Event @event, CancellationToken ct);
+    public Task UpdateAsync(Event @event, CancellationToken ct);
+    public Task RemoveAsync(Guid id, CancellationToken ct);
 }

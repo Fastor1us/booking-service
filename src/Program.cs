@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddPresentation();
 builder.Services.AddApplication();
-builder.Services.AddRepositories();
+builder.Services.AddInfrastructure();
 
 builder.Logging.AddConsole();
 

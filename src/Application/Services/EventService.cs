@@ -1,4 +1,5 @@
 using BookingApi.Application.Interfaces;
+using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 using BookingApi.Presentation.Filters;
 
@@ -7,15 +8,18 @@ namespace BookingApi.Application.Services;
 public class EventService(IEventRepository _eventRepository)
     : IEventService
 {
-    public Event GetById(Guid id)
+    public async Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        return _eventRepository.GetById(id);
+        return await _eventRepository.TryGetByIdAsync(id, ct)
+            ?? throw new EventNotFoundException(id);
     }
 
-    public PagedEvents GetAll(
-        EventFilter filter, PaginationParams paginationParams)
+    public async Task<PagedEvents> GetAllAsync(
+        EventFilter filter,
+        PaginationParams paginationParams,
+        CancellationToken ct)
     {
-        var query = _eventRepository.GetQueryable();
+        var query = await _eventRepository.GetQueryableAsync(ct);
 
         if (!string.IsNullOrEmpty(filter.Title))
         {
@@ -33,27 +37,32 @@ public class EventService(IEventRepository _eventRepository)
             query = query.Where(e => e.EndAt <= filter.To);
         }
 
-        var res = _eventRepository.GetPaged(
+        var res = await _eventRepository.GetPagedAsync(
             query,
             paginationParams.PageIndex,
-            paginationParams.PageSize);
+            paginationParams.PageSize,
+            ct);
 
         return new(res.Items, res.TotalCount);
     }
 
-    public Event Add(Event @event)
+    public async Task<Event> AddAsync(Event @event, CancellationToken ct)
     {
-        var id = _eventRepository.Add(@event);
-        return _eventRepository.GetById(id);
+        var id = await _eventRepository.AddAsync(@event, ct);
+
+        return await _eventRepository.TryGetByIdAsync(id, ct)
+            ?? throw new EventNotFoundException(id);
     }
 
-    public void Update(Event @event)
+    public async Task UpdateAsync(Event @event, CancellationToken ct)
     {
-        _eventRepository.Update(@event);
+        if (!await _eventRepository.TryUpdateAsync(@event, ct))
+            throw new EventNotFoundException(@event.Id);
     }
 
-    public void Remove(Guid id)
+    public async Task RemoveAsync(Guid id, CancellationToken ct)
     {
-        _eventRepository.Remove(id);
+        if (!await _eventRepository.TryRemoveAsync(id, ct))
+            throw new EventNotFoundException(id);
     }
 }
