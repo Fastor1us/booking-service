@@ -239,13 +239,13 @@ Get booking details by ID.
 
 Response model for event data.
 
-| Property      | Type       | Required | Description                |
-| ------------- | ---------- | -------- | -------------------------- |
-| `id`          | `Guid`     | ✅ Yes   | Unique event identifier    |
-| `title`       | `string`   | ✅ Yes   | Event title                |
-| `description` | `string`   | ❌ No    | Optional event description |
-| `startAt`     | `DateTime` | ✅ Yes   | Event start date and time  |
-| `endAt`       | `DateTime` | ✅ Yes   | Event end date and time    |
+| Property      | Type       |Description                 |
+| ------------- | ---------- | -------------------------- |
+| `id`          | `Guid`     | Unique event identifier    |
+| `title`       | `string`   | Event title                |
+| `description` | `string`   | Optional event description |
+| `startAt`     | `DateTime` | Event start date and time  |
+| `endAt`       | `DateTime` | Event end date and time    |
 
 **Example:**
 
@@ -265,12 +265,12 @@ Response model for event data.
 
 Response model for paginated event list.
 
-| Property     | Type                            | Required | Description                     |
-| ------------ | ------------------------------- | -------- | ------------------------------- |
-| `items`      | `IEnumerable<EventResponseDto>` | ✅ Yes   | List of events for current page |
-| `totalCount` | `int`                           | ✅ Yes   | Total number of events          |
-| `pageIndex`  | `int`                           | ✅ Yes   | Current page number (1-based)   |
-| `itemsCount` | `int`                           | ✅ Yes   | Number of items on this page    |
+| Property     | Type                            | Description                     |
+| ------------ | ------------------------------- | ------------------------------- |
+| `items`      | `IEnumerable<EventResponseDto>` | List of events for current page |
+| `totalCount` | `int`                           | Total number of events          |
+| `pageIndex`  | `int`                           | Current page number (1-based)   |
+| `itemsCount` | `int`                           | Number of items on this page    |
 
 **Example:**
 
@@ -323,13 +323,13 @@ Request model for updating an existing event.
 
 Response model for booking creation (returned from `POST /api/events/{id}/book`).
 
-| Property      | Type                                   | Required | Description                   |
-| ------------- | -------------------------------------- | -------- | ----------------------------- |
-| `Id`          | `Guid`                                 | ✅ Yes   | Unique booking identifier     |
-| `eventId`     | `Guid`                                 | ✅ Yes   | Todo                          |
-| `status`      | [`BookingStatus`](#bookingstatus-enum) | ✅ Yes   | Current status of the booking |
-| `createdAt`   | [`BookingStatus`](#bookingstatus-enum) | ✅ Yes   | Todo                          |
-| `processedAt` | [`BookingStatus`](#bookingstatus-enum) | ❌ No    | Todo                          |
+| Property      | Type                                   | Description                   |
+| ------------- | -------------------------------------- | ----------------------------- |
+| `Id`          | `Guid`                                 | Unique booking identifier     |
+| `eventId`     | `Guid`                                 | Unique event identifier       |
+| `status`      | [`BookingStatus`](#bookingstatus-enum) | Current status of the booking |
+| `createdAt`   | `DateTime`                             | Booking creation time         |
+| `processedAt` | `DateTime`                             | Booking status changed time   |
 
 **Example:**
 

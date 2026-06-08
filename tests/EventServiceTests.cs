@@ -10,10 +10,10 @@ namespace BookingTests;
 
 public class EventServiceTests
 {
-    private readonly CancellationToken _ct = new CancellationTokenSource().Token;
+    private readonly CancellationToken _ct = CancellationToken.None;
 
     [Fact]
-    public async Task Add_ValidEvent_ReturnsAddedEvent()
+    public async Task AddAsync_ValidEvent_ReturnsAddedEvent()
     {
         // Arrange
         Event @event = EventFactory.CreateEvent();
@@ -23,7 +23,7 @@ public class EventServiceTests
             .Setup(repository => repository.AddAsync(It.IsAny<Event>(), _ct))
             .ReturnsAsync(@event.Id);
         mockRepository
-            .Setup(repository => repository.GetByIdAsync(
+            .Setup(repository => repository.TryGetByIdAsync(
                 It.Is<Guid>(id => id == @event.Id), _ct))
             .ReturnsAsync(@event);
 
@@ -38,7 +38,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task GetAll_WithValidPagination_ReturnsPagedEvents()
+    public async Task GetAllAsync_WithValidPagination_ReturnsPagedEvents()
     {
         // Arrange
         List<Event> events = EventFactory.CreateEvents(20);
@@ -63,7 +63,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task GetById_ExistingId_ReturnsCorrectEvent()
+    public async Task GetByIdAsync_ExistingId_ReturnsCorrectEvent()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -73,7 +73,7 @@ public class EventServiceTests
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
             .Setup(repository => repository
-                .GetByIdAsync(It.Is<Guid>(id => id == guid), _ct))
+                .TryGetByIdAsync(It.Is<Guid>(id => id == guid), _ct))
             .ReturnsAsync(@event);
 
         var eventService = new EventService(mockRepository.Object);
@@ -87,7 +87,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task Update_ExistingEvent_DoesNotThrowException()
+    public async Task UpdateAsync_ExistingEvent_DoesNotThrowException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -97,7 +97,7 @@ public class EventServiceTests
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
             .Setup(repository => repository
-                .UpdateAsync(It.Is<Event>(e => e.Id == guid), _ct))
+                .TryUpdateAsync(It.Is<Event>(e => e.Id == guid), _ct))
             .ReturnsAsync(true);
 
         var eventService = new EventService(mockRepository.Object);
@@ -110,11 +110,11 @@ public class EventServiceTests
         Assert.Null(exception);
         mockRepository
             .Verify(repo =>
-                repo.UpdateAsync(It.IsAny<Event>(), _ct), Times.Once);
+                repo.TryUpdateAsync(It.IsAny<Event>(), _ct), Times.Once);
     }
 
     [Fact]
-    public async Task Remove_ExistingId_DoesNotThrowException()
+    public async Task RemoveAsync_ExistingId_DoesNotThrowException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -122,7 +122,7 @@ public class EventServiceTests
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
             .Setup(repository => repository
-                .RemoveAsync(It.Is<Guid>(g => g == guid), _ct))
+                .TryRemoveAsync(It.Is<Guid>(g => g == guid), _ct))
             .ReturnsAsync(true);
 
         var eventService = new EventService(mockRepository.Object);
@@ -135,11 +135,11 @@ public class EventServiceTests
         Assert.Null(exception);
         mockRepository
             .Verify(repo =>
-                repo.RemoveAsync(It.IsAny<Guid>(), _ct), Times.Once);
+                repo.TryRemoveAsync(It.IsAny<Guid>(), _ct), Times.Once);
     }
 
     [Fact]
-    public async Task GetAll_WithTitleFilter_ReturnsMatchingEvents()
+    public async Task GetAllAsync_WithTitleFilter_ReturnsMatchingEvents()
     {
         // Arrange
         string filterTitle = "Title #1";
@@ -165,7 +165,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task GetAll_WithDateRangeFilter_ReturnsEventsWithinRange()
+    public async Task GetAllAsync_WithDateRangeFilter_ReturnsEventsWithinRange()
     {
         // Arrange
         DateTime invalidStartAt = DateTime.Now.AddDays(-5);
@@ -202,7 +202,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task GetAll_WithTitleAndDateRangeFilter_ReturnsMatchingEventsWithinRange()
+    public async Task GetAllAsync_WithTitleAndDateRangeFilter_ReturnsMatchingEventsWithinRange()
     {
         // Arrange
         string filterTitle = "The Bohemians";
@@ -242,14 +242,14 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task GetById_NonExistentId_ThrowsEventNotFoundException()
+    public async Task GetByIdAsync_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.GetByIdAsync(guid, _ct))
+            .Setup(repository => repository.TryGetByIdAsync(guid, _ct))
             .Throws(new EventNotFoundException(guid));
 
         var eventService = new EventService(mockRepository.Object);
@@ -264,7 +264,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task Update_NonExistentId_ThrowsEventNotFoundException()
+    public async Task UpdateAsync_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -272,7 +272,7 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.UpdateAsync(@event, _ct))
+            .Setup(repository => repository.TryUpdateAsync(@event, _ct))
             .Throws(new EventNotFoundException(guid));
 
         var eventService = new EventService(mockRepository.Object);
@@ -287,7 +287,7 @@ public class EventServiceTests
     }
 
     [Fact]
-    public async Task Remove_NonExistentId_ThrowsEventNotFoundException()
+    public async Task RemoveAsync_NonExistentId_ThrowsEventNotFoundException()
     {
         // Arrange
         Guid guid = Guid.NewGuid();
@@ -295,7 +295,7 @@ public class EventServiceTests
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.RemoveAsync(guid, _ct))
+            .Setup(repository => repository.TryRemoveAsync(guid, _ct))
             .Throws(new EventNotFoundException(guid));
 
         var eventService = new EventService(mockRepository.Object);

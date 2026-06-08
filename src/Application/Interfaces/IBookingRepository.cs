@@ -4,16 +4,19 @@ namespace BookingApi.Application.Interfaces;
 
 public interface IBookingRepository
 {
-    public Task<Booking> CreateBookingAsync(
+    public Task<BookingRepositoryResult> TryCreateBookingAsync(
         Guid eventId,
         CancellationToken ct);
-    public Task<Booking?> GetBookingByIdAsync(
+    public Task<BookingRepositoryResult> TryGetBookingByIdAsync(
         Guid bookingId,
         CancellationToken ct);
-    public Task<bool> TryGetPendingBooking(
-        out Booking? booking,
+    public Task<BookingRepositoryResult> TryGetPendingBooking(
         CancellationToken ct);
-    public Task<bool> ConfirmBooking(
+    public Task<BookingRepositoryResult> TryConfirmBooking(
+        Guid bookingId,
+        CancellationToken ct);
+
+    public Task<BookingRepositoryResult> TryRejectBooking(
         Guid bookingId,
         CancellationToken ct);
 }

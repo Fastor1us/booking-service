@@ -4,7 +4,7 @@ namespace BookingApi.Application.Interfaces;
 
 public interface IEventRepository
 {
-    public Task<Event?> GetByIdAsync(Guid id, CancellationToken ct);
+    public Task<Event?> TryGetByIdAsync(Guid id, CancellationToken ct);
     public Task<PagedEvents> GetPagedAsync(
        IQueryable<Event> query,
        int pageIndex,
@@ -12,6 +12,6 @@ public interface IEventRepository
        CancellationToken ct);
     public Task<IQueryable<Event>> GetQueryableAsync(CancellationToken ct);
     public Task<Guid> AddAsync(Event @event, CancellationToken ct);
-    public Task<bool> UpdateAsync(Event @event, CancellationToken ct);
-    public Task<bool> RemoveAsync(Guid id, CancellationToken ct);
+    public Task<bool> TryUpdateAsync(Event @event, CancellationToken ct);
+    public Task<bool> TryRemoveAsync(Guid id, CancellationToken ct);
 }

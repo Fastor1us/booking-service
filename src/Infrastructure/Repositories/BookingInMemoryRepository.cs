@@ -4,14 +4,19 @@ using BookingApi.Domain.Models;
 
 namespace BookingApi.Infrastructure.Repositories;
 
-public class BookingInMemoryRepository : IBookingRepository
+public class BookingInMemoryRepository(IEventRepository _eventRepository)
+    : IBookingRepository
 {
     private readonly ConcurrentDictionary<Guid, Booking> _bookings = new();
 
-    public Task<Booking> CreateBookingAsync(
+    public async Task<BookingRepositoryResult> TryCreateBookingAsync(
         Guid eventId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+
+        var @event = await _eventRepository.TryGetByIdAsync(eventId, ct);
+        if (@event == null)
+            return new(false, $"Event with id '{eventId}' is not exist");
 
         Guid id = Guid.NewGuid();
 
@@ -23,64 +28,118 @@ public class BookingInMemoryRepository : IBookingRepository
         var booking = new Booking
         {
             Id = id,
-            EventId = eventId,
+            EventId = @event.Id,
             Status = BookingStatus.Pending,
             CreatedAt = DateTime.Now
         };
 
-        _bookings.TryAdd(id, booking);
-
-        return Task.FromResult(booking);
+        return _bookings.TryAdd(id, booking)
+            ? new(true, booking)
+            : new(false, $"Booking with id '{id}' is already exists", booking);
     }
 
-    public Task<Booking?> GetBookingByIdAsync(
+    public async Task<BookingRepositoryResult> TryGetBookingByIdAsync(
         Guid bookingId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        _bookings.TryGetValue(bookingId, out Booking? booking);
-        return Task.FromResult(booking);
+        if (_bookings.TryGetValue(bookingId, out Booking? booking))
+        {
+            Guid eventId = booking.EventId;
+            var @event = await _eventRepository.TryGetByIdAsync(eventId, ct);
+            if (@event == null)
+            {
+                var res = await TryRejectBooking(booking.Id, ct);
+                if (!res.Success) return res;
+                return new(
+                    false, $"Event with id '{eventId}' is not exist", res.Booking);
+            }
+        }
+
+        return booking != null
+            ? new(true, booking)
+            : new(false, $"Booking with id '{bookingId}' is not exist");
     }
 
-    public Task<bool> TryGetPendingBooking(
-        out Booking? booking, CancellationToken ct)
+    public Task<BookingRepositoryResult> TryGetPendingBooking(
+        CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        booking = _bookings.Values
+        var booking = _bookings.Values
             .FirstOrDefault(b => b.Status == BookingStatus.Pending);
-        return Task.FromResult(booking != null);
+
+        return booking != null
+            ? Task.FromResult(new BookingRepositoryResult(true, booking))
+            : Task.FromResult(new BookingRepositoryResult(
+                false, "There are no pending bookings at this moment"));
     }
 
-    public Task<bool> ConfirmBooking(Guid bookingId, CancellationToken ct)
+    public async Task<BookingRepositoryResult> TryConfirmBooking(
+        Guid bookingId, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        if (!_bookings.TryGetValue(bookingId, out Booking? existingBooking))
+        if (!_bookings.TryGetValue(bookingId, out Booking? booking))
+            return new(false, $"Booking with id '{bookingId}' is not exist");
+
+        Guid eventId = booking.EventId;
+        var @event = await _eventRepository.TryGetByIdAsync(eventId, ct);
+        if (@event == null)
         {
-            return Task.FromResult(false);
+            var res = await TryRejectBooking(booking.Id, ct);
+            if (!res.Success) return res;
+            return new(false, $"Event with id '{eventId}' is not exist", res.Booking);
         }
 
-        if (existingBooking.Status == BookingStatus.Confirmed)
-        {
-            return Task.FromResult(true);
-        }
+        if (booking.Status == BookingStatus.Confirmed)
+            return new(true, booking);
 
-        if (existingBooking.Status != BookingStatus.Pending)
-        {
-            return Task.FromResult(false);
-        }
+        if (booking.Status != BookingStatus.Pending)
+            return new(
+                false,
+                $"Booking with id '{bookingId}' is not in {BookingStatus.Pending} status",
+                booking);
 
         var updatedBooking = new Booking
         {
-            Id = existingBooking.Id,
-            EventId = existingBooking.EventId,
+            Id = booking.Id,
+            EventId = booking.EventId,
             Status = BookingStatus.Confirmed,
-            CreatedAt = existingBooking.CreatedAt,
+            CreatedAt = booking.CreatedAt,
             ProcessedAt = DateTime.Now
         };
 
-        return Task.FromResult(
-            _bookings.TryUpdate(bookingId, updatedBooking, existingBooking));
+        bool isUpdated = _bookings.TryUpdate(bookingId, updatedBooking, booking);
+
+        return isUpdated
+            ? new(true, updatedBooking)
+            : new(false, $"Booking with id '{bookingId}' is not exist");
+    }
+
+    public async Task<BookingRepositoryResult> TryRejectBooking(Guid bookingId, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        if (!_bookings.TryGetValue(bookingId, out Booking? booking))
+            return new(false, $"Booking with id '{bookingId}' is not exist");
+
+        if (booking.Status == BookingStatus.Rejected)
+            return new(true, booking);
+
+        var updatedBooking = new Booking
+        {
+            Id = booking.Id,
+            EventId = booking.EventId,
+            Status = BookingStatus.Rejected,
+            CreatedAt = booking.CreatedAt,
+            ProcessedAt = DateTime.Now
+        };
+
+        bool isUpdated = _bookings.TryUpdate(bookingId, updatedBooking, booking);
+
+        return isUpdated
+            ? new(true, updatedBooking)
+            : new(false, $"Booking with id '{bookingId}' is not exist");
     }
 }

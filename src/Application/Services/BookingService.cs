@@ -5,22 +5,41 @@ using BookingApi.Domain.Models;
 namespace BookingApi.Application.Services;
 
 public class BookingService(
-    IEventRepository _eventRepository,
     IBookingRepository _bookingRepository) : IBookingService
 {
     public async Task<Booking> CreateBookingAsync(
         Guid eventId, CancellationToken ct)
     {
-        _ = await _eventRepository.GetByIdAsync(eventId, ct)
-            ?? throw new EventNotFoundException(eventId);
+        var res = await _bookingRepository.TryCreateBookingAsync(eventId, ct);
+        if (!res.Success || res.Booking == null)
+        {
+            if (res.Details == null)
+                throw new InvalidOperationException(
+                    $"Unexpected error in {nameof(CreateBookingAsync)} " +
+                    $"for event '{eventId}': repository result has null Details");
 
-        return await _bookingRepository.CreateBookingAsync(eventId, ct);
+            var details = res.Details.ToLower();
+
+            throw details switch
+            {
+                _ when details.Contains("event") => new EventNotFoundException(eventId),
+                _ => new InvalidOperationException(res.Details)
+            };
+        }
+
+        return res.Booking;
     }
 
     public async Task<Booking> GetBookingByIdAsync(
         Guid bookingId, CancellationToken ct)
     {
-        return await _bookingRepository.GetBookingByIdAsync(bookingId, ct)
-            ?? throw new BookingNotFoundException(bookingId);
+        var res = await _bookingRepository.TryGetBookingByIdAsync(bookingId, ct);
+
+        if (!res.Success || res.Booking == null)
+        {
+            throw new BookingNotFoundException(bookingId);
+        }
+
+        return res.Booking;
     }
 }

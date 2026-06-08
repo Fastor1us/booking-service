@@ -34,7 +34,7 @@ public class EventInMemoryRepository : IEventRepository
         // }
     }
 
-    public Task<Event?> GetByIdAsync(Guid id, CancellationToken ct)
+    public Task<Event?> TryGetByIdAsync(Guid id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -89,7 +89,7 @@ public class EventInMemoryRepository : IEventRepository
         return Task.FromResult(id);
     }
 
-    public Task<bool> UpdateAsync(Event @event, CancellationToken ct)
+    public Task<bool> TryUpdateAsync(Event @event, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -97,7 +97,7 @@ public class EventInMemoryRepository : IEventRepository
         return Task.FromResult(res);
     }
 
-    public Task<bool> RemoveAsync(Guid id, CancellationToken ct)
+    public Task<bool> TryRemoveAsync(Guid id, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 

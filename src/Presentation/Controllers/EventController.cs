@@ -69,6 +69,10 @@ public class EventController(
         [FromRoute] Guid id, CancellationToken ct)
     {
         var booking = await bookingService.CreateBookingAsync(id, ct);
-        return Accepted(booking.MapToResponseDto());
+        return AcceptedAtAction(
+            actionName: nameof(BookingController.GetById),
+            controllerName: "Booking",
+            routeValues: new { id = booking.Id },
+            value: booking.MapToResponseDto());
     }
 }

@@ -9,28 +9,21 @@ namespace BookingTests;
 
 public class BookingServiceTests
 {
-    private readonly CancellationToken _ct = new CancellationTokenSource().Token;
+    private readonly CancellationToken _ct = CancellationToken.None;
 
     [Fact]
-    public async Task CreateBooking_ValidEventId_ReturnsCreatedBooking()
+    public async Task CreateBookingAsync_ValidEventId_ReturnsCreatedBooking()
     {
         // Arrange
         Event @event = EventFactory.CreateEvent();
-
-        var mockEventRepository = new Mock<IEventRepository>();
-        mockEventRepository
-            .Setup(r => r.GetByIdAsync(It.Is<Guid>(id => id == @event.Id), _ct))
-            .ReturnsAsync(@event);
-
         var booking = BookingFactory.CreateBooking(@event.Id);
 
         var mockBookingRepository = new Mock<IBookingRepository>();
         mockBookingRepository
-            .Setup(r => r.CreateBookingAsync(@event.Id, _ct))
-            .ReturnsAsync(booking);
+            .Setup(r => r.TryCreateBookingAsync(@event.Id, _ct))
+            .ReturnsAsync(new BookingRepositoryResult(true, booking));
 
-        var bookingService = new BookingService(
-            mockEventRepository.Object, mockBookingRepository.Object);
+        var bookingService = new BookingService(mockBookingRepository.Object);
 
         // Act
         var res = await bookingService.CreateBookingAsync(@event.Id, _ct);
@@ -41,51 +34,41 @@ public class BookingServiceTests
     }
 
     [Fact]
-    public async Task CreateBooking_SeveralAtOnceWithSameEventId_ReturnsCreatedBookings()
+    public async Task CreateBookingAsync_SeveralAtOnceWithSameEventId_ReturnsCreatedBookings()
     {
         // Arrange
         Event @event = EventFactory.CreateEvent();
 
-        var mockEventRepository = new Mock<IEventRepository>();
-        mockEventRepository
-            .Setup(r => r.GetByIdAsync(It.Is<Guid>(id => id == @event.Id), _ct))
-            .ReturnsAsync(@event);
-
         var mockBookingRepository = new Mock<IBookingRepository>();
         mockBookingRepository
-            .Setup(r => r.CreateBookingAsync(@event.Id, _ct))
-            .ReturnsAsync(BookingFactory.CreateBooking(@event.Id));
+            .Setup(r => r.TryCreateBookingAsync(@event.Id, _ct))
+            .ReturnsAsync(() => new BookingRepositoryResult(
+                true, BookingFactory.CreateBooking(@event.Id)));
 
-        var bookingService = new BookingService(
-            mockEventRepository.Object, mockBookingRepository.Object);
+        var bookingService = new BookingService(mockBookingRepository.Object);
 
         // Act
-        var res1 = bookingService.CreateBookingAsync(@event.Id, _ct);
-        var res2 = bookingService.CreateBookingAsync(@event.Id, _ct);
-
-        await Task.WhenAll(res1, res2);
+        var res = await Task.WhenAll(
+            bookingService.CreateBookingAsync(@event.Id, _ct),
+            bookingService.CreateBookingAsync(@event.Id, _ct));
 
         // Assert
-        Assert.True(res1.Id != res2.Id);
+        Assert.True(res[0].Id != res[1].Id);
     }
 
     [Fact]
-    public async Task GetBookingById_ValidBookingId_ReturnsCorrectBooking()
+    public async Task GetBookingByIdAsync_ValidBookingId_ReturnsCorrectBooking()
     {
         // Arrange
         var eventId = Guid.NewGuid();
-
-        var mockEventRepository = new Mock<IEventRepository>();
-
         var booking = BookingFactory.CreateBooking(eventId);
 
         var mockBookingRepository = new Mock<IBookingRepository>();
         mockBookingRepository
-            .Setup(r => r.GetBookingByIdAsync(booking.Id, _ct))
-            .ReturnsAsync(booking);
+            .Setup(r => r.TryGetBookingByIdAsync(booking.Id, _ct))
+            .ReturnsAsync(new BookingRepositoryResult(true, booking));
 
-        var bookingService = new BookingService(
-            mockEventRepository.Object, mockBookingRepository.Object);
+        var bookingService = new BookingService(mockBookingRepository.Object);
 
         // Act
         var res = await bookingService.GetBookingByIdAsync(booking.Id, _ct);
@@ -96,22 +79,18 @@ public class BookingServiceTests
     }
 
     [Fact]
-    public async Task CreateBooking_NonExistentEventId_EventNotFoundException()
+    public async Task CreateBookingAsync_NonExistentEventId_EventNotFoundException()
     {
         // Arrange
         Guid eventId = Guid.NewGuid();
-
-        var mockEventRepository = new Mock<IEventRepository>();
-        mockEventRepository
-            .Setup(r => r.GetByIdAsync(It.Is<Guid>(id => id == eventId), _ct))
-            .Throws(new EventNotFoundException(eventId));
-
         var booking = BookingFactory.CreateBooking(eventId);
 
         var mockBookingRepository = new Mock<IBookingRepository>();
+        mockBookingRepository
+            .Setup(r => r.TryCreateBookingAsync(It.Is<Guid>(id => id == eventId), _ct))
+            .Throws(new EventNotFoundException(eventId));
 
-        var bookingService = new BookingService(
-            mockEventRepository.Object, mockBookingRepository.Object);
+        var bookingService = new BookingService(mockBookingRepository.Object);
 
         // Act
         var exception = await Record
@@ -119,24 +98,21 @@ public class BookingServiceTests
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
-        Assert.Equal(exception.Message, $"Event with Id '{eventId}' was not found.");
+        Assert.Equal($"Event with Id '{eventId}' was not found.", exception.Message);
     }
 
     [Fact]
-    public async Task GetBookingById_NonExistentBookingId_ThrowsBookingNotFoundException()
+    public async Task GetBookingByIdAsync_NonExistentBookingId_ThrowsBookingNotFoundException()
     {
         // Arrange
         Guid bookingId = Guid.NewGuid();
 
-        var mockEventRepository = new Mock<IEventRepository>();
-
         var mockBookingRepository = new Mock<IBookingRepository>();
         mockBookingRepository
-            .Setup(r => r.GetBookingByIdAsync(It.Is<Guid>(id => id == bookingId), _ct))
+            .Setup(r => r.TryGetBookingByIdAsync(It.Is<Guid>(id => id == bookingId), _ct))
             .Throws(new BookingNotFoundException(bookingId));
 
-        var bookingService = new BookingService(
-            mockEventRepository.Object, mockBookingRepository.Object);
+        var bookingService = new BookingService(mockBookingRepository.Object);
 
         // Act
         var exception = await Record
@@ -144,6 +120,6 @@ public class BookingServiceTests
 
         // Assert
         Assert.IsType<BookingNotFoundException>(exception);
-        Assert.Equal(exception.Message, $"Booking with Id '{bookingId}' was not found.");
+        Assert.Equal($"Booking with Id '{bookingId}' was not found.", exception.Message);
     }
 }

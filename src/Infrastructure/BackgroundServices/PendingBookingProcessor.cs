@@ -22,24 +22,38 @@ public class PendingBookingProcessor(
                 var bookingRepository = scope.ServiceProvider
                     .GetRequiredService<IBookingRepository>();
 
-                while (await bookingRepository
-                    .TryGetPendingBooking(out Booking? booking, stoppingToken))
+                var result = await bookingRepository
+                    .TryGetPendingBooking(stoppingToken);
+
+                while (result.Success && result.Booking != null)
                 {
-                    if (booking != null &&
-                        booking.Status == BookingStatus.Pending)
+                    var booking = result.Booking;
+
+                    if (booking.Status == BookingStatus.Pending)
                     {
                         await Task.Delay(2_000, stoppingToken);
 
-                        await bookingRepository
-                            .ConfirmBooking(booking.Id, stoppingToken);
+                        var confirmResult = await bookingRepository
+                            .TryConfirmBooking(booking.Id, stoppingToken);
+
+                        if (!confirmResult.Success)
+                            _logger.LogWarning(
+                                "Failed to confirm booking {BookingId}: {Details}",
+                                booking.Id, confirmResult.Details);
+                        else if (_logger.IsEnabled(LogLevel.Information))
+                            _logger.LogInformation(
+                                "Successfully confirmed pending booking {BookingId}",
+                                booking.Id);
                     }
                     else
                     {
                         throw new InvalidOperationException(
-                            "TryGetPendingBooking returned true but booking" +
-                            "is null or has invalid status. Booking id: " +
-                            $"{booking?.Id}, status: {booking?.Status}");
+                            $"TryGetPendingBooking returned booking with invalid status. " +
+                            $"Booking id: {booking.Id}, status: {booking.Status}");
                     }
+
+                    result = await bookingRepository
+                        .TryGetPendingBooking(stoppingToken);
                 }
 
                 await Task.Delay(3_000, stoppingToken);

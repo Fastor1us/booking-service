@@ -10,7 +10,7 @@ public class EventService(IEventRepository _eventRepository)
 {
     public async Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        return await _eventRepository.GetByIdAsync(id, ct)
+        return await _eventRepository.TryGetByIdAsync(id, ct)
             ?? throw new EventNotFoundException(id);
     }
 
@@ -50,19 +50,19 @@ public class EventService(IEventRepository _eventRepository)
     {
         var id = await _eventRepository.AddAsync(@event, ct);
 
-        return await _eventRepository.GetByIdAsync(id, ct)
+        return await _eventRepository.TryGetByIdAsync(id, ct)
             ?? throw new EventNotFoundException(id);
     }
 
     public async Task UpdateAsync(Event @event, CancellationToken ct)
     {
-        if (!await _eventRepository.UpdateAsync(@event, ct))
+        if (!await _eventRepository.TryUpdateAsync(@event, ct))
             throw new EventNotFoundException(@event.Id);
     }
 
     public async Task RemoveAsync(Guid id, CancellationToken ct)
     {
-        if (!await _eventRepository.RemoveAsync(id, ct))
+        if (!await _eventRepository.TryRemoveAsync(id, ct))
             throw new EventNotFoundException(id);
     }
 }
