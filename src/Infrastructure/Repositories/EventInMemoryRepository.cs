@@ -1,5 +1,6 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Models;
+using BookingApi.Presentation.Dtos;
 using System.Collections.Concurrent;
 
 namespace BookingApi.Infrastructure.Repositories;
@@ -68,7 +69,7 @@ public class EventInMemoryRepository : IEventRepository
         return Task.FromResult(_events.Values.AsQueryable());
     }
 
-    public Task<Guid> AddAsync(Event @event, CancellationToken ct)
+    public Task<Guid> AddAsync(CreateEventDto @event, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -79,6 +80,8 @@ public class EventInMemoryRepository : IEventRepository
             Id = id,
             Title = @event.Title,
             Description = @event.Description,
+            TotalSeats = @event.TotalSeats,
+            AvailableSeats = @event.TotalSeats,
             StartAt = @event.StartAt,
             EndAt = @event.EndAt
         }))
@@ -89,11 +92,28 @@ public class EventInMemoryRepository : IEventRepository
         return Task.FromResult(id);
     }
 
-    public Task<bool> TryUpdateAsync(Event @event, CancellationToken ct)
+    public Task<bool> TryUpdateAsync(
+        Guid id, UpdateEventDto updateEvent, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        var res = _events.TryUpdate(@event.Id, @event, _events[@event.Id]);
+        if (!_events.TryGetValue(id, out Event? existedEvent))
+        {
+            return Task.FromResult(false);
+        }
+
+        var newEvent = new Event
+        {
+            Id = existedEvent.Id,
+            Title = updateEvent.Title,
+            Description = updateEvent.Description,
+            TotalSeats = existedEvent.TotalSeats,
+            AvailableSeats = existedEvent.AvailableSeats,
+            StartAt = updateEvent.StartAt,
+            EndAt = updateEvent.EndAt
+        };
+
+        var res = _events.TryUpdate(id, newEvent, existedEvent);
         return Task.FromResult(res);
     }
 

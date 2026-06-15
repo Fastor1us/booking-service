@@ -1,6 +1,7 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
+using BookingApi.Presentation.Dtos;
 using BookingApi.Presentation.Filters;
 
 namespace BookingApi.Application.Services;
@@ -46,7 +47,7 @@ public class EventService(IEventRepository _eventRepository)
         return new(res.Items, res.TotalCount);
     }
 
-    public async Task<Event> AddAsync(Event @event, CancellationToken ct)
+    public async Task<Event> AddAsync(CreateEventDto @event, CancellationToken ct)
     {
         var id = await _eventRepository.AddAsync(@event, ct);
 
@@ -54,10 +55,10 @@ public class EventService(IEventRepository _eventRepository)
             ?? throw new EventNotFoundException(id);
     }
 
-    public async Task UpdateAsync(Event @event, CancellationToken ct)
+    public async Task UpdateAsync(Guid id, UpdateEventDto @event, CancellationToken ct)
     {
-        if (!await _eventRepository.TryUpdateAsync(@event, ct))
-            throw new EventNotFoundException(@event.Id);
+        if (!await _eventRepository.TryUpdateAsync(id, @event, ct))
+            throw new EventNotFoundException(id);
     }
 
     public async Task RemoveAsync(Guid id, CancellationToken ct)

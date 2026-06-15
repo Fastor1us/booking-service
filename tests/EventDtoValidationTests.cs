@@ -11,7 +11,7 @@ public class EventDtoValidationTests
     public void PostEventDto_WithValidData_PassesValidation()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "Valid Event",
             Description = "Valid Description",
@@ -32,7 +32,7 @@ public class EventDtoValidationTests
         // Arrange
         var startAt = DateTime.Now.AddDays(2);
         var endAt = DateTime.Now.AddDays(1);
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "Invalid Event",
             Description = "Description",
@@ -56,7 +56,7 @@ public class EventDtoValidationTests
     {
         // Arrange
         var sameDateTime = DateTime.Now.AddDays(1);
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "Invalid Event",
             Description = "Description",
@@ -79,7 +79,7 @@ public class EventDtoValidationTests
     public void PostEventDto_WithNullTitle_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = null!,
             Description = "Description",
@@ -102,7 +102,7 @@ public class EventDtoValidationTests
     public void PostEventDto_WithEmptyTitle_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "",
             Description = "Description",
@@ -125,7 +125,7 @@ public class EventDtoValidationTests
     public void PostEventDto_WithWhitespaceTitle_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "   ",
             Description = "Description",
@@ -148,7 +148,7 @@ public class EventDtoValidationTests
     public void PostEventDto_WithDefaultDateTimeStartAt_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "Valid Title",
             Description = "Description",
@@ -171,7 +171,7 @@ public class EventDtoValidationTests
     public void PostEventDto_WithDefaultDateTimeEndAt_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "Valid Title",
             Description = "Description",
@@ -194,7 +194,7 @@ public class EventDtoValidationTests
     public void PostEventDto_WithMultipleValidationErrors_ReturnsAllErrors()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "",
             Description = "Description",
@@ -221,7 +221,7 @@ public class EventDtoValidationTests
     public void PutEventDto_WithValidData_PassesValidation()
     {
         // Arrange
-        var dto = new PutEventDto
+        var dto = new UpdateEventDto
         {
             Title = "Valid Event",
             Description = "Valid Description",
@@ -240,7 +240,7 @@ public class EventDtoValidationTests
     public void PutEventDto_WithEndAtEarlierThanStartAt_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PutEventDto
+        var dto = new UpdateEventDto
         {
             Title = "Invalid Event",
             Description = "Description",
@@ -260,7 +260,7 @@ public class EventDtoValidationTests
     public void PutEventDto_WithNullTitle_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PutEventDto
+        var dto = new UpdateEventDto
         {
             Title = null!,
             Description = "Description",

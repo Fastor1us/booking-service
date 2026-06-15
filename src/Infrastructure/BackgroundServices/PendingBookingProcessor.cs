@@ -14,6 +14,14 @@ public class PendingBookingProcessor(
     {
         _logger.LogInformation("PendingBookingProcessor has been started");
 
+        ParallelOptions _parallelOptions = new()
+        {
+            CancellationToken = stoppingToken,
+            MaxDegreeOfParallelism = Environment.ProcessorCount > 1
+            ? (Environment.ProcessorCount >= 4 ? 4 : 2)
+            : 1
+        };
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -22,39 +30,28 @@ public class PendingBookingProcessor(
                 var bookingRepository = scope.ServiceProvider
                     .GetRequiredService<IBookingRepository>();
 
-                var result = await bookingRepository
-                    .TryGetPendingBooking(stoppingToken);
+                var pendingBookingIds = await bookingRepository
+                    .TryGetPendingBookingIds(stoppingToken);
 
-                while (result.Success && result.Booking != null)
-                {
-                    var booking = result.Booking;
-
-                    if (booking.Status == BookingStatus.Pending)
+                await Parallel.ForEachAsync(
+                    pendingBookingIds,
+                    _parallelOptions,
+                    async (id, linkedToken) =>
                     {
-                        await Task.Delay(2_000, stoppingToken);
+                        await Task.Delay(2_000, linkedToken);
 
                         var confirmResult = await bookingRepository
-                            .TryConfirmBooking(booking.Id, stoppingToken);
+                            .TryConfirmBooking(id, linkedToken);
 
-                        if (!confirmResult.Success)
+                        if (!confirmResult.IsSuccess)
                             _logger.LogWarning(
                                 "Failed to confirm booking {BookingId}: {Details}",
-                                booking.Id, confirmResult.Details);
+                                id, confirmResult.ErrorMessage);
                         else if (_logger.IsEnabled(LogLevel.Information))
                             _logger.LogInformation(
                                 "Successfully confirmed pending booking {BookingId}",
-                                booking.Id);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException(
-                            $"TryGetPendingBooking returned booking with invalid status. " +
-                            $"Booking id: {booking.Id}, status: {booking.Status}");
-                    }
-
-                    result = await bookingRepository
-                        .TryGetPendingBooking(stoppingToken);
-                }
+                                id);
+                    });
 
                 await Task.Delay(3_000, stoppingToken);
             }

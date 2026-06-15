@@ -16,7 +16,9 @@ public class BookingInMemoryRepository(IEventRepository _eventRepository)
 
         var @event = await _eventRepository.TryGetByIdAsync(eventId, ct);
         if (@event == null)
-            return new(false, $"Event with id '{eventId}' is not exist");
+            return BookingRepositoryResult.EventNotFound(eventId);
+        if (!@event.TryReserveSeats())
+            return BookingRepositoryResult.NoAvailableSeats();
 
         Guid id = Guid.NewGuid();
 
@@ -34,8 +36,8 @@ public class BookingInMemoryRepository(IEventRepository _eventRepository)
         };
 
         return _bookings.TryAdd(id, booking)
-            ? new(true, booking)
-            : new(false, $"Booking with id '{id}' is already exists", booking);
+            ? BookingRepositoryResult.Success(booking)
+            : BookingRepositoryResult.BookingAlreadyExists(id);
     }
 
     public async Task<BookingRepositoryResult> TryGetBookingByIdAsync(
@@ -50,29 +52,26 @@ public class BookingInMemoryRepository(IEventRepository _eventRepository)
             if (@event == null)
             {
                 var res = await TryRejectBooking(booking.Id, ct);
-                if (!res.Success) return res;
-                return new(
-                    false, $"Event with id '{eventId}' is not exist", res.Booking);
+                if (!res.IsSuccess) return res;
+                return BookingRepositoryResult.EventNotFound(eventId, res.Booking);
             }
         }
 
         return booking != null
-            ? new(true, booking)
-            : new(false, $"Booking with id '{bookingId}' is not exist");
+            ? BookingRepositoryResult.Success(booking)
+            : BookingRepositoryResult.BookingNotFound(bookingId);
     }
 
-    public Task<BookingRepositoryResult> TryGetPendingBooking(
+    public Task<IEnumerable<Guid>> TryGetPendingBookingIds(
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        var booking = _bookings.Values
-            .FirstOrDefault(b => b.Status == BookingStatus.Pending);
+        var pendingIds = _bookings.Values
+            .Where(b => b.Status == BookingStatus.Pending)
+            .Select(b => b.Id);
 
-        return booking != null
-            ? Task.FromResult(new BookingRepositoryResult(true, booking))
-            : Task.FromResult(new BookingRepositoryResult(
-                false, "There are no pending bookings at this moment"));
+        return Task.FromResult(pendingIds);
     }
 
     public async Task<BookingRepositoryResult> TryConfirmBooking(
@@ -81,25 +80,22 @@ public class BookingInMemoryRepository(IEventRepository _eventRepository)
         ct.ThrowIfCancellationRequested();
 
         if (!_bookings.TryGetValue(bookingId, out Booking? booking))
-            return new(false, $"Booking with id '{bookingId}' is not exist");
+            return BookingRepositoryResult.BookingNotFound(bookingId);
 
         Guid eventId = booking.EventId;
         var @event = await _eventRepository.TryGetByIdAsync(eventId, ct);
         if (@event == null)
         {
             var res = await TryRejectBooking(booking.Id, ct);
-            if (!res.Success) return res;
-            return new(false, $"Event with id '{eventId}' is not exist", res.Booking);
+            if (!res.IsSuccess) return res;
+            return BookingRepositoryResult.EventNotFound(eventId, res.Booking);
         }
 
         if (booking.Status == BookingStatus.Confirmed)
-            return new(true, booking);
+            return BookingRepositoryResult.Success(booking);
 
         if (booking.Status != BookingStatus.Pending)
-            return new(
-                false,
-                $"Booking with id '{bookingId}' is not in {BookingStatus.Pending} status",
-                booking);
+            return BookingRepositoryResult.InvalidStatus(booking, BookingStatus.Pending);
 
         var updatedBooking = new Booking
         {
@@ -113,8 +109,8 @@ public class BookingInMemoryRepository(IEventRepository _eventRepository)
         bool isUpdated = _bookings.TryUpdate(bookingId, updatedBooking, booking);
 
         return isUpdated
-            ? new(true, updatedBooking)
-            : new(false, $"Booking with id '{bookingId}' is not exist");
+            ? BookingRepositoryResult.Success(updatedBooking)
+            : BookingRepositoryResult.BookingNotFound(bookingId);
     }
 
     public async Task<BookingRepositoryResult> TryRejectBooking(Guid bookingId, CancellationToken ct)
@@ -122,10 +118,10 @@ public class BookingInMemoryRepository(IEventRepository _eventRepository)
         ct.ThrowIfCancellationRequested();
 
         if (!_bookings.TryGetValue(bookingId, out Booking? booking))
-            return new(false, $"Booking with id '{bookingId}' is not exist");
+            return BookingRepositoryResult.BookingNotFound(bookingId);
 
         if (booking.Status == BookingStatus.Rejected)
-            return new(true, booking);
+            return BookingRepositoryResult.Success(booking);
 
         var updatedBooking = new Booking
         {
@@ -137,9 +133,11 @@ public class BookingInMemoryRepository(IEventRepository _eventRepository)
         };
 
         bool isUpdated = _bookings.TryUpdate(bookingId, updatedBooking, booking);
+        var @event = await _eventRepository.TryGetByIdAsync(booking.EventId, ct);
+        if (isUpdated) @event?.TryReleaseSeats();
 
         return isUpdated
-            ? new(true, updatedBooking)
-            : new(false, $"Booking with id '{bookingId}' is not exist");
+            ? BookingRepositoryResult.Success(updatedBooking)
+            : BookingRepositoryResult.BookingNotFound(bookingId);
     }
 }
