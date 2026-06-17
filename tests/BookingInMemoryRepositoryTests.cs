@@ -16,7 +16,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryCreateBookingAsync_WithValidEventId_ShouldCreatePendingBooking()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository.Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
             .ReturnsAsync(@event);
@@ -34,6 +34,120 @@ public class BookingInMemoryRepositoryTests
         Assert.NotEqual(default, result.Booking.CreatedAt);
         Assert.Null(result.Booking.ProcessedAt);
         Assert.Null(result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task TryCreateBookingAsync_WithValidEventId_ShouldDecrementsAvailableSeats()
+    {
+        // Arrange
+        Event @event = EventFactory.Generate();
+        int expectedAvailableSeats = @event.AvailableSeats - 1;
+        var mockEventRepository = new Mock<IEventRepository>();
+        mockEventRepository.Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
+            .ReturnsAsync(@event);
+        var bookingRepo = new BookingInMemoryRepository(mockEventRepository.Object);
+
+        // Act
+        var result = await bookingRepo.TryCreateBookingAsync(@event.Id, _ct);
+
+        // Assert
+        Assert.Equal(expectedAvailableSeats, @event.AvailableSeats);
+    }
+
+    [Fact]
+    public async Task TryCreateBookingAsync_ConcurrentCallsWithSameValidEventId_ShouldDecrementsAvailableSeats()
+    {
+        // Arrange
+        int amountOfCreatingBooking = 3;
+        Event @event = EventFactory.Generate();
+        int expectedAvailableSeats = @event.AvailableSeats - amountOfCreatingBooking;
+        var mockEventRepository = new Mock<IEventRepository>();
+        mockEventRepository.Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
+            .ReturnsAsync(@event);
+        var bookingRepo = new BookingInMemoryRepository(mockEventRepository.Object);
+
+        var tasks = Enumerable
+            .Range(0, amountOfCreatingBooking)
+            .Select(_ => bookingRepo.TryCreateBookingAsync(@event.Id, _ct));
+
+        // Act
+        var result = await Task.WhenAll(tasks);
+
+        // Assert
+        Assert.Equal(expectedAvailableSeats, @event.AvailableSeats);
+    }
+
+    [Fact]
+    public async Task TryCreateBookingAsync_ConcurrentCallsWithSameValidEventId_ShouldCreatePendingBookingsDependsOnAvailableSeatsCount()
+    {
+        // Arrange
+        Guid eventId = Guid.NewGuid();
+        int availableSeats = 5;
+        int amountOfCreatingBooking = 20;
+        int expectedAvailableSeats = availableSeats <= amountOfCreatingBooking
+            ? 0
+            : availableSeats - amountOfCreatingBooking;
+
+        Event @event = EventFactory.Generate(
+            eventId,
+            "Title",
+            DateTime.Now.AddDays(-1),
+            DateTime.Now,
+            availableSeats,
+            availableSeats);
+
+        var mockEventRepository = new Mock<IEventRepository>();
+        mockEventRepository.Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
+            .ReturnsAsync(@event);
+        var bookingRepo = new BookingInMemoryRepository(mockEventRepository.Object);
+
+        var tasks = Enumerable
+            .Range(0, amountOfCreatingBooking)
+            .Select(_ => bookingRepo.TryCreateBookingAsync(@event.Id, _ct));
+
+        // Act
+        var result = await Task.WhenAll(tasks);
+        var successfulBookings = result.Where(r => r.IsSuccess).ToList();
+        var failedBookings = result.Where(r => !r.IsSuccess).ToList();
+
+        // Assert
+        Assert.Equal(expectedAvailableSeats, @event.AvailableSeats);
+        Assert.Equal(availableSeats, successfulBookings.Count);
+        Assert.Equal(amountOfCreatingBooking - availableSeats, failedBookings.Count);
+        Assert.All(successfulBookings, sb =>
+            {
+                Assert.NotNull(sb.Booking);
+                Assert.Equal(BookingStatus.Pending, sb.Booking.Status);
+                Assert.Equal(@event.Id, sb.Booking.EventId);
+            });
+        Assert.All(failedBookings, fb =>
+            {
+                Assert.Null(fb.Booking);
+                Assert.Equal(BookingErrorType.NoAvailableSeats, fb.ErrorType);
+                Assert.Contains("No available seats", fb.ErrorMessage);
+            });
+    }
+
+    [Fact]
+    public async Task TryCreateBookingAsync_WithNoAvailableSeats_ShouldReturnFailure()
+    {
+        // Arrange
+        Guid eventId = Guid.NewGuid();
+        Event @event = EventFactory.Generate(
+            eventId, "Title", DateTime.Now.AddDays(-1), DateTime.Now, 1, 0);
+
+        var mockEventRepository = new Mock<IEventRepository>();
+        mockEventRepository.Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
+            .ReturnsAsync(@event);
+        var bookingRepo = new BookingInMemoryRepository(mockEventRepository.Object);
+
+        // Act
+        var result = await bookingRepo.TryCreateBookingAsync(@event.Id, _ct);
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Null(result.Booking);
+        Assert.Contains("No available seats for this event", result.ErrorMessage);
     }
 
     [Fact]
@@ -84,7 +198,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryGetBookingByIdAsync_WithExistingBooking_ShouldReturnBooking()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -126,7 +240,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryGetBookingByIdAsync_WhenEventWasDeletedAfterBookingCreation_ShouldRejectBooking()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -179,22 +293,25 @@ public class BookingInMemoryRepositoryTests
     public async Task TryGetPendingBooking_WhenPendingBookingExists_ShouldReturnFirstPendingBooking()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
             .ReturnsAsync(@event);
 
         var repository = new BookingInMemoryRepository(mockEventRepository.Object);
-        await repository.TryCreateBookingAsync(@event.Id, _ct);
+        var createdBookingResult = await repository.TryCreateBookingAsync(@event.Id, _ct);
 
         // Act
-        var result = await repository.TryGetPendingBookings(_ct);
+        var pendingIds = (await repository.TryGetPendingBookingIds(_ct)).ToList();
 
         // Assert
-        Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Booking);
-        Assert.Equal(BookingStatus.Pending, result.Booking.Status);
+        Assert.NotEmpty(pendingIds);
+        Assert.Single(pendingIds);
+        Assert.NotNull(createdBookingResult.Booking);
+        Assert.Equal(createdBookingResult.Booking.Id, pendingIds[0]);
+        Assert.Equal(BookingStatus.Pending, createdBookingResult.Booking.Status);
+        Assert.Equal(@event.Id, createdBookingResult.Booking.EventId);
     }
 
     [Fact]
@@ -207,19 +324,17 @@ public class BookingInMemoryRepositoryTests
         // Repository is empty, no bookings at all
 
         // Act
-        var result = await repository.TryGetPendingBookings(_ct);
+        var result = (await repository.TryGetPendingBookingIds(_ct)).ToList();
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Booking);
-        Assert.Equal("There are no pending bookings at this moment", result.ErrorMessage);
+        Assert.Empty(result);
     }
 
     [Fact]
     public async Task TryGetPendingBooking_WhenAllBookingsAreConfirmedOrRejected_ShouldReturnFailure()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -236,12 +351,10 @@ public class BookingInMemoryRepositoryTests
         await repository.TryRejectBooking(createResult2.Booking!.Id, _ct);
 
         // Act
-        var result = await repository.TryGetPendingBookings(_ct);
+        var result = (await repository.TryGetPendingBookingIds(_ct)).ToList();
 
         // Assert
-        Assert.False(result.IsSuccess);
-        Assert.Null(result.Booking);
-        Assert.Equal("There are no pending bookings at this moment", result.ErrorMessage);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -256,7 +369,7 @@ public class BookingInMemoryRepositoryTests
 
         // Act
         var exception = await Record.ExceptionAsync(() =>
-            repository.TryGetPendingBookings(cts.Token));
+            repository.TryGetPendingBookingIds(cts.Token));
 
         // Assert
         Assert.IsType<OperationCanceledException>(exception);
@@ -271,7 +384,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryConfirmBooking_WithValidPendingBooking_ShouldConfirmSuccessfully()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -316,7 +429,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryConfirmBooking_WhenEventWasDeletedAfterBookingCreation_ShouldRejectBooking()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -345,7 +458,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryConfirmBooking_WhenBookingAlreadyConfirmed_ShouldReturnSuccessWithoutChanges()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -375,7 +488,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryConfirmBooking_WhenBookingAlreadyRejected_ShouldReturnFailure()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -425,7 +538,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryRejectBooking_WithValidPendingBooking_ShouldRejectSuccessfully()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -450,6 +563,40 @@ public class BookingInMemoryRepositoryTests
     }
 
     [Fact]
+    public async Task TryRejectBooking_WithValidPendingBooking_ShouldReleaseAvailableEventSeat()
+    {
+        // Arrange
+        Guid eventId = Guid.NewGuid();
+        int baseAvailableSeats = 1;
+        Event @event = EventFactory.Generate(
+            eventId,
+            "Title",
+            DateTime.Now.AddDays(-1),
+            DateTime.Now,
+            baseAvailableSeats,
+            baseAvailableSeats);
+        var mockEventRepository = new Mock<IEventRepository>();
+        mockEventRepository
+            .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
+            .ReturnsAsync(@event);
+
+        var repository = new BookingInMemoryRepository(mockEventRepository.Object);
+        var createResult = await repository.TryCreateBookingAsync(@event.Id, _ct);
+        var bookingId = createResult.Booking!.Id;
+        var availableSeatsAfterReserving = @event.AvailableSeats;
+
+        // Act
+        var rejectResult = await repository.TryRejectBooking(bookingId, _ct);
+
+        // Assert
+        Assert.True(rejectResult.IsSuccess);
+        Assert.NotNull(rejectResult.Booking);
+        Assert.Equal(BookingStatus.Rejected, rejectResult.Booking.Status);
+        Assert.True(availableSeatsAfterReserving == baseAvailableSeats - 1);
+        Assert.True(baseAvailableSeats == @event.AvailableSeats);
+    }
+
+    [Fact]
     public async Task TryRejectBooking_WithNonExistentBooking_ShouldReturnFailure()
     {
         // Arrange
@@ -470,7 +617,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryRejectBooking_WhenEventWasDeleted_ShouldStillRejectSuccessfully()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -498,7 +645,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryRejectBooking_WhenBookingAlreadyRejected_ShouldReturnSuccessWithoutChanges()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -528,7 +675,7 @@ public class BookingInMemoryRepositoryTests
     public async Task TryRejectBooking_WhenBookingAlreadyConfirmed_ShouldRejectIt()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -577,7 +724,7 @@ public class BookingInMemoryRepositoryTests
     public async Task CompleteBookingLifecycle_CreateConfirmGet_ShouldWorkCorrectly()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -606,7 +753,7 @@ public class BookingInMemoryRepositoryTests
     public async Task CompleteBookingLifecycle_CreateRejectGet_ShouldWorkCorrectly()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))
@@ -635,7 +782,7 @@ public class BookingInMemoryRepositoryTests
     public async Task MultipleBookingsForSameEvent_ShouldAllBeCreatedIndependently()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        Event @event = EventFactory.Generate();
         var mockEventRepository = new Mock<IEventRepository>();
         mockEventRepository
             .Setup(r => r.TryGetByIdAsync(@event.Id, _ct))

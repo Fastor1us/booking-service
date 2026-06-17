@@ -9,6 +9,7 @@ public class PendingBookingProcessor(
 {
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly ILogger<PendingBookingProcessor> _logger = logger;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -40,8 +41,17 @@ public class PendingBookingProcessor(
                     {
                         await Task.Delay(2_000, linkedToken);
 
-                        var confirmResult = await bookingRepository
-                            .TryConfirmBooking(id, linkedToken);
+                        BookingRepositoryResult confirmResult;
+                        await _semaphore.WaitAsync(linkedToken);
+                        try
+                        {
+                            confirmResult = await bookingRepository
+                                .TryConfirmBooking(id, linkedToken);
+                        }
+                        finally
+                        {
+                            _semaphore.Release();
+                        }
 
                         if (!confirmResult.IsSuccess)
                             _logger.LogWarning(

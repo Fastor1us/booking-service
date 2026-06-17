@@ -4,7 +4,7 @@ namespace BookingTests.Helpers;
 
 public static class BookingFactory
 {
-    public static Booking CreateBooking(
+    public static Booking Generate(
         Guid eventId,
         BookingStatus bookingStatus = BookingStatus.Pending,
         DateTime? createdAt = null,
