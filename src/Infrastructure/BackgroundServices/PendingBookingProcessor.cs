@@ -39,6 +39,8 @@ public class PendingBookingProcessor(
                     _parallelOptions,
                     async (id, linkedToken) =>
                     {
+                        _logger.LogInfo($"Start handle Booking with id: {id}");
+
                         await Task.Delay(2_000, linkedToken);
 
                         BookingRepositoryResult confirmResult;
@@ -57,8 +59,8 @@ public class PendingBookingProcessor(
                             _logger.LogWarning(
                                 "Failed to confirm booking {BookingId}: {Details}",
                                 id, confirmResult.ErrorMessage);
-                        else if (_logger.IsEnabled(LogLevel.Information))
-                            _logger.LogInformation(
+                        else
+                            _logger.LogInfo(
                                 "Successfully confirmed pending booking {BookingId}",
                                 id);
                     });
