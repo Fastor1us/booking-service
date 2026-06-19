@@ -38,21 +38,20 @@ public class EventController(
 
     [HttpPost]
     public async Task<ActionResult<EventResponseDto>> Add(
-        [FromBody] PostEventDto eventDto, CancellationToken ct)
+        [FromBody] CreateEventDto eventDto, CancellationToken ct)
     {
-        var @event = await eventService
-            .AddAsync(eventDto.MapToEvent(), ct);
+        var @event = await eventService.AddAsync(eventDto, ct);
         return CreatedAtAction(
             nameof(GetById), new { id = @event.Id }, @event);
     }
 
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<EventResponseDto>> Put(
-        [FromBody] PutEventDto eventDto,
+        [FromBody] UpdateEventDto eventDto,
         [FromRoute] Guid id,
         CancellationToken ct)
     {
-        await eventService.UpdateAsync(eventDto.MapToEvent(id), ct);
+        await eventService.UpdateAsync(id, eventDto, ct);
         return NoContent();
     }
 

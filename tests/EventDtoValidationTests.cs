@@ -1,4 +1,5 @@
 using BookingApi.Presentation.Dtos;
+using BookingTests.Helpers;
 using System.ComponentModel.DataAnnotations;
 
 namespace BookingTests;
@@ -11,13 +12,11 @@ public class EventDtoValidationTests
     public void PostEventDto_WithValidData_PassesValidation()
     {
         // Arrange
-        var dto = new PostEventDto
-        {
-            Title = "Valid Event",
-            Description = "Valid Description",
-            StartAt = DateTime.Now.AddDays(1),
-            EndAt = DateTime.Now.AddDays(2)
-        };
+        var dto = EventFactory.Generate<CreateEventDto>(
+            "Valid Event", 
+            "Valid Description",
+            DateTime.Now.AddDays(1),
+            DateTime.Now.AddDays(2));
 
         // Act
         var validationResults = ValidateDto(dto);
@@ -32,13 +31,11 @@ public class EventDtoValidationTests
         // Arrange
         var startAt = DateTime.Now.AddDays(2);
         var endAt = DateTime.Now.AddDays(1);
-        var dto = new PostEventDto
-        {
-            Title = "Invalid Event",
-            Description = "Description",
-            StartAt = startAt,
-            EndAt = endAt
-        };
+        var dto = EventFactory.Generate<CreateEventDto>(
+            "Invalid Event", 
+            "Description",
+            startAt,
+            endAt);
 
         // Act
         var validationResults = ValidateDto(dto);
@@ -56,13 +53,11 @@ public class EventDtoValidationTests
     {
         // Arrange
         var sameDateTime = DateTime.Now.AddDays(1);
-        var dto = new PostEventDto
-        {
-            Title = "Invalid Event",
-            Description = "Description",
-            StartAt = sameDateTime,
-            EndAt = sameDateTime
-        };
+        var dto = EventFactory.Generate<CreateEventDto>(
+            "Invalid Event", 
+            "Description",
+            sameDateTime,
+            sameDateTime);
 
         // Act
         var validationResults = ValidateDto(dto);
@@ -79,10 +74,11 @@ public class EventDtoValidationTests
     public void PostEventDto_WithNullTitle_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = null!,
             Description = "Description",
+            TotalSeats = 20,
             StartAt = DateTime.Now.AddDays(1),
             EndAt = DateTime.Now.AddDays(2)
         };
@@ -102,13 +98,11 @@ public class EventDtoValidationTests
     public void PostEventDto_WithEmptyTitle_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
-        {
-            Title = "",
-            Description = "Description",
-            StartAt = DateTime.Now.AddDays(1),
-            EndAt = DateTime.Now.AddDays(2)
-        };
+        var dto = EventFactory.Generate<CreateEventDto>(
+            "", 
+            "Description",
+            DateTime.Now.AddDays(1),
+            DateTime.Now.AddDays(2));
 
         // Act
         var validationResults = ValidateDto(dto);
@@ -125,13 +119,11 @@ public class EventDtoValidationTests
     public void PostEventDto_WithWhitespaceTitle_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
-        {
-            Title = "   ",
-            Description = "Description",
-            StartAt = DateTime.Now.AddDays(1),
-            EndAt = DateTime.Now.AddDays(2)
-        };
+        var dto = EventFactory.Generate<CreateEventDto>(
+            "   ", 
+            "Description",
+            DateTime.Now.AddDays(1),
+            DateTime.Now.AddDays(2));
 
         // Act
         var validationResults = ValidateDto(dto);
@@ -148,10 +140,11 @@ public class EventDtoValidationTests
     public void PostEventDto_WithDefaultDateTimeStartAt_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "Valid Title",
             Description = "Description",
+            TotalSeats = 20,
             StartAt = default,
             EndAt = DateTime.Now.AddDays(2)
         };
@@ -171,10 +164,11 @@ public class EventDtoValidationTests
     public void PostEventDto_WithDefaultDateTimeEndAt_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PostEventDto
+        var dto = new CreateEventDto
         {
             Title = "Valid Title",
             Description = "Description",
+            TotalSeats = 20,
             StartAt = DateTime.Now.AddDays(1),
             EndAt = default
         };
@@ -194,13 +188,11 @@ public class EventDtoValidationTests
     public void PostEventDto_WithMultipleValidationErrors_ReturnsAllErrors()
     {
         // Arrange
-        var dto = new PostEventDto
-        {
-            Title = "",
-            Description = "Description",
-            StartAt = DateTime.Now.AddDays(2),
-            EndAt = DateTime.Now.AddDays(1) // End earlier than Start
-        };
+        var dto = EventFactory.Generate<CreateEventDto>(
+            "", 
+            "Description",
+            DateTime.Now.AddDays(2),
+            DateTime.Now.AddDays(1));   // End earlier than Start
 
         // Act
         var validationResults = ValidateDto(dto);
@@ -221,7 +213,7 @@ public class EventDtoValidationTests
     public void PutEventDto_WithValidData_PassesValidation()
     {
         // Arrange
-        var dto = new PutEventDto
+        var dto = new UpdateEventDto
         {
             Title = "Valid Event",
             Description = "Valid Description",
@@ -240,7 +232,7 @@ public class EventDtoValidationTests
     public void PutEventDto_WithEndAtEarlierThanStartAt_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PutEventDto
+        var dto = new UpdateEventDto
         {
             Title = "Invalid Event",
             Description = "Description",
@@ -260,7 +252,7 @@ public class EventDtoValidationTests
     public void PutEventDto_WithNullTitle_ReturnsValidationError()
     {
         // Arrange
-        var dto = new PutEventDto
+        var dto = new UpdateEventDto
         {
             Title = null!,
             Description = "Description",

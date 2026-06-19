@@ -51,4 +51,16 @@ public static class Extensions
 
         return services;
     }
+
+    public static void LogInfo(this ILogger logger, string message, params object[] args)
+    {
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(message, args);
+    }
+
+    public static void LogInfo(this ILogger logger, Exception? exception, string message, params object[] args)
+    {
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation(exception, message, args);
+    }
 }

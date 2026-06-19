@@ -9,10 +9,19 @@ public class PendingBookingProcessor(
 {
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private readonly ILogger<PendingBookingProcessor> _logger = logger;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("PendingBookingProcessor has been started");
+
+        ParallelOptions _parallelOptions = new()
+        {
+            CancellationToken = stoppingToken,
+            MaxDegreeOfParallelism = Environment.ProcessorCount > 1
+            ? (Environment.ProcessorCount >= 4 ? 4 : 2)
+            : 1
+        };
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -22,39 +31,39 @@ public class PendingBookingProcessor(
                 var bookingRepository = scope.ServiceProvider
                     .GetRequiredService<IBookingRepository>();
 
-                var result = await bookingRepository
-                    .TryGetPendingBooking(stoppingToken);
+                var pendingBookingIds = await bookingRepository
+                    .TryGetPendingBookingIds(stoppingToken);
 
-                while (result.Success && result.Booking != null)
-                {
-                    var booking = result.Booking;
-
-                    if (booking.Status == BookingStatus.Pending)
+                await Parallel.ForEachAsync(
+                    pendingBookingIds,
+                    _parallelOptions,
+                    async (id, linkedToken) =>
                     {
-                        await Task.Delay(2_000, stoppingToken);
+                        _logger.LogInfo($"Start handle Booking with id: {id}");
 
-                        var confirmResult = await bookingRepository
-                            .TryConfirmBooking(booking.Id, stoppingToken);
+                        await Task.Delay(2_000, linkedToken);
 
-                        if (!confirmResult.Success)
+                        BookingRepositoryResult confirmResult;
+                        await _semaphore.WaitAsync(linkedToken);
+                        try
+                        {
+                            confirmResult = await bookingRepository
+                                .TryConfirmBooking(id, linkedToken);
+                        }
+                        finally
+                        {
+                            _semaphore.Release();
+                        }
+
+                        if (!confirmResult.IsSuccess)
                             _logger.LogWarning(
                                 "Failed to confirm booking {BookingId}: {Details}",
-                                booking.Id, confirmResult.Details);
-                        else if (_logger.IsEnabled(LogLevel.Information))
-                            _logger.LogInformation(
+                                id, confirmResult.ErrorMessage);
+                        else
+                            _logger.LogInfo(
                                 "Successfully confirmed pending booking {BookingId}",
-                                booking.Id);
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException(
-                            $"TryGetPendingBooking returned booking with invalid status. " +
-                            $"Booking id: {booking.Id}, status: {booking.Status}");
-                    }
-
-                    result = await bookingRepository
-                        .TryGetPendingBooking(stoppingToken);
-                }
+                                id);
+                    });
 
                 await Task.Delay(3_000, stoppingToken);
             }

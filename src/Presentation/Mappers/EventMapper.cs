@@ -6,30 +6,6 @@ namespace BookingApi.Presentation.Mappers;
 
 public static class EventMapperExtension
 {
-    public static Event MapToEvent(this PostEventDto @event)
-    {
-        return new Event
-        {
-            Id = Guid.Empty,
-            Title = @event.Title,
-            Description = @event.Description,
-            StartAt = @event.StartAt,
-            EndAt = @event.EndAt
-        };
-    }
-
-    public static Event MapToEvent(this PutEventDto @event, Guid id)
-    {
-        return new Event
-        {
-            Id = id,
-            Title = @event.Title,
-            Description = @event.Description,
-            StartAt = @event.StartAt,
-            EndAt = @event.EndAt
-        };
-    }
-
     public static EventResponseDto MapToResponseDto(this Event @event)
     {
         return new EventResponseDto
@@ -37,6 +13,8 @@ public static class EventMapperExtension
             Id = @event.Id,
             Title = @event.Title,
             Description = @event.Description,
+            TotalSeats = @event.TotalSeats,
+            AvailableSeats = @event.AvailableSeats,
             StartAt = @event.StartAt,
             EndAt = @event.EndAt
         };

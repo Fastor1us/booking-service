@@ -9,7 +9,7 @@ public abstract class EventRequestDto : IValidatableObject
     public DateTime StartAt { get; set; }
     public DateTime EndAt { get; set; }
 
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (string.IsNullOrWhiteSpace(Title))
             yield return new ValidationResult(
@@ -29,5 +29,19 @@ public abstract class EventRequestDto : IValidatableObject
     }
 }
 
-public class PostEventDto : EventRequestDto { }
-public class PutEventDto : EventRequestDto { }
+public class CreateEventDto : EventRequestDto
+{
+    public int TotalSeats { get; set; }
+
+    public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (TotalSeats <= 0)
+            yield return new ValidationResult(
+                "TotalSeats must be more than 0", [nameof(TotalSeats)]);
+
+        foreach (var result in base.Validate(validationContext))
+            yield return result;
+    }
+}
+
+public class UpdateEventDto : EventRequestDto { }

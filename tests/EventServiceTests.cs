@@ -2,8 +2,8 @@
 using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
+using BookingApi.Presentation.Dtos;
 using BookingTests.Helpers;
-using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace BookingTests;
@@ -16,21 +16,23 @@ public class EventServiceTests
     public async Task AddAsync_ValidEvent_ReturnsAddedEvent()
     {
         // Arrange
-        Event @event = EventFactory.CreateEvent();
+        var createEventDtovent = EventFactory.Generate<CreateEventDto>();
+        Guid eventId = Guid.NewGuid();
+        Event @event = EventFactory.Generate();
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.AddAsync(It.IsAny<Event>(), _ct))
-            .ReturnsAsync(@event.Id);
+            .Setup(repository => repository.AddAsync(It.IsAny<CreateEventDto>(), _ct))
+            .ReturnsAsync(eventId);
         mockRepository
             .Setup(repository => repository.TryGetByIdAsync(
-                It.Is<Guid>(id => id == @event.Id), _ct))
+                It.Is<Guid>(id => id == eventId), _ct))
             .ReturnsAsync(@event);
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
-        var res = await eventService.AddAsync(@event, _ct);
+        var res = await eventService.AddAsync(createEventDtovent, _ct);
 
         // Assert
         Assert.NotNull(res);
@@ -41,7 +43,7 @@ public class EventServiceTests
     public async Task GetAllAsync_WithValidPagination_ReturnsPagedEvents()
     {
         // Arrange
-        List<Event> events = EventFactory.CreateEvents(20);
+        List<Event> events = EventFactory.Generate(20);
         var expectedEvents = events.Skip(5).Take(5);
 
         var mockRepository = new Mock<IEventRepository>();
@@ -68,7 +70,7 @@ public class EventServiceTests
         // Arrange
         Guid guid = Guid.NewGuid();
 
-        Event @event = EventFactory.CreateEvent(guid);
+        Event @event = EventFactory.Generate(guid);
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
@@ -92,25 +94,29 @@ public class EventServiceTests
         // Arrange
         Guid guid = Guid.NewGuid();
 
-        Event @event = EventFactory.CreateEvent(guid);
+        var updateEventDto = EventFactory.Generate<UpdateEventDto>();
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
             .Setup(repository => repository
-                .TryUpdateAsync(It.Is<Event>(e => e.Id == guid), _ct))
+                .TryUpdateAsync(
+                    It.Is<Guid>(g => g == guid),
+                    It.IsAny<UpdateEventDto>(),
+                    _ct))
             .ReturnsAsync(true);
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
         var exception = await Record
-            .ExceptionAsync(() => eventService.UpdateAsync(@event, _ct));
+            .ExceptionAsync(() => eventService
+                .UpdateAsync(guid, updateEventDto, _ct));
 
         // Assert
         Assert.Null(exception);
         mockRepository
-            .Verify(repo =>
-                repo.TryUpdateAsync(It.IsAny<Event>(), _ct), Times.Once);
+            .Verify(repo => repo.TryUpdateAsync(
+                guid, It.IsAny<UpdateEventDto>(), _ct), Times.Once);
     }
 
     [Fact]
@@ -144,7 +150,7 @@ public class EventServiceTests
         // Arrange
         string filterTitle = "Title #1";
 
-        List<Event> events = EventFactory.CreateEvents(10);
+        List<Event> events = EventFactory.Generate(10);
         var expectedEvents = events.Where(e => e.Title == filterTitle);
 
         var mockRepository = new Mock<IEventRepository>();
@@ -175,11 +181,11 @@ public class EventServiceTests
 
         // Arrange
         List<Event> events = [
-            EventFactory.CreateEvent(
+            EventFactory.Generate(
                 null, null, invalidStartAt, invalidEndAt),
-            EventFactory.CreateEvent(
+            EventFactory.Generate(
                 null, null, validStartAt, validEndAt),
-            EventFactory.CreateEvent(
+            EventFactory.Generate(
                 null, null, validStartAt, validEndAt),
         ];
 
@@ -213,13 +219,13 @@ public class EventServiceTests
         DateTime validEndAt = DateTime.Now.AddDays(-1);
 
         List<Event> events = [
-            EventFactory.CreateEvent(
+            EventFactory.Generate(
                 null, "The Bohemians part #1", invalidStartAt, invalidEndAt),
-            EventFactory.CreateEvent(
+            EventFactory.Generate(
                 null, "The Bohemians part #2", validStartAt, validEndAt),
-            EventFactory.CreateEvent(
+            EventFactory.Generate(
                 null, "The Bohemians part #3", validStartAt, validEndAt),
-            EventFactory.CreateEvent(
+            EventFactory.Generate(
                 null, "Dracula By Bram Stoker", validStartAt, validEndAt)
         ];
 
@@ -268,18 +274,20 @@ public class EventServiceTests
     {
         // Arrange
         Guid guid = Guid.NewGuid();
-        Event @event = EventFactory.CreateEvent(guid);
+        Event @event = EventFactory.Generate(guid);
+        var updateEventDto = EventFactory.Generate<UpdateEventDto>();
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository
-            .Setup(repository => repository.TryUpdateAsync(@event, _ct))
+            .Setup(repository => repository.TryUpdateAsync(guid, updateEventDto, _ct))
             .Throws(new EventNotFoundException(guid));
 
         var eventService = new EventService(mockRepository.Object);
 
         // Act
         var exception = await Record
-            .ExceptionAsync(() => eventService.UpdateAsync(@event, _ct));
+            .ExceptionAsync(() => eventService.UpdateAsync(
+                guid, updateEventDto, _ct));
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
@@ -291,7 +299,7 @@ public class EventServiceTests
     {
         // Arrange
         Guid guid = Guid.NewGuid();
-        Event @event = EventFactory.CreateEvent(guid);
+        Event @event = EventFactory.Generate(guid);
 
         var mockRepository = new Mock<IEventRepository>();
         mockRepository

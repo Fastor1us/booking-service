@@ -10,7 +10,7 @@ public interface IBookingRepository
     public Task<BookingRepositoryResult> TryGetBookingByIdAsync(
         Guid bookingId,
         CancellationToken ct);
-    public Task<BookingRepositoryResult> TryGetPendingBooking(
+    public Task<IEnumerable<Guid>> TryGetPendingBookingIds(
         CancellationToken ct);
     public Task<BookingRepositoryResult> TryConfirmBooking(
         Guid bookingId,

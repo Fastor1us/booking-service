@@ -1,11 +1,33 @@
 # Booking API
-
-REST API for managing event bookings
+REST API for booking events - create, manage and booking
 
 ## 📋 Requirements
 
 - [.NET 10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
 - CLI / IDE
+
+## 📑 Navigation
+
+- [🚀 Quick Start](#quick-start)
+- [🧪 Testing](#testing)
+- [🌐 API Endpoints](#api-endpoints)
+  - [📅 Events Controller](#events-controller-apievents)
+  - [📖 Booking Controller](#booking-controller-apibookings)
+  - [📊 Query Parameters](#query-parameters)
+- [📦 Models](#models)
+  - [EventResponseDto](#eventresponsedto)
+  - [PaginatedEventsResponseDto](#paginatedeventsresponsedto)
+  - [PostEventDto](#posteventdto)
+  - [PutEventDto](#puteventdto)
+  - [BookingResponseDto](#bookingresponsedto)
+  - [BookingStatus Enum](#bookingstatus-enum)
+  - [ErrorResponseDto](#errorresponsedto)
+- [📋 HTTP Status Codes](#http-status-codes)
+- [🏗️ Architecture](#architecture)
+- [🔒 Concurrency & Synchronization Primitives](#concurrency-&-synchronization-primitives)
+- [🧠 Background Processing](#background-processing)
+- [🛠️ Technology Stack](#technology-stack)
+- [📝 Notes](#notes)
 
 ## 🚀 Quick Start
 
@@ -239,13 +261,15 @@ Get booking details by ID.
 
 Response model for event data.
 
-| Property      | Type       |Description                 |
-| ------------- | ---------- | -------------------------- |
-| `id`          | `Guid`     | Unique event identifier    |
-| `title`       | `string`   | Event title                |
-| `description` | `string`   | Optional event description |
-| `startAt`     | `DateTime` | Event start date and time  |
-| `endAt`       | `DateTime` | Event end date and time    |
+| Property         | Type       |Description                          |
+| ---------------- | ---------- | ----------------------------------- |
+| `id`             | `Guid`     | Unique event identifier             |
+| `title`          | `string`   | Event title                         |
+| `description`    | `string`   | Optional event description          |
+| `totalSeats`     | `int`      | Max amount of event's seats         |
+| `availableSeats` | `int`      | Current available seats to booking  |
+| `startAt`        | `DateTime` | Event start date and time           |
+| `endAt`          | `DateTime` | Event end date and time             |
 
 **Example:**
 
@@ -253,6 +277,8 @@ Response model for event data.
 {
   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "title": "Tech Conference 2024",
+  "totalSeats": 20,
+  "availableSeats": 5,
   "description": "Annual technology conference",
   "startAt": "2024-06-15T09:00:00Z",
   "endAt": "2024-06-17T18:00:00Z"
@@ -297,12 +323,13 @@ Response model for paginated event list.
 
 Request model for creating a new event.
 
-| Property      | Type       | Required | Description                | Constraints                   |
-| ------------- | ---------- | -------- | -------------------------- | ----------------------------- |
-| `title`       | `string`   | ✅ Yes   | Event title                | Not empty, max 200 characters |
-| `description` | `string`   | ❌ No    | Optional event description | Max 1000 characters           |
-| `startAt`     | `DateTime` | ✅ Yes   | Event start date and time  | Must be in the future         |
-| `endAt`       | `DateTime` | ✅ Yes   | Event end date and time    | Must be later than `startAt`  |
+| Property      | Type       | Required | Description                 | Constraints                   |
+| ------------- | ---------- | -------- | --------------------------- | ----------------------------- |
+| `title`       | `string`   | ✅ Yes   | Event title                 | Not empty, max 200 characters |
+| `description` | `string`   | ❌ No    | Optional event description  | Max 1000 characters           |
+| `totalSeats`  | `int`      | ✅ Yes   | Max amount of event's seats | Must be more than 0           |
+| `startAt`     | `DateTime` | ✅ Yes   | Event start date and time   | Must be in the future         |
+| `endAt`       | `DateTime` | ✅ Yes   | Event end date and time     | Must be later than `startAt`  |
 
 ---
 
@@ -377,11 +404,12 @@ Response model for error responses returned by the global exception handling mid
 
 ### HTTP Status Codes
 
-| Status Code               | Description          | When Occurs                                                                                                                                                                                |
-| ------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 400 Bad Request           | Invalid request data | - Validation errors (missing required fields, invalid dates)<br>- Invalid filter parameters (`to` date before `from`)<br>- Invalid pagination parameters (page < 1, pageSize outside 5-50) |
-| 404 Not Found             | Resource not found   | Event with specified ID doesn't exist                                                                                                                                                      |
-| 500 Internal Server Error | Server error         | Unhandled exceptions in the application                                                                                                                                                    |
+| Status Code               | When Occurs                                                                                                                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 400 Bad Request           | Validation errors (missing required fields, invalid dates)<br>Invalid filter parameters (`to` date before `from`)<br>Invalid pagination parameters (page < 1, pageSize outside 5-50) |
+| 404 Not Found             | Event or Booking with specified ID doesn't exist                                                                                                                                     |
+| 409 Conflict              | Event does not have available seats to booking                                                                                                                                       |
+| 500 Internal Server Error | Unhandled exceptions in the application                                                                                                                                              |
 
 ### Example Error Response (400 Bad Request)
 
@@ -416,6 +444,14 @@ The solution follows a layered architecture:
 - **Application Layer** (`BookingApi.Application`) - Services, Interfaces
 - **Domain Layer** (`BookingApi.Domain`) - Models, Exceptions
 - **Infrastructure Layer** (`BookingApi.Infrastructure`) - Repositories (In-memory implementation)
+
+## 🔒 Concurrency & Synchronization Primitives
+
+The application uses synchronization primitives and concurrent collections to prevent race conditions and data inconsistency
+
+## 🧠 Background Processing
+
+The API includes a background service that automatically processes pending bookings with a delay mechanism
 
 ## 🛠️ Technology Stack
 

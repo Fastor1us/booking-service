@@ -7,23 +7,38 @@ namespace BookingApi.Application.Services;
 public class BookingService(
     IBookingRepository _bookingRepository) : IBookingService
 {
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+
     public async Task<Booking> CreateBookingAsync(
         Guid eventId, CancellationToken ct)
     {
-        var res = await _bookingRepository.TryCreateBookingAsync(eventId, ct);
-        if (!res.Success || res.Booking == null)
+        BookingRepositoryResult res;
+
+        await _semaphore.WaitAsync(ct);
+        try
         {
-            if (res.Details == null)
+            res = await _bookingRepository.TryCreateBookingAsync(eventId, ct);
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+
+        if (!res.IsSuccess || res.Booking == null)
+        {
+            if (res.ErrorMessage == null)
                 throw new InvalidOperationException(
                     $"Unexpected error in {nameof(CreateBookingAsync)} " +
                     $"for event '{eventId}': repository result has null Details");
 
-            var details = res.Details.ToLower();
-
-            throw details switch
+            throw res.ErrorType switch
             {
-                _ when details.Contains("event") => new EventNotFoundException(eventId),
-                _ => new InvalidOperationException(res.Details)
+                BookingErrorType.EventNotFound => new EventNotFoundException(eventId),
+                BookingErrorType.NoAvailableSeats => new NoAvailableSeatsException(res.ErrorMessage),
+                BookingErrorType.BookingAlreadyExists => new InvalidOperationException(res.ErrorMessage),
+                BookingErrorType.BookingNotFound => new BookingNotFoundException(res.ErrorMessage),
+                BookingErrorType.InvalidStatus => new InvalidOperationException(res.ErrorMessage),
+                _ => new InvalidOperationException(res.ErrorMessage)
             };
         }
 
@@ -35,7 +50,7 @@ public class BookingService(
     {
         var res = await _bookingRepository.TryGetBookingByIdAsync(bookingId, ct);
 
-        if (!res.Success || res.Booking == null)
+        if (!res.IsSuccess || res.Booking == null)
         {
             throw new BookingNotFoundException(bookingId);
         }
