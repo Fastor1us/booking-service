@@ -11,6 +11,10 @@ public class PendingBookingProcessor(
     private readonly ILogger<PendingBookingProcessor> _logger = logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
+    private const int ProcessingDelayMs = 2_000;
+    private const int PollingIntervalMs = 3_000;
+    private const int ErrorRetryDelayMs = 5_000;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("PendingBookingProcessor has been started");
@@ -41,7 +45,7 @@ public class PendingBookingProcessor(
                     {
                         _logger.LogInfo($"Start handle Booking with id: {id}");
 
-                        await Task.Delay(2_000, linkedToken);
+                        await Task.Delay(ProcessingDelayMs, linkedToken);
 
                         BookingRepositoryResult confirmResult;
                         await _semaphore.WaitAsync(linkedToken);
@@ -65,7 +69,7 @@ public class PendingBookingProcessor(
                                 id);
                     });
 
-                await Task.Delay(3_000, stoppingToken);
+                await Task.Delay(PollingIntervalMs, stoppingToken);
             }
             catch (OperationCanceledException)
                 when (stoppingToken.IsCancellationRequested)
@@ -75,7 +79,7 @@ public class PendingBookingProcessor(
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in PendingBookingProcessor");
-                await Task.Delay(5_000, stoppingToken);
+                await Task.Delay(ErrorRetryDelayMs, stoppingToken);
             }
         }
 

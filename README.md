@@ -140,11 +140,11 @@ Get paginated list of events with optional filtering.
 
 **Responses:**
 
-| Status Code | Description               | Response Type                                               |
-| ----------- | ------------------------- | ----------------------------------------------------------- |
-| 200         | Success                   | [`PaginatedEventsResponseDto`](#paginatedeventsresponsedto) |
-| 400         | Invalid filter/pagination | [`ErrorResponseDto`](#errorresponsedto)                     |
-| 500         | Internal server error     | [`ErrorResponseDto`](#errorresponsedto)                     |
+| Status Code | Description                                   | Response Type                                               |
+| ----------- | --------------------------------------------- | ----------------------------------------------------------- |
+| 200         | Success                                       | [`PaginatedEventsResponseDto`](#paginatedeventsresponsedto) |
+| 400         | Validation error or invalid filter/pagination | [`ErrorResponseDto`](#errorresponsedto)                     |
+| 500         | Internal server error                         | [`ErrorResponseDto`](#errorresponsedto)                     |
 
 ---
 
@@ -231,6 +231,7 @@ Book a ticket for an event. Creates a pending booking request.
 | ----------- | ---------------------------- | ------------------------------------------- |
 | 202         | Accepted (booking created)   | [`BookingResponseDto`](#bookingresponsedto) |
 | 404         | Event not found              | [`ErrorResponseDto`](#errorresponsedto)     |
+| 409         | Conflict                     | [`ErrorResponseDto`](#errorresponsedto)     |
 | 500         | Internal server error        | [`ErrorResponseDto`](#errorresponsedto)     |
 
 ---
