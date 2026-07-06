@@ -1,4 +1,3 @@
-using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Models;
 
 namespace BookingApi.Infrastructure.BackgroundServices;
@@ -31,45 +30,47 @@ public class PendingBookingProcessor(
         {
             try
             {
-                using var scope = _scopeFactory.CreateScope();
-                var bookingRepository = scope.ServiceProvider
-                    .GetRequiredService<IBookingRepository>();
+                // TODO
 
-                var pendingBookingIds = await bookingRepository
-                    .TryGetPendingBookingIds(stoppingToken);
+                // using var scope = _scopeFactory.CreateScope();
+                // var bookingRepository = scope.ServiceProvider
+                //     .GetRequiredService<IBookingRepository>();
 
-                await Parallel.ForEachAsync(
-                    pendingBookingIds,
-                    _parallelOptions,
-                    async (id, linkedToken) =>
-                    {
-                        _logger.LogInfo($"Start handle Booking with id: {id}");
+                // var pendingBookingIds = await bookingRepository
+                //     .TryGetPendingBookingIds(stoppingToken);
 
-                        await Task.Delay(ProcessingDelayMs, linkedToken);
+                // await Parallel.ForEachAsync(
+                //     pendingBookingIds,
+                //     _parallelOptions,
+                //     async (id, linkedToken) =>
+                //     {
+                //         _logger.LogInfo($"Start handle Booking with id: {id}");
 
-                        BookingRepositoryResult confirmResult;
-                        await _semaphore.WaitAsync(linkedToken);
-                        try
-                        {
-                            confirmResult = await bookingRepository
-                                .TryConfirmBooking(id, linkedToken);
-                        }
-                        finally
-                        {
-                            _semaphore.Release();
-                        }
+                //         await Task.Delay(ProcessingDelayMs, linkedToken);
 
-                        if (!confirmResult.IsSuccess)
-                            _logger.LogWarning(
-                                "Failed to confirm booking {BookingId}: {Details}",
-                                id, confirmResult.ErrorMessage);
-                        else
-                            _logger.LogInfo(
-                                "Successfully confirmed pending booking {BookingId}",
-                                id);
-                    });
+                //         BookingRepositoryResult confirmResult;
+                //         await _semaphore.WaitAsync(linkedToken);
+                //         try
+                //         {
+                //             confirmResult = await bookingRepository
+                //                 .TryConfirmBooking(id, linkedToken);
+                //         }
+                //         finally
+                //         {
+                //             _semaphore.Release();
+                //         }
 
-                await Task.Delay(PollingIntervalMs, stoppingToken);
+                //         if (!confirmResult.IsSuccess)
+                //             _logger.LogWarning(
+                //                 "Failed to confirm booking {BookingId}: {Details}",
+                //                 id, confirmResult.ErrorMessage);
+                //         else
+                //             _logger.LogInfo(
+                //                 "Successfully confirmed pending booking {BookingId}",
+                //                 id);
+                //     });
+
+                // await Task.Delay(PollingIntervalMs, stoppingToken);
             }
             catch (OperationCanceledException)
                 when (stoppingToken.IsCancellationRequested)

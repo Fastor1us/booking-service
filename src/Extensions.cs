@@ -3,7 +3,8 @@ using BookingApi.Application.Interfaces;
 using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Infrastructure.BackgroundServices;
-using BookingApi.Infrastructure.Repositories;
+using BookingApi.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi;
 
@@ -44,8 +45,13 @@ public static class Extensions
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
-        services.AddSingleton<IEventRepository, EventInMemoryRepository>();
-        services.AddSingleton<IBookingRepository, BookingInMemoryRepository>();
+        services.AddDbContext<AppDbContext>((serviceProvider, options) =>
+        {
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string is required");
+            options.UseNpgsql(connectionString);
+        });
 
         services.AddHostedService<PendingBookingProcessor>();
 

@@ -1,16 +1,12 @@
-using BookingApi.Application.Interfaces;
+using BookingApi.Infrastructure.Data;
 using BookingApi.Presentation.Dtos;
-using BookingApi.Presentation.Filters;
-using BookingApi.Presentation.Mappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi.Presentation.Controllers;
 
 [ApiController]
 [Route("api/events")]
-public class EventController(
-    IEventService eventService,
-    IBookingService bookingService) : ControllerBase
+public class EventController(AppDbContext context) : ControllerBase
 {
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
@@ -19,8 +15,7 @@ public class EventController(
     public async Task<ActionResult<EventResponseDto>> GetById(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        var @event = await eventService.GetByIdAsync(id, ct);
-        return Ok(@event.MapToResponseDto());
+        throw new NotImplementedException();
     }
 
     [HttpGet]
@@ -35,11 +30,7 @@ public class EventController(
         [FromQuery] int? pageSize,
         CancellationToken ct)
     {
-        PaginationParams paginationParams = new(page, pageSize);
-
-        var @event = await eventService
-            .GetAllAsync(new(title, from, to), paginationParams, ct);
-        return Ok(@event.MapToPaginatedResponseDto(paginationParams));
+        throw new NotImplementedException();
     }
 
     [HttpPost]
@@ -49,9 +40,7 @@ public class EventController(
     public async Task<ActionResult<EventResponseDto>> Add(
         [FromBody] CreateEventDto eventDto, CancellationToken ct)
     {
-        var @event = await eventService.AddAsync(eventDto, ct);
-        return CreatedAtAction(
-            nameof(GetById), new { id = @event.Id }, @event);
+        throw new NotImplementedException();
     }
 
     [HttpPut("{id:guid}")]
@@ -64,8 +53,7 @@ public class EventController(
         [FromRoute] Guid id,
         CancellationToken ct)
     {
-        await eventService.UpdateAsync(id, eventDto, ct);
-        return NoContent();
+        throw new NotImplementedException();
     }
 
     [HttpDelete("{id:guid}")]
@@ -75,8 +63,7 @@ public class EventController(
     public async Task<IActionResult> Remove(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        await eventService.RemoveAsync(id, ct);
-        return NoContent();
+        throw new NotImplementedException();
     }
 
     [HttpPost("{id:guid}/book")]
@@ -87,11 +74,6 @@ public class EventController(
     public async Task<ActionResult<BookingResponseDto>> Book(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        var booking = await bookingService.CreateBookingAsync(id, ct);
-        return AcceptedAtAction(
-            actionName: nameof(BookingController.GetById),
-            controllerName: "Booking",
-            routeValues: new { id = booking.Id },
-            value: booking.MapToResponseDto());
+        throw new NotImplementedException();
     }
 }
