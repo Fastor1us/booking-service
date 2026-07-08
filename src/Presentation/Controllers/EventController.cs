@@ -1,12 +1,14 @@
-using BookingApi.Infrastructure.Data;
+using BookingApi.Application.Interfaces;
 using BookingApi.Presentation.Dtos;
+using BookingApi.Presentation.Filters;
+using BookingApi.Presentation.Mappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi.Presentation.Controllers;
 
 [ApiController]
 [Route("api/events")]
-public class EventController(AppDbContext context) : ControllerBase
+public class EventController(IEventService eventService) : ControllerBase
 {
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
@@ -15,7 +17,8 @@ public class EventController(AppDbContext context) : ControllerBase
     public async Task<ActionResult<EventResponseDto>> GetById(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var @event = await eventService.GetByIdAsync(id, ct);
+        return Ok(@event.MapToResponseDto());
     }
 
     [HttpGet]
@@ -30,7 +33,11 @@ public class EventController(AppDbContext context) : ControllerBase
         [FromQuery] int? pageSize,
         CancellationToken ct)
     {
-        throw new NotImplementedException();
+        PaginationParams paginationParams = new(page, pageSize);
+        EventFilter eventFilter = new(title, from, to);
+
+        var @event = await eventService.GetAllAsync(eventFilter, paginationParams, ct);
+        return Ok(@event.MapToPaginatedResponseDto(paginationParams));
     }
 
     [HttpPost]
@@ -38,9 +45,10 @@ public class EventController(AppDbContext context) : ControllerBase
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<EventResponseDto>> Add(
-        [FromBody] CreateEventDto eventDto, CancellationToken ct)
+        [FromBody] CreateEventDto dto, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var @event = await eventService.AddAsync(dto, ct);
+        return CreatedAtAction(nameof(GetById), new { id = @event.Id }, @event);
     }
 
     [HttpPut("{id:guid}")]
@@ -49,11 +57,12 @@ public class EventController(AppDbContext context) : ControllerBase
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<EventResponseDto>> Put(
-        [FromBody] UpdateEventDto eventDto,
         [FromRoute] Guid id,
+        [FromBody] UpdateEventDto dto,
         CancellationToken ct)
     {
-        throw new NotImplementedException();
+        await eventService.UpdateAsync(id, dto, ct);
+        return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
@@ -63,7 +72,8 @@ public class EventController(AppDbContext context) : ControllerBase
     public async Task<IActionResult> Remove(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        await eventService.RemoveAsync(id, ct);
+        return NoContent();
     }
 
     [HttpPost("{id:guid}/book")]

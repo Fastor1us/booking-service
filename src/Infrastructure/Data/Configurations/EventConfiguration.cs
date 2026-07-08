@@ -67,7 +67,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
 
         builder.ToTable(tb => tb.HasCheckConstraint(
             "ck_total_seats",
-            $"total_seats > {EventConstants.MinTotalSeats}"));
+            $"total_seats >= {EventConstants.MinTotalSeats}"));
 
         builder.ToTable(tb => tb.HasCheckConstraint(
             "ck_available_seats",

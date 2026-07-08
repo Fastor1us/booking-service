@@ -6,7 +6,7 @@ namespace BookingApi.Presentation.Controllers;
 
 [ApiController]
 [Route("api/bookings")]
-public class BookingController(AppDbContext context) : ControllerBase
+public class BookingController : ControllerBase
 {
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
