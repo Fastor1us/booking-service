@@ -7,6 +7,6 @@ public class EventResponseDto
     public string? Description { get; set; }
     public required int TotalSeats { get; set; }
     public int AvailableSeats { get; set; }
-    public required DateTime StartAt { get; set; }
-    public required DateTime EndAt { get; set; }
+    public required DateTimeOffset StartAt { get; set; }
+    public required DateTimeOffset EndAt { get; set; }
 }
