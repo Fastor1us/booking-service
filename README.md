@@ -27,7 +27,6 @@ REST API for booking events - create, manage and booking
 - [🔒 Concurrency & Synchronization Primitives](#concurrency-&-synchronization-primitives)
 - [🧠 Background Processing](#background-processing)
 - [🛠️ Technology Stack](#technology-stack)
-- [📝 Notes](#notes)
 
 ## 🚀 Quick Start
 
@@ -444,11 +443,7 @@ The solution follows a layered architecture:
 - **Presentation Layer** (`BookingApi.Presentation`) - Controllers, DTOs, Filters, Middlewares
 - **Application Layer** (`BookingApi.Application`) - Services, Interfaces
 - **Domain Layer** (`BookingApi.Domain`) - Models, Exceptions
-- **Infrastructure Layer** (`BookingApi.Infrastructure`) - Repositories (In-memory implementation)
-
-## 🔒 Concurrency & Synchronization Primitives
-
-The application uses synchronization primitives and concurrent collections to prevent race conditions and data inconsistency
+- **Infrastructure Layer** (`BookingApi.Infrastructure`) - Repositories, Background services
 
 ## 🧠 Background Processing
 
@@ -458,12 +453,6 @@ The API includes a background service that automatically processes pending booki
 
 - .NET 10.0
 - ASP.NET Core Web API
+- EFCore, PostgreSQL
 - Swagger/OpenAPI
 - xUnit (testing)
-- In-memory repository (development)
-
-## 📝 Notes
-
-- The API uses an in-memory database by default. All data is lost when the application stops.
-- Uncomment the test data population block in `EventInMemoryRepository.cs` to pre-populate events for testing.
-- Comprehensive validation is implemented both at the DTO level and service layer.
