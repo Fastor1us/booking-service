@@ -9,6 +9,6 @@ public sealed class Event
     public int AvailableSeats { get; set; }
     public required DateTimeOffset StartAt { get; set; }
     public required DateTimeOffset EndAt { get; set; }
-    public IEnumerable<Booking> Bookings { get; set; } = [];
+    public ICollection<Booking> Bookings { get; set; } = [];
     public uint RowVersion { get; set; }
 }

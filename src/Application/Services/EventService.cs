@@ -64,11 +64,8 @@ public class EventService(AppDbContext context) : IEventService
             EndAt = dto.EndAt
         };
 
-        context.Add(@event);
-        var saved = await context.SaveChangesAsync(ct);
-
-        if (saved == 0)
-            throw new InvalidOperationException("Failed to save event");
+        context.Events.Add(@event);
+        await context.SaveChangesAsync(ct);
 
         return @event;
     }

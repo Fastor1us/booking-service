@@ -8,7 +8,8 @@ namespace BookingApi.Presentation.Controllers;
 
 [ApiController]
 [Route("api/events")]
-public class EventController(IEventService eventService) : ControllerBase
+public class EventController(
+    IEventService eventService, IBookingService bookingService) : ControllerBase
 {
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
@@ -84,6 +85,11 @@ public class EventController(IEventService eventService) : ControllerBase
     public async Task<ActionResult<BookingResponseDto>> Book(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var booking = await bookingService.CreateAsync(id, ct);
+        return AcceptedAtAction(
+            actionName: nameof(BookingController.GetById),
+            controllerName: "Booking",
+            routeValues: new { id = booking.Id },
+            value: booking.MapToResponseDto());
     }
 }

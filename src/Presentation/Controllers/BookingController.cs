@@ -1,12 +1,13 @@
-using BookingApi.Infrastructure.Data;
+using BookingApi.Application.Interfaces;
 using BookingApi.Presentation.Dtos;
+using BookingApi.Presentation.Mappers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi.Presentation.Controllers;
 
 [ApiController]
 [Route("api/bookings")]
-public class BookingController : ControllerBase
+public class BookingController(IBookingService bookingService) : ControllerBase
 {
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
@@ -15,6 +16,7 @@ public class BookingController : ControllerBase
     public async Task<ActionResult<BookingResponseDto>> GetById(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var booking = await bookingService.GetByIdAsync(id, ct);
+        return Ok(booking.MapToResponseDto());
     }
 }

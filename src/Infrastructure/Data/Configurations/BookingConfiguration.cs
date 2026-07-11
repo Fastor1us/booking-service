@@ -36,8 +36,7 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
 
         builder.Property(e => e.CreatedAt)
             .HasColumnName("created_at")
-            .IsRequired()
-            .HasDefaultValueSql("CURRENT_TIMESTAMP");
+            .IsRequired();
 
         builder.Property(e => e.ProcessedAt)
                    .HasColumnName("processed_at")
