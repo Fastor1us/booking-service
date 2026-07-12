@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Presentation.Dtos;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Presentation.Middlewares;
 
@@ -52,9 +53,22 @@ public class GlobalExceptionHandlingMiddleware(
             details.AddRange(validationEx.Details);
         }
 
+        var title = ex is DbUpdateException dbEx
+            ? dbEx.InnerException switch
+            {
+                var inner when inner?.Message?.Contains("duplicate key") == true
+                    => "Duplicate data detected. Please ensure all unique fields are correct.",
+                var inner when inner?.Message?.Contains("foreign key") == true
+                    => "The operation references a record that does not exist.",
+                var inner when inner?.Message?.Contains("constraint") == true
+                    => "The operation violates a database constraint.",
+                _ => "A database error occurred. Please try again."
+            }
+            : ex.Message;
+
         var error = new ErrorResponseDto
         {
-            Title = ex.Message,
+            Title = title,
             Details = details
         };
 

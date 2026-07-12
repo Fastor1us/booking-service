@@ -2,11 +2,13 @@ namespace BookingApi.Domain.Models;
 
 public class Booking
 {
-    public Guid Id { get; init; }
-    public Guid EventId { get; init; }
-    public BookingStatus Status { get; set; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? ProcessedAt { get; set; }
+    public required Guid Id { get; init; }
+    public required Guid EventId { get; init; }
+    public Event? Event { get; init; } = null!;
+    public required BookingStatus Status { get; set; }
+    public required DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? ProcessedAt { get; set; }
+    public uint RowVersion { get; set; }
 }
 
 public enum BookingStatus

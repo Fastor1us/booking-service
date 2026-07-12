@@ -27,7 +27,6 @@ REST API for booking events - create, manage and booking
 - [🔒 Concurrency & Synchronization Primitives](#concurrency-&-synchronization-primitives)
 - [🧠 Background Processing](#background-processing)
 - [🛠️ Technology Stack](#technology-stack)
-- [📝 Notes](#notes)
 
 ## 🚀 Quick Start
 
@@ -140,11 +139,11 @@ Get paginated list of events with optional filtering.
 
 **Responses:**
 
-| Status Code | Description               | Response Type                                               |
-| ----------- | ------------------------- | ----------------------------------------------------------- |
-| 200         | Success                   | [`PaginatedEventsResponseDto`](#paginatedeventsresponsedto) |
-| 400         | Invalid filter/pagination | [`ErrorResponseDto`](#errorresponsedto)                     |
-| 500         | Internal server error     | [`ErrorResponseDto`](#errorresponsedto)                     |
+| Status Code | Description                                   | Response Type                                               |
+| ----------- | --------------------------------------------- | ----------------------------------------------------------- |
+| 200         | Success                                       | [`PaginatedEventsResponseDto`](#paginatedeventsresponsedto) |
+| 400         | Validation error or invalid filter/pagination | [`ErrorResponseDto`](#errorresponsedto)                     |
+| 500         | Internal server error                         | [`ErrorResponseDto`](#errorresponsedto)                     |
 
 ---
 
@@ -231,6 +230,7 @@ Book a ticket for an event. Creates a pending booking request.
 | ----------- | ---------------------------- | ------------------------------------------- |
 | 202         | Accepted (booking created)   | [`BookingResponseDto`](#bookingresponsedto) |
 | 404         | Event not found              | [`ErrorResponseDto`](#errorresponsedto)     |
+| 409         | Conflict                     | [`ErrorResponseDto`](#errorresponsedto)     |
 | 500         | Internal server error        | [`ErrorResponseDto`](#errorresponsedto)     |
 
 ---
@@ -443,11 +443,7 @@ The solution follows a layered architecture:
 - **Presentation Layer** (`BookingApi.Presentation`) - Controllers, DTOs, Filters, Middlewares
 - **Application Layer** (`BookingApi.Application`) - Services, Interfaces
 - **Domain Layer** (`BookingApi.Domain`) - Models, Exceptions
-- **Infrastructure Layer** (`BookingApi.Infrastructure`) - Repositories (In-memory implementation)
-
-## 🔒 Concurrency & Synchronization Primitives
-
-The application uses synchronization primitives and concurrent collections to prevent race conditions and data inconsistency
+- **Infrastructure Layer** (`BookingApi.Infrastructure`) - Repositories, Background services
 
 ## 🧠 Background Processing
 
@@ -457,12 +453,6 @@ The API includes a background service that automatically processes pending booki
 
 - .NET 10.0
 - ASP.NET Core Web API
+- EFCore, PostgreSQL
 - Swagger/OpenAPI
 - xUnit (testing)
-- In-memory repository (development)
-
-## 📝 Notes
-
-- The API uses an in-memory database by default. All data is lost when the application stops.
-- Uncomment the test data population block in `EventInMemoryRepository.cs` to pre-populate events for testing.
-- Comprehensive validation is implemented both at the DTO level and service layer.

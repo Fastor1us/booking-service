@@ -1,17 +1,20 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
+using BookingApi.Infrastructure.Data;
 using BookingApi.Presentation.Dtos;
 using BookingApi.Presentation.Filters;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Application.Services;
 
-public class EventService(IEventRepository _eventRepository)
-    : IEventService
+public class EventService(AppDbContext context) : IEventService
 {
     public async Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        return await _eventRepository.TryGetByIdAsync(id, ct)
+        return await context.Events
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == id, ct)
             ?? throw new EventNotFoundException(id);
     }
 
@@ -20,50 +23,69 @@ public class EventService(IEventRepository _eventRepository)
         PaginationParams paginationParams,
         CancellationToken ct)
     {
-        var query = await _eventRepository.GetQueryableAsync(ct);
+        using var transaction = await context.Database
+            .BeginTransactionAsync(System.Data.IsolationLevel.Snapshot, ct);
 
-        if (!string.IsNullOrEmpty(filter.Title))
-        {
-            query = query.Where(e => e.Title.Contains(
-                filter.Title, StringComparison.OrdinalIgnoreCase));
-        }
+        var query = context.Events
+            .AsNoTrackingWithIdentityResolution();
+
+        if (!string.IsNullOrWhiteSpace(filter.Title))
+            query = query.Where(e => e.Title.Contains(filter.Title));
 
         if (filter.From.HasValue)
-        {
-            query = query.Where(e => e.StartAt >= filter.From);
-        }
+            query = query.Where(e => e.StartAt >= filter.From.Value);
 
         if (filter.To.HasValue)
+            query = query.Where(e => e.StartAt <= filter.To.Value);
+
+        query = query.OrderByDescending(e => e.StartAt);
+
+        var totalCount = await query.CountAsync(ct);
+
+        var items = await query
+            .Skip((paginationParams.PageIndex - 1) * paginationParams.PageSize)
+            .Take(paginationParams.PageSize)
+            .ToListAsync(ct);
+
+        await transaction.CommitAsync(ct);
+
+        return new PagedEvents(items, totalCount);
+    }
+
+    public async Task<Event> AddAsync(CreateEventDto dto, CancellationToken ct)
+    {
+        var @event = new Event
         {
-            query = query.Where(e => e.EndAt <= filter.To);
-        }
+            Id = Guid.NewGuid(),
+            Title = dto.Title,
+            TotalSeats = dto.TotalSeats,
+            AvailableSeats = dto.TotalSeats,
+            StartAt = dto.StartAt,
+            EndAt = dto.EndAt
+        };
 
-        var res = await _eventRepository.GetPagedAsync(
-            query,
-            paginationParams.PageIndex,
-            paginationParams.PageSize,
-            ct);
+        context.Events.Add(@event);
+        await context.SaveChangesAsync(ct);
 
-        return new(res.Items, res.TotalCount);
+        return @event;
     }
 
-    public async Task<Event> AddAsync(CreateEventDto @event, CancellationToken ct)
+    public async Task UpdateAsync(Guid id, UpdateEventDto dto, CancellationToken ct)
     {
-        var id = await _eventRepository.AddAsync(@event, ct);
-
-        return await _eventRepository.TryGetByIdAsync(id, ct)
-            ?? throw new EventNotFoundException(id);
-    }
-
-    public async Task UpdateAsync(Guid id, UpdateEventDto @event, CancellationToken ct)
-    {
-        if (!await _eventRepository.TryUpdateAsync(id, @event, ct))
-            throw new EventNotFoundException(id);
+        await context.Events
+            .Where(e => e.Id == id)
+            .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(e => e.Title, _ => dto.Title)
+                    .SetProperty(e => e.Description, _ => dto.Description)
+                    .SetProperty(e => e.StartAt, _ => dto.StartAt)
+                    .SetProperty(e => e.EndAt, _ => dto.EndAt),
+                ct);
     }
 
     public async Task RemoveAsync(Guid id, CancellationToken ct)
     {
-        if (!await _eventRepository.TryRemoveAsync(id, ct))
-            throw new EventNotFoundException(id);
+        await context.Events
+            .Where(e => e.Id == id)
+            .ExecuteDeleteAsync(ct);
     }
 }

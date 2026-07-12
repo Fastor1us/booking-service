@@ -9,10 +9,12 @@ namespace BookingApi.Presentation.Controllers;
 [ApiController]
 [Route("api/events")]
 public class EventController(
-    IEventService eventService,
-    IBookingService bookingService) : ControllerBase
+    IEventService eventService, IBookingService bookingService) : ControllerBase
 {
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<EventResponseDto>> GetById(
         [FromRoute] Guid id, CancellationToken ct)
     {
@@ -21,6 +23,9 @@ public class EventController(
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<PaginatedEventsResponseDto>> GetAll(
         [FromQuery] string? title,
         [FromQuery] DateTime? from,
@@ -30,32 +35,41 @@ public class EventController(
         CancellationToken ct)
     {
         PaginationParams paginationParams = new(page, pageSize);
+        EventFilter eventFilter = new(title, from, to);
 
-        var @event = await eventService
-            .GetAllAsync(new(title, from, to), paginationParams, ct);
+        var @event = await eventService.GetAllAsync(eventFilter, paginationParams, ct);
         return Ok(@event.MapToPaginatedResponseDto(paginationParams));
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<EventResponseDto>> Add(
-        [FromBody] CreateEventDto eventDto, CancellationToken ct)
+        [FromBody] CreateEventDto dto, CancellationToken ct)
     {
-        var @event = await eventService.AddAsync(eventDto, ct);
-        return CreatedAtAction(
-            nameof(GetById), new { id = @event.Id }, @event);
+        var @event = await eventService.AddAsync(dto, ct);
+        return CreatedAtAction(nameof(GetById), new { id = @event.Id }, @event);
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<EventResponseDto>> Put(
-        [FromBody] UpdateEventDto eventDto,
         [FromRoute] Guid id,
+        [FromBody] UpdateEventDto dto,
         CancellationToken ct)
     {
-        await eventService.UpdateAsync(id, eventDto, ct);
+        await eventService.UpdateAsync(id, dto, ct);
         return NoContent();
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Remove(
         [FromRoute] Guid id, CancellationToken ct)
     {
@@ -64,10 +78,14 @@ public class EventController(
     }
 
     [HttpPost("{id:guid}/book")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<BookingResponseDto>> Book(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        var booking = await bookingService.CreateBookingAsync(id, ct);
+        var booking = await bookingService.CreateAsync(id, ct);
         return AcceptedAtAction(
             actionName: nameof(BookingController.GetById),
             controllerName: "Booking",

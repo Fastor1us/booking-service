@@ -1,60 +1,50 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
+using BookingApi.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Application.Services;
 
-public class BookingService(
-    IBookingRepository _bookingRepository) : IBookingService
+public class BookingService(AppDbContext context)
+    : ServiceBase(context), IBookingService
 {
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
-
-    public async Task<Booking> CreateBookingAsync(
-        Guid eventId, CancellationToken ct)
+    public async Task<Booking> CreateAsync(Guid eventId, CancellationToken ct)
     {
-        BookingRepositoryResult res;
-
-        await _semaphore.WaitAsync(ct);
-        try
-        {
-            res = await _bookingRepository.TryCreateBookingAsync(eventId, ct);
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
-
-        if (!res.IsSuccess || res.Booking == null)
-        {
-            if (res.ErrorMessage == null)
-                throw new InvalidOperationException(
-                    $"Unexpected error in {nameof(CreateBookingAsync)} " +
-                    $"for event '{eventId}': repository result has null Details");
-
-            throw res.ErrorType switch
+        var res = await ExecuteWithRetryAsync<Booking>(async _ =>
             {
-                BookingErrorType.EventNotFound => new EventNotFoundException(eventId),
-                BookingErrorType.NoAvailableSeats => new NoAvailableSeatsException(res.ErrorMessage),
-                BookingErrorType.BookingAlreadyExists => new InvalidOperationException(res.ErrorMessage),
-                BookingErrorType.BookingNotFound => new BookingNotFoundException(res.ErrorMessage),
-                BookingErrorType.InvalidStatus => new InvalidOperationException(res.ErrorMessage),
-                _ => new InvalidOperationException(res.ErrorMessage)
-            };
-        }
+                var @event = await context.Events
+                    .FirstOrDefaultAsync(e => e.Id == eventId, ct)
+                    ?? throw new EventNotFoundException(eventId);
 
-        return res.Booking;
+                if (@event.AvailableSeats == 0)
+                    throw new NoAvailableSeatsException(eventId);
+
+                @event.AvailableSeats--;
+
+                var booking = new Booking
+                {
+                    Id = Guid.NewGuid(),
+                    EventId = eventId,
+                    Status = BookingStatus.Pending,
+                    CreatedAt = DateTime.Now.ToUniversalTime()
+                };
+
+                context.Bookings.Add(booking);
+                await context.SaveChangesAsync(ct);
+
+                return booking;
+            },
+            ct);
+
+        return res;
     }
 
-    public async Task<Booking> GetBookingByIdAsync(
-        Guid bookingId, CancellationToken ct)
+    public async Task<Booking> GetByIdAsync(Guid bookingId, CancellationToken ct)
     {
-        var res = await _bookingRepository.TryGetBookingByIdAsync(bookingId, ct);
-
-        if (!res.IsSuccess || res.Booking == null)
-        {
-            throw new BookingNotFoundException(bookingId);
-        }
-
-        return res.Booking;
+        return await context.Bookings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == bookingId, ct)
+            ?? throw new BookingNotFoundException(bookingId);
     }
 }
