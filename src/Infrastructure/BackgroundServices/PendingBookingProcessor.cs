@@ -172,7 +172,6 @@ public class PendingBookingProcessor(
             return false;
         }
 
-        booking.Event.AvailableSeats--;
         booking.Status = BookingStatus.Confirmed;
         booking.ProcessedAt = DateTime.UtcNow;
 

@@ -1,19 +1,18 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
-using BookingApi.Infrastructure.Data;
 using BookingApi.Presentation.Dtos;
 using BookingApi.Presentation.Filters;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Application.Services;
 
-public class EventService(AppDbContext context) : IEventService
+public class EventService(IUnitOfWork unitOfWork) : IEventService
 {
     public async Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        return await context.Events
-            .AsNoTracking()
+        return await unitOfWork.EventRepository
+            .GetQuery(QueryTrackerBehavior.NoTracking)
             .FirstOrDefaultAsync(e => e.Id == id, ct)
             ?? throw new EventNotFoundException(id);
     }
@@ -23,11 +22,11 @@ public class EventService(AppDbContext context) : IEventService
         PaginationParams paginationParams,
         CancellationToken ct)
     {
-        using var transaction = await context.Database
-            .BeginTransactionAsync(System.Data.IsolationLevel.Snapshot, ct);
+        await unitOfWork.BeginTransactionAsync(
+            System.Data.IsolationLevel.RepeatableRead, ct);
 
-        var query = context.Events
-            .AsNoTrackingWithIdentityResolution();
+        var query = unitOfWork.EventRepository
+            .GetQuery(QueryTrackerBehavior.NoTrackingWithIdentityResolution);
 
         if (!string.IsNullOrWhiteSpace(filter.Title))
             query = query.Where(e => e.Title.Contains(filter.Title));
@@ -47,7 +46,7 @@ public class EventService(AppDbContext context) : IEventService
             .Take(paginationParams.PageSize)
             .ToListAsync(ct);
 
-        await transaction.CommitAsync(ct);
+        await unitOfWork.CommitTransactionAsync(ct);
 
         return new PagedEvents(items, totalCount);
     }
@@ -64,28 +63,21 @@ public class EventService(AppDbContext context) : IEventService
             EndAt = dto.EndAt
         };
 
-        context.Events.Add(@event);
-        await context.SaveChangesAsync(ct);
+        unitOfWork.EventRepository.Add(@event);
+        await unitOfWork.SaveChangesAsync(ct);
 
         return @event;
     }
 
     public async Task UpdateAsync(Guid id, UpdateEventDto dto, CancellationToken ct)
     {
-        await context.Events
-            .Where(e => e.Id == id)
-            .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(e => e.Title, _ => dto.Title)
-                    .SetProperty(e => e.Description, _ => dto.Description)
-                    .SetProperty(e => e.StartAt, _ => dto.StartAt)
-                    .SetProperty(e => e.EndAt, _ => dto.EndAt),
-                ct);
+        await unitOfWork.EventRepository
+            .ExecuteUpdateByIdAsync(id, dto.Title, dto.Description, dto.StartAt, dto.EndAt, ct);
     }
 
     public async Task RemoveAsync(Guid id, CancellationToken ct)
     {
-        await context.Events
-            .Where(e => e.Id == id)
-            .ExecuteDeleteAsync(ct);
+        await unitOfWork.EventRepository
+            .ExecuteDeleteByIdAsync(id, ct);
     }
 }

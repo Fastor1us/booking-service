@@ -1,17 +1,46 @@
+using System.Data;
+using BookingApi.Application.Interfaces;
 using BookingApi.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookingApi.Application.Services;
+namespace BookingApi.Infrastructure.UnitOfWork;
 
-public abstract class ServiceBase(AppDbContext context)
+public class EfCoreUnitOfWork(
+    AppDbContext context,
+    IEventRepository eventRepository,
+    IBookingRepository bookingRepository) : IUnitOfWork
 {
-    protected readonly AppDbContext context = context;
+    public IEventRepository EventRepository => eventRepository;
+    public IBookingRepository BookingRepository => bookingRepository;
+
+    private IDbContextTransaction? _dbContextTransaction = null;
+
+    public async Task BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken ct = default)
+    {
+        _dbContextTransaction = await context.Database.BeginTransactionAsync(isolationLevel, ct);
+    }
+
+    public async Task CommitTransactionAsync(CancellationToken ct = default)
+    {
+        if (_dbContextTransaction != null)
+        {
+            await _dbContextTransaction.CommitAsync(ct);
+            await _dbContextTransaction.DisposeAsync();
+            _dbContextTransaction = null;
+        }
+    }
+
+    public Task<int> SaveChangesAsync(CancellationToken ct = default)
+    {
+        return context.SaveChangesAsync(ct);
+    }
 
     /// <summary>
     /// Execute operation with retries. 
     /// Notice: context's ChangeTracker being clear every retry
     /// </summary>
-    protected async Task ExecuteWithRetryAsync(
+    public async Task ExecuteWithRetryAsync(
         Func<CancellationToken, Task> operation,
         CancellationToken ct,
         int maxRetries = 3)
@@ -42,7 +71,7 @@ public abstract class ServiceBase(AppDbContext context)
     /// Execute operation with retries. 
     /// Notice: context's ChangeTracker being clear every retry
     /// </summary>
-    protected async Task<T> ExecuteWithRetryAsync<T>(
+    public async Task<T> ExecuteWithRetryAsync<T>(
         Func<CancellationToken, Task<T>> operation,
         CancellationToken ct,
         int maxRetries = 3)
@@ -68,5 +97,20 @@ public abstract class ServiceBase(AppDbContext context)
         }
 
         throw new InvalidOperationException("Should never reach here");
+    }
+
+    public void Dispose()
+    {
+        _dbContextTransaction?.Dispose();
+        context.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_dbContextTransaction != null)
+        {
+            await _dbContextTransaction.DisposeAsync();
+        }
+        await context.DisposeAsync();
     }
 }
