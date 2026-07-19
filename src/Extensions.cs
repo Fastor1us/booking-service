@@ -52,7 +52,9 @@ public static class Extensions
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
             var connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string is required");
+
             options.UseNpgsql(connectionString);
+            options.UseLazyLoadingProxies();
         });
 
         services.AddScoped<IEventRepository, EFCoreEventRepository>();

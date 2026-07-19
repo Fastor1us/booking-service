@@ -3,7 +3,6 @@ using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 using BookingApi.Presentation.Dtos;
 using BookingApi.Presentation.Filters;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Application.Services;
 
@@ -12,8 +11,10 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
     public async Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return await unitOfWork.EventRepository
-            .GetQuery(QueryTrackerBehavior.NoTracking)
-            .FirstOrDefaultAsync(e => e.Id == id, ct)
+            .FirstOrDefaultAsync(
+                QueryTrackerBehavior.NoTracking,
+                e => e.Id == id,
+                ct)
             ?? throw new EventNotFoundException(id);
     }
 
@@ -25,7 +26,9 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
         await unitOfWork.BeginTransactionAsync(
             System.Data.IsolationLevel.RepeatableRead, ct);
 
-        var query = unitOfWork.EventRepository
+        var eventRepository = unitOfWork.EventRepository;
+
+        var query = eventRepository
             .GetQuery(QueryTrackerBehavior.NoTrackingWithIdentityResolution);
 
         if (!string.IsNullOrWhiteSpace(filter.Title))
@@ -39,12 +42,13 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
 
         query = query.OrderByDescending(e => e.StartAt);
 
-        var totalCount = await query.CountAsync(ct);
+        var totalCount = await eventRepository.CountAsync(query, ct);
 
-        var items = await query
-            .Skip((paginationParams.PageIndex - 1) * paginationParams.PageSize)
-            .Take(paginationParams.PageSize)
-            .ToListAsync(ct);
+        query = query
+                    .Skip((paginationParams.PageIndex - 1) * paginationParams.PageSize)
+                    .Take(paginationParams.PageSize);
+
+        var items = await eventRepository.ToListAsync(query, ct);
 
         await unitOfWork.CommitTransactionAsync(ct);
 

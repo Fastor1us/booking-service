@@ -1,6 +1,5 @@
+using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Models;
-using BookingApi.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Infrastructure.BackgroundServices;
 
@@ -14,7 +13,6 @@ public class PendingBookingProcessor(
     private const int ProcessingDelayMs = 2_000;
     private const int PollingIntervalMs = 3_000;
     private const int ErrorRetryDelayMs = 5_000;
-    private const int MaxRetries = 3;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -52,15 +50,15 @@ public class PendingBookingProcessor(
     private async Task ProcessPendingBookingsAsync(ParallelOptions options, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var data = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        var pendingBookings = await context.Bookings
-            .AsNoTracking()
-            .Where(b => b.Status == BookingStatus.Pending)
-            .OrderBy(b => b.CreatedAt) // FIFO
-            .Take(options.MaxDegreeOfParallelism)
-            .Select(b => new { b.Id, b.EventId })
-            .ToListAsync(ct);
+        var pendingBookings = await data.BookingRepository
+            .ToListAsync(data.BookingRepository
+                .GetQuery(QueryTrackerBehavior.NoTracking)
+                .Where(b => b.Status == BookingStatus.Pending)
+                .OrderBy(b => b.CreatedAt) // FIFO
+                .Take(options.MaxDegreeOfParallelism)
+                , ct);
 
         if (pendingBookings.Count == 0)
             return;
@@ -92,48 +90,20 @@ public class PendingBookingProcessor(
         Guid eventId,
         CancellationToken ct)
     {
-        var attempt = 0;
+        using var scope = _scopeFactory.CreateScope();
+        var data = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        while (attempt < MaxRetries)
-        {
-            try
-            {
-                return await ConfirmBookingAsync(bookingId, eventId, ct);
-            }
-            catch (DbUpdateConcurrencyException) when (attempt < MaxRetries - 1)
-            {
-                attempt++;
-                _logger.LogWarning(
-                    "Concurrency conflict for booking {BookingId}, retry {Attempt}/{MaxRetries}",
-                    bookingId, attempt, MaxRetries);
-
-                await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), ct);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                _logger.LogError(
-                    "Failed to confirm booking {BookingId} due to concurrency after {MaxRetries} attempts",
-                    bookingId, MaxRetries);
-                return false;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Unexpected error confirming booking {BookingId}", bookingId);
-                return false;
-            }
-        }
-
-        return false;
+        return await data.ExecuteWithRetryAsync(_ =>
+            ConfirmBookingAsync(bookingId, eventId, ct),
+            ct);
     }
 
     private async Task<bool> ConfirmBookingAsync(Guid bookingId, Guid eventId, CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var data = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        var booking = await context.Bookings
-            .Include(e => e.Event)
-            .FirstOrDefaultAsync(b => b.Id == bookingId, ct);
+        var booking = await data.BookingRepository.FirstOrDefaultAsync(b => b.Id == bookingId, ct);
 
         if (booking == null)
         {
@@ -153,7 +123,7 @@ public class PendingBookingProcessor(
                 booking.Status = BookingStatus.Rejected;
                 booking.ProcessedAt = DateTime.UtcNow;
 
-                await context.SaveChangesAsync(ct);
+                await data.SaveChangesAsync(ct);
             }
             _logger.LogWarning("Event is not found for processing Booking {BookingId}", bookingId);
             return false;
@@ -164,7 +134,7 @@ public class PendingBookingProcessor(
             booking.Status = BookingStatus.Rejected;
             booking.ProcessedAt = DateTime.UtcNow;
 
-            await context.SaveChangesAsync(ct);
+            await data.SaveChangesAsync(ct);
 
             _logger.LogWarning(
                 "Booking {BookingId} rejected - no available seats for event {EventId}",
@@ -175,7 +145,7 @@ public class PendingBookingProcessor(
         booking.Status = BookingStatus.Confirmed;
         booking.ProcessedAt = DateTime.UtcNow;
 
-        await context.SaveChangesAsync(ct);
+        await data.SaveChangesAsync(ct);
 
         return true;
     }

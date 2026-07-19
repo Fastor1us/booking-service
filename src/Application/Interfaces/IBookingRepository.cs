@@ -2,9 +2,6 @@ using BookingApi.Domain.Models;
 
 namespace BookingApi.Application.Interfaces;
 
-public interface IBookingRepository : IRepository
+public interface IBookingRepository : IRepository<Booking>
 {
-    IQueryable<Booking> GetQuery(QueryTrackerBehavior behavior = default);
-
-    public void Add(Booking booking);
 }

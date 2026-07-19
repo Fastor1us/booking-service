@@ -5,9 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Infrastructure.Repositories;
 
-public class EFCoreBookingRepository(AppDbContext context) : IBookingRepository
+public sealed class EFCoreBookingRepository(AppDbContext context)
+    : EFCoreRepositoryBase<Booking>, IBookingRepository
 {
-    public IQueryable<Booking> GetQuery(
+    public override IQueryable<Booking> GetQuery(
         QueryTrackerBehavior behavior = QueryTrackerBehavior.Track)
     {
         return behavior switch
@@ -23,7 +24,22 @@ public class EFCoreBookingRepository(AppDbContext context) : IBookingRepository
         };
     }
 
-    public void Add(Booking booking)
+    public override Task<Booking?> FirstOrDefaultAsync(
+        QueryTrackerBehavior behavior,
+        System.Linq.Expressions.Expression<Func<Booking, bool>> predicate,
+        CancellationToken ct = default)
+    {
+        return GetQuery(behavior).FirstOrDefaultAsync(predicate, ct);
+    }
+
+    public override Task<Booking?> FirstOrDefaultAsync(
+        System.Linq.Expressions.Expression<Func<Booking, bool>> predicate,
+        CancellationToken ct = default)
+    {
+        return context.Bookings.FirstOrDefaultAsync(predicate, ct);
+    }
+
+    public override void Add(Booking booking)
     {
         context.Bookings.Add(booking);
     }

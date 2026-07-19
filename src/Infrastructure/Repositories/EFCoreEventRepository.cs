@@ -5,9 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Infrastructure.Repositories;
 
-public class EFCoreEventRepository(AppDbContext context) : IEventRepository
+public sealed class EFCoreEventRepository(AppDbContext context)
+    : EFCoreRepositoryBase<Event>, IEventRepository
 {
-    public IQueryable<Event> GetQuery(
+    public override IQueryable<Event> GetQuery(
         QueryTrackerBehavior behavior = QueryTrackerBehavior.Track)
     {
         return behavior switch
@@ -23,7 +24,22 @@ public class EFCoreEventRepository(AppDbContext context) : IEventRepository
         };
     }
 
-    public void Add(Event @event) => context.Events.Add(@event);
+    public override Task<Event?> FirstOrDefaultAsync(
+        QueryTrackerBehavior behavior,
+        System.Linq.Expressions.Expression<Func<Event, bool>> predicate,
+        CancellationToken ct = default)
+    {
+        return GetQuery(behavior).FirstOrDefaultAsync(predicate, ct);
+    }
+
+    public override Task<Event?> FirstOrDefaultAsync(
+        System.Linq.Expressions.Expression<Func<Event, bool>> predicate,
+        CancellationToken ct = default)
+    {
+        return context.Events.FirstOrDefaultAsync(predicate, ct);
+    }
+
+    public override void Add(Event @event) => context.Events.Add(@event);
 
     public Task<int> ExecuteUpdateByIdAsync(
         Guid id,
