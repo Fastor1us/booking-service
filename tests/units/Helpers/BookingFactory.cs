@@ -1,6 +1,4 @@
-using BookingApi.Domain.Models;
-
-namespace BookingTests.Helpers;
+namespace BookingApi.UnitTests.Helpers;
 
 public static class BookingFactory
 {

@@ -1,7 +1,7 @@
 using BookingApi.Domain.Models;
 using BookingApi.Presentation.Dtos;
 
-namespace BookingTests.Helpers;
+namespace BookingApi.UnitTests.Helpers;
 
 public static class EventFactory
 {

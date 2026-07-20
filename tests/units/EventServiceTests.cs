@@ -3,10 +3,10 @@ using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 using BookingApi.Presentation.Dtos;
-using BookingTests.Helpers;
+using BookingApi.UnitTests.Helpers;
 using Moq;
 
-namespace BookingTests;
+namespace BookingApi.UnitTests;
 
 public class EventServiceTests
 {
