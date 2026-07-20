@@ -7,7 +7,10 @@ public sealed class AppDbContext : DbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
-        Database.Migrate();
+        if (Database.IsRelational())
+        {
+            Database.Migrate();
+        }
     }
 
     public DbSet<Event> Events => Set<Event>();

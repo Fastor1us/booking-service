@@ -6,7 +6,7 @@ namespace BookingApi.Application.Services;
 
 public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 {
-    public async Task<Booking> CreateAsync(Guid eventId, CancellationToken ct)
+    public async Task<Booking> AddAsync(Guid eventId, CancellationToken ct)
     {
         var res = await unitOfWork.ExecuteWithRetryAsync(async _ =>
             {

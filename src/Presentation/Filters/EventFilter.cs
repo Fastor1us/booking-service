@@ -8,6 +8,8 @@ public class EventFilter
     public DateTime? From { get; init; }
     public DateTime? To { get; init; }
 
+    public EventFilter() : this(null, null, null) { }
+
     public EventFilter(string? title, DateTime? from, DateTime? to)
     {
         Title = title;

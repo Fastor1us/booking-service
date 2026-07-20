@@ -85,7 +85,7 @@ public class EventController(
     public async Task<ActionResult<BookingResponseDto>> Book(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        var booking = await bookingService.CreateAsync(id, ct);
+        var booking = await bookingService.AddAsync(id, ct);
         return AcceptedAtAction(
             actionName: nameof(BookingController.GetById),
             controllerName: "Booking",

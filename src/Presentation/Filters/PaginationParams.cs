@@ -7,6 +7,8 @@ public class PaginationParams
     public int PageIndex { get; init; }
     public int PageSize { get; init; }
 
+    public PaginationParams() : this(null, null) { }
+
     public PaginationParams(int? pageIndex, int? pageSize)
     {
         PageIndex = pageIndex ?? 1;
