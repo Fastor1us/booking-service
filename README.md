@@ -92,10 +92,15 @@ dotnet ef migrations remove \
 The application automatically applies pending migrations on startup:
 
 ```csharp
-// AppDbContext.cs
-if (Database.IsRelational())
+// Program.cs
+using (var scope = app.Services.CreateScope())
 {
-    Database.Migrate();
+    var dbContext = scope.ServiceProvider
+        .GetRequiredService<AppDbContext>();
+    if (dbContext.Database.IsRelational())
+    {
+        dbContext.Database.Migrate();
+    }
 }
 ```
 
