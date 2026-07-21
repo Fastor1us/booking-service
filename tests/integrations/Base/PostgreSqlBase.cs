@@ -27,7 +27,7 @@ public abstract class PostgreSqlBase : IAsyncLifetime
             }
         }
 
-        await RecreateSchemaViaSqlAsync();
+        await TruncateTables();
     }
 
     public async Task DisposeAsync()
@@ -39,15 +39,9 @@ public abstract class PostgreSqlBase : IAsyncLifetime
         }
     }
 
-    private async Task RecreateSchemaViaSqlAsync()
+    private async Task TruncateTables()
     {
-        var createScript = _context!.Database.GenerateCreateScript();
-
-        var commands = createScript.Split(';', StringSplitOptions.RemoveEmptyEntries);
-
-        //await _context.Database.ExecuteSqlRawAsync("SET session_replication_role = replica;");
-
-        var tableNames = _context.Model.GetEntityTypes()
+        var tableNames = _context!.Model.GetEntityTypes()
             .Select(t => t.GetTableName())
             .Where(name => !string.IsNullOrEmpty(name))
             .Distinct()
@@ -55,18 +49,8 @@ public abstract class PostgreSqlBase : IAsyncLifetime
 
         foreach (var tableName in tableNames!)
         {
-            await _context.Database.ExecuteSqlRawAsync($"DROP TABLE IF EXISTS \"{tableName}\" CASCADE;");
+            await _context.Database.ExecuteSqlRawAsync($"TRUNCATE TABLE \"{tableName}\" CASCADE;");
         }
-
-        foreach (var command in commands)
-        {
-            if (!string.IsNullOrWhiteSpace(command))
-            {
-                await _context.Database.ExecuteSqlRawAsync(command + ";");
-            }
-        }
-
-        //await _context.Database.ExecuteSqlRawAsync("SET session_replication_role = DEFAULT;");
     }
 
     protected AppDbContext CreateContext()
