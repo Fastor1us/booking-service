@@ -48,7 +48,7 @@ public class EventConfiguration : IEntityTypeConfiguration<Event>
             .WithOne(e => e.Event)
             .HasForeignKey(e => e.EventId)
             .HasConstraintName("fk_events_bookings")
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(e => e.RowVersion)
             .HasColumnName("xmin")

@@ -1,19 +1,16 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
-using BookingApi.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Application.Services;
 
-public class BookingService(AppDbContext context)
-    : ServiceBase(context), IBookingService
+public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 {
-    public async Task<Booking> CreateAsync(Guid eventId, CancellationToken ct)
+    public async Task<Booking> AddAsync(Guid eventId, CancellationToken ct)
     {
-        var res = await ExecuteWithRetryAsync<Booking>(async _ =>
+        var res = await unitOfWork.ExecuteWithRetryAsync(async _ =>
             {
-                var @event = await context.Events
+                var @event = await unitOfWork.EventRepository
                     .FirstOrDefaultAsync(e => e.Id == eventId, ct)
                     ?? throw new EventNotFoundException(eventId);
 
@@ -30,8 +27,8 @@ public class BookingService(AppDbContext context)
                     CreatedAt = DateTime.Now.ToUniversalTime()
                 };
 
-                context.Bookings.Add(booking);
-                await context.SaveChangesAsync(ct);
+                unitOfWork.BookingRepository.Add(booking);
+                await unitOfWork.SaveChangesAsync(ct);
 
                 return booking;
             },
@@ -42,9 +39,11 @@ public class BookingService(AppDbContext context)
 
     public async Task<Booking> GetByIdAsync(Guid bookingId, CancellationToken ct)
     {
-        return await context.Bookings
-            .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == bookingId, ct)
+        return await unitOfWork.BookingRepository
+            .FirstOrDefaultAsync(
+                QueryTrackerBehavior.NoTracking,
+                e => e.Id == bookingId,
+                ct)
             ?? throw new BookingNotFoundException(bookingId);
     }
 }

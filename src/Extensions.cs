@@ -4,6 +4,8 @@ using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Infrastructure.BackgroundServices;
 using BookingApi.Infrastructure.Data;
+using BookingApi.Infrastructure.Repositories;
+using BookingApi.Infrastructure.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi;
@@ -50,8 +52,14 @@ public static class Extensions
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
             var connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string is required");
+
             options.UseNpgsql(connectionString);
+            options.UseLazyLoadingProxies();
         });
+
+        services.AddScoped<IEventRepository, EFCoreEventRepository>();
+        services.AddScoped<IBookingRepository, EFCoreBookingRepository>();
+        services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
 
         services.AddHostedService<PendingBookingProcessor>();
 

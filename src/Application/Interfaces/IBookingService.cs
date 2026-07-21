@@ -4,7 +4,7 @@ namespace BookingApi.Application.Interfaces;
 
 public interface IBookingService
 {
-    public Task<Booking> CreateAsync(
+    public Task<Booking> AddAsync(
         Guid eventId,
         CancellationToken ct);
     public Task<Booking> GetByIdAsync(

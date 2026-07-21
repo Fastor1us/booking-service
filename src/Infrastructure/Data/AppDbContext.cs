@@ -3,13 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Infrastructure.Data;
 
-public sealed class AppDbContext : DbContext
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-    {
-        Database.EnsureCreated();
-    }
-
     public DbSet<Event> Events => Set<Event>();
     public DbSet<Booking> Bookings => Set<Booking>();
 

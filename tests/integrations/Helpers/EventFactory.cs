@@ -1,15 +1,15 @@
 using BookingApi.Domain.Models;
 using BookingApi.Presentation.Dtos;
 
-namespace BookingTests.Helpers;
+namespace BookingApi.IntegrationTests.Helpers;
 
 public static class EventFactory
 {
     public static Event Generate(
         Guid? guid = null,
         string? title = null,
-        DateTime? startAt = null,
-        DateTime? endAt = null,
+        DateTimeOffset? startAt = null,
+        DateTimeOffset? endAt = null,
         int? totalSeats = null,
         int? availableSeats = null)
     {
@@ -19,8 +19,8 @@ public static class EventFactory
             Title = title ?? "Event title",
             TotalSeats = totalSeats ?? 20,
             AvailableSeats = availableSeats ?? totalSeats ?? 20,
-            StartAt = startAt ?? DateTime.Now.AddDays(-1),
-            EndAt = endAt ?? DateTime.Now
+            StartAt = startAt ?? DateTimeOffset.UtcNow.AddDays(-1),
+            EndAt = endAt ?? DateTimeOffset.UtcNow
         };
     }
 
@@ -30,7 +30,7 @@ public static class EventFactory
             .Range(1, count)
             .Select((index) =>
             {
-                DateTime date = DateTime.Now;
+                DateTimeOffset date = DateTimeOffset.UtcNow;
                 return new Event
                 {
                     Id = Guid.NewGuid(),
@@ -46,8 +46,8 @@ public static class EventFactory
     public static T Generate<T>(
         string? title = null,
         string? description = null,
-        DateTime? startAt = null,
-        DateTime? endAt = null,
+        DateTimeOffset? startAt = null,
+        DateTimeOffset? endAt = null,
         int? totalSeats = null) where T : class, new()
     {
         return typeof(T).Name switch
@@ -57,15 +57,15 @@ public static class EventFactory
                 Title = title ?? "Event title",
                 Description = description,
                 TotalSeats = totalSeats ?? 20,
-                StartAt = startAt ?? DateTime.Now.AddDays(-1),
-                EndAt = endAt ?? DateTime.Now
+                StartAt = startAt ?? DateTimeOffset.UtcNow.AddDays(-1),
+                EndAt = endAt ?? DateTimeOffset.UtcNow
             } as T ?? throw new InvalidCastException(),
 
             nameof(UpdateEventDto) => new UpdateEventDto
             {
                 Title = title ?? "Updated Event",
-                StartAt = startAt ?? DateTime.Now.AddDays(-1),
-                EndAt = endAt ?? DateTime.Now
+                StartAt = startAt ?? DateTimeOffset.UtcNow.AddDays(-1),
+                EndAt = endAt ?? DateTimeOffset.UtcNow
             } as T ?? throw new InvalidCastException(),
             
             _ => throw new NotSupportedException($"Type {typeof(T).Name} is not supported"),

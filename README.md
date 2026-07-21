@@ -1,14 +1,19 @@
 # Booking API
 REST API for booking events - create, manage and booking
 
+
 ## 📋 Requirements
 
 - [.NET 10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Docker](https://www.docker.com/)
 - CLI / IDE
+
 
 ## 📑 Navigation
 
 - [🚀 Quick Start](#quick-start)
+- [🗄️ Database Migrations](#️-database-migrations)
 - [🧪 Testing](#testing)
 - [🌐 API Endpoints](#api-endpoints)
   - [📅 Events Controller](#events-controller-apievents)
@@ -24,9 +29,9 @@ REST API for booking events - create, manage and booking
   - [ErrorResponseDto](#errorresponsedto)
 - [📋 HTTP Status Codes](#http-status-codes)
 - [🏗️ Architecture](#architecture)
-- [🔒 Concurrency & Synchronization Primitives](#concurrency-&-synchronization-primitives)
 - [🧠 Background Processing](#background-processing)
 - [🛠️ Technology Stack](#technology-stack)
+
 
 ## 🚀 Quick Start
 
@@ -50,13 +55,104 @@ dotnet run --project ./src/BookingApi.csproj
 
 After running, access [Swagger UI](http://localhost:5142/swagger/index.html)
 
+
+
+## 🗄️ Database Migrations
+The project uses Entity Framework Core migrations to manage database schema changes.
+
+### Prerequisites
+Install the EF Core tools globally (if not already installed):
+
+```bash
+dotnet tool install --global dotnet-ef
+```
+
+### Create a new migration
+
+```bash
+dotnet ef migrations add <MigrationName> \
+    --project ./src/BookingApi.csproj
+```
+
+### Apply migrations
+
+```bash
+dotnet ef database update \
+    --project ./src/BookingApi.csproj
+```
+
+### Remove last migration
+
+```bash
+dotnet ef migrations remove \
+    --project ./src/BookingApi.csproj
+```
+
+### Automatic Migration
+The application automatically applies pending migrations on startup:
+
+```csharp
+// Program.cs
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider
+        .GetRequiredService<AppDbContext>();
+    if (dbContext.Database.IsRelational())
+    {
+        dbContext.Database.Migrate();
+    }
+}
+```
+
+
 ## 🧪 Testing
+
+The solution includes comprehensive testing with two separate test projects:
+
+### 📂 Test Structure  
+
+tests/  
+├── units/  
+│   └── BookingApi.UnitTests  
+├── integrations/  
+│   └── BookingApi.IntegrationTests 
+
+### Unit Tests (BookingApi.UnitTests)
+- Purpose: Test individual components in isolation
+- Tools: xUnit, Moq, In-Memory Database
+- Scope: Services, Domain logic
+- Characteristics: Fast execution, no external dependencies
+
+### Integration Tests (BookingApi.IntegrationTests)
+- Purpose: Test real database interactions and component integration
+- Tools: xUnit, Testcontainers.PostgreSql
+- Scope: Repositories, UnitOfWork, Db Constraints and Transactions
+- Characteristics: Uses real PostgreSQL container, tests data persistence
 
 ### Run tests
 
 ```bash
 dotnet test
 ```
+
+### Run only unit tests
+
+```bash
+dotnet test ./tests/units/BookingApi.UnitTests.csproj
+```
+
+### Run only integration tests
+
+```bash
+dotnet test ./tests/integrations/BookingApi.IntegrationTests.csproj
+```
+
+### Test Database Setup
+Integration tests use **Testcontainers** to spin up a real PostgreSQL database in Docker:
+- One container instance reused across all test classes
+- Automatic cleanup between tests
+- No manual database configuration required
+
 
 ## 🌐 API Endpoints
 
@@ -436,6 +532,7 @@ Response model for error responses returned by the global exception handling mid
 }
 ```
 
+
 ## 🏗️ Architecture
 
 The solution follows a layered architecture:
@@ -445,9 +542,35 @@ The solution follows a layered architecture:
 - **Domain Layer** (`BookingApi.Domain`) - Models, Exceptions
 - **Infrastructure Layer** (`BookingApi.Infrastructure`) - Repositories, Background services
 
+### 🏗️ Data Access Pattern
+The application uses the Repository + Unit of Work pattern for data access:
+
+#### 📦 Repository Pattern
+- IEventRepository - Data access operations for events
+- IBookingRepository - Data access operations for bookings
+- IRepository<T> - Generic repository interface with common operations
+- Provides a clean abstraction over the data source
+
+#### 🔍 Repository Query Capabilities
+- Flexible query building with IQueryable<T>
+- Configurable tracking behavior:
+  - Track - For entities that will be modified
+  - NoTracking - For read-only operations (better performance)
+  - NoTrackingWithIdentityResolution - For complex queries
+
+#### 🔄 Unit of Work Pattern
+- IUnitOfWork - Coordinates multiple repositories in a single transaction
+- Ensures atomic operations - all changes succeed or none are applied
+- Two transaction modes:
+  1. Explicit Transactions - Manual control with BeginTransactionAsync/CommitTransactionAsync
+  1. Implicit Retry - ExecuteWithRetryAsync for optimistic concurrency handling
+- Lifecycle: Scoped per HTTP request in web applications
+
+
 ## 🧠 Background Processing
 
 The API includes a background service that automatically processes pending bookings with a delay mechanism
+
 
 ## 🛠️ Technology Stack
 
@@ -455,4 +578,6 @@ The API includes a background service that automatically processes pending booki
 - ASP.NET Core Web API
 - EFCore, PostgreSQL
 - Swagger/OpenAPI
-- xUnit (testing)
+- PostgreSQL
+- Docer
+- xUnit
