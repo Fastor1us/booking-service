@@ -1,8 +1,8 @@
-using BookingApi.Infrastructure.Data;
-using BookingApi.IntegrationTests.Fixtures;
+using BookingApi.Infrastructure.Persistence;
+using BookingApi.Infrastructure.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookingApi.IntegrationTests.Base;
+namespace BookingApi.Infrastructure.Tests.Base;
 
 [Collection("Postgre")]
 public abstract class PostgreSqlBase : IAsyncLifetime

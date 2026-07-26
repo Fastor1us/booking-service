@@ -1,16 +1,16 @@
-﻿using BookingApi.Application.Interfaces;
+﻿using BookingApi.Application.Dtos;
+using BookingApi.Application.Interfaces;
 using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
-using BookingApi.Infrastructure.Data;
+using BookingApi.Infrastructure.Persistence;
 using BookingApi.Infrastructure.Repositories;
 using BookingApi.Infrastructure.UnitOfWork;
-using BookingApi.Presentation.Dtos;
 using BookingApi.UnitTests.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BookingApi.UnitTests;
+namespace BookingApi.Application.Tests;
 
 public class EFCoreBookingServiceTests : IDisposable
 {

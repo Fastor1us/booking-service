@@ -1,6 +1,6 @@
+using BookingApi.Infrastructure.Persistence;
 using BookingApi.Presentation;
-using BookingApi.Presentation.Infrastructure.Data;
-using BookingApi.Presentation.Presentation.Middlewares;
+using BookingApi.Presentation.Middlewares;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

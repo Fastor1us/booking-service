@@ -1,11 +1,11 @@
 using System.Text.Json.Serialization;
-using BookingApi.Presentation.Application.Interfaces;
-using BookingApi.Presentation.Application.Services;
-using BookingApi.Presentation.Domain.Exceptions;
-using BookingApi.Presentation.Infrastructure.BackgroundServices;
-using BookingApi.Presentation.Infrastructure.Data;
-using BookingApi.Presentation.Infrastructure.Repositories;
-using BookingApi.Presentation.Infrastructure.UnitOfWork;
+using BookingApi.Application.Interfaces;
+using BookingApi.Application.Services;
+using BookingApi.Domain.Exceptions;
+using BookingApi.Infrastructure.BackgroundServices;
+using BookingApi.Infrastructure.Persistence;
+using BookingApi.Infrastructure.Repositories;
+using BookingApi.Infrastructure.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Presentation;

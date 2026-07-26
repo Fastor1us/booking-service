@@ -1,6 +1,6 @@
 using Testcontainers.PostgreSql;
 
-namespace BookingApi.IntegrationTests.Fixtures;
+namespace BookingApi.Infrastructure.Tests.Fixtures;
 
 public static class DatabaseContainer
 {

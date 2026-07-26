@@ -1,8 +1,8 @@
-using BookingApi.Presentation.Dtos;
+using BookingApi.Application.Dtos;
 using BookingApi.UnitTests.Helpers;
 using System.ComponentModel.DataAnnotations;
 
-namespace BookingApi.UnitTests;
+namespace BookingApi.Application.Tests;
 
 public class EventDtoValidationTests
 {

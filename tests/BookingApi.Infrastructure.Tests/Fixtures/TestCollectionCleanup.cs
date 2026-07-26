@@ -1,4 +1,4 @@
-namespace BookingApi.IntegrationTests.Fixtures;
+namespace BookingApi.Infrastructure.Tests.Fixtures;
 
 public class TestCollectionCleanup : IDisposable
 {

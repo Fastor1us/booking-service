@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\BookingApi.Application\BookingApi.Application.csproj" />
+    <ProjectReference Include="..\..\src\BookingApi.Infrastructure\BookingApi.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
