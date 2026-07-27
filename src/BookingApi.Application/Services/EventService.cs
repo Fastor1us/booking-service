@@ -1,5 +1,6 @@
 using BookingApi.Application.Dtos;
 using BookingApi.Application.Interfaces;
+using BookingApi.Domain.Constants;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 
@@ -75,8 +76,18 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
 
     public async Task UpdateAsync(Guid id, UpdateEventDto dto, CancellationToken ct)
     {
+        var @event = new Event
+        {
+            Id = id,
+            Title = dto.Title,
+            Description = dto.Description,
+            TotalSeats = EventConstants.MinTotalSeats, // required
+            StartAt = dto.StartAt,
+            EndAt = dto.EndAt
+        };
+
         await unitOfWork.EventRepository
-            .ExecuteUpdateByIdAsync(id, dto.Title, dto.Description, dto.StartAt, dto.EndAt, ct);
+            .ExecuteUpdateByIdAsync(@event, ct);
     }
 
     public async Task RemoveAsync(Guid id, CancellationToken ct)

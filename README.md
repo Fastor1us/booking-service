@@ -116,16 +116,23 @@ The solution includes comprehensive testing with two separate test projects:
 ```
 tests/
 ├── BookingApi.Application.Tests/
+├── BookingApi.Domain.Tests/
 └── BookingApi.Infrastructure.Tests/
 ```
 
-### Unit Tests (BookingApi.Application.Tests)
+### BookingApi.Application.Tests ```Unit Tests```
 - **Purpose:** Test individual components in isolation
 - **Tools:** xUnit, Moq, In-Memory Database
-- **Scope:** Services, Domain logic, Validation
+- **Scope:** Services
 - **Characteristics:** Fast execution, no external dependencies
 
-### Integration Tests (BookingApi.Infrastructure.Tests)
+### BookingApi.Application.Tests ```Unit Tests```
+- **Purpose:** Test individual components in isolation
+- **Tools:** xUnit, Moq, In-Memory Database
+- **Scope:** Domain logic, Validation
+- **Characteristics:** Fast execution, no external dependencies
+
+### BookingApi.Infrastructure.Tests ```Integration Tests```
 - **Purpose:** Test real database interactions and component integration
 - **Tools:** xUnit, Testcontainers.PostgreSql
 - **Scope:** Repositories, UnitOfWork, Db Constraints and Transactions

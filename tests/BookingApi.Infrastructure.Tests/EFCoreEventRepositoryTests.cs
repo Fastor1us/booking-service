@@ -1,5 +1,6 @@
 ﻿using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Constants;
+using BookingApi.Domain.Models;
 using BookingApi.Infrastructure.Repositories;
 using BookingApi.Infrastructure.Tests.Base;
 using BookingApi.Infrastructure.Tests.Helpers;
@@ -25,25 +26,6 @@ public class EFCoreEventRepositoryTests : PostgreSqlBase
 
         // Act
         eventRepository.Add(event1);
-        var exception = await Record.ExceptionAsync(() =>
-            context.SaveChangesAsync());
-
-        // Assert
-        Assert.NotNull(exception);
-        Assert.IsType<DbUpdateException>(exception);
-    }
-
-    [Fact]
-    public async Task Add_ExcessivelyLongTitle_ThrowsDbUpdateException()
-    {
-        // Arrange
-        var context = CreateContext();
-        var eventRepository = new EFCoreEventRepository(context);
-        var @event = EventFactory.Generate(
-            title: new string('t', EventConstants.TitleMaxLength + 1));
-        eventRepository.Add(@event);
-
-        // Act
         var exception = await Record.ExceptionAsync(() =>
             context.SaveChangesAsync());
 
@@ -185,14 +167,15 @@ public class EFCoreEventRepositoryTests : PostgreSqlBase
         context.ChangeTracker.Clear();
 
         // Act
-        var updatedCount = await eventRepository
-            .ExecuteUpdateByIdAsync(
-                @event.Id,
-                "NewTitle",
-                "NewDescription",
-                @event.StartAt.AddHours(1),
-                @event.EndAt.AddHours(1)
-            );
+        var updatedCount = await eventRepository.ExecuteUpdateByIdAsync(new()
+        {
+            Id = @event.Id,
+            Title = "NewTitle",
+            TotalSeats = EventConstants.MinTotalSeats,
+            Description = "NewDescription",
+            StartAt = @event.StartAt.AddHours(1),
+            EndAt = @event.EndAt.AddHours(1)
+        });
         var updatedEvent = await eventRepository
             .FirstOrDefaultAsync(e => e.Id == @event.Id);
 

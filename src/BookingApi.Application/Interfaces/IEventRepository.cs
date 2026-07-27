@@ -22,13 +22,7 @@ public interface IEventRepository : IRepository<Event>
     ///     </para>
     /// </remarks>
     /// <returns>Number of entities updated (0 if event not found, 1 if successful)</returns>
-    Task<int> ExecuteUpdateByIdAsync(
-        Guid id,
-        string title,
-        string? description,
-        DateTimeOffset startAt,
-        DateTimeOffset endAt,
-        CancellationToken ct = default);
+    Task<int> ExecuteUpdateByIdAsync(Event @event, CancellationToken ct = default);
 
     /// <summary>
     ///     Permanently removes an event by its ID without loading the entity into memory.

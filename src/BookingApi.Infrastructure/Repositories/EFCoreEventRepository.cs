@@ -42,20 +42,16 @@ public sealed class EFCoreEventRepository(AppDbContext context)
     public override void Add(Event @event) => context.Events.Add(@event);
 
     public Task<int> ExecuteUpdateByIdAsync(
-        Guid id,
-        string title,
-        string? description,
-        DateTimeOffset startAt,
-        DateTimeOffset endAt,
+        Event @event,
         CancellationToken ct = default)
     {
         return context.Events
-            .Where(e => e.Id == id)
+            .Where(e => e.Id == @event.Id)
             .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(e => e.Title, _ => title)
-                    .SetProperty(e => e.Description, _ => description)
-                    .SetProperty(e => e.StartAt, _ => startAt)
-                    .SetProperty(e => e.EndAt, _ => endAt),
+                    .SetProperty(e => e.Title, _ => @event.Title)
+                    .SetProperty(e => e.Description, _ => @event.Description)
+                    .SetProperty(e => e.StartAt, _ => @event.StartAt)
+                    .SetProperty(e => e.EndAt, _ => @event.EndAt),
                 ct);
     }
 

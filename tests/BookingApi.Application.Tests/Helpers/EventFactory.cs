@@ -48,7 +48,7 @@ public static class EventFactory
         string? description = null,
         DateTime? startAt = null,
         DateTime? endAt = null,
-        int? totalSeats = null) where T : class, new()
+        int? totalSeats = null) where T : class
     {
         return typeof(T).Name switch
         {
@@ -64,6 +64,17 @@ public static class EventFactory
             nameof(UpdateEventDto) => new UpdateEventDto
             {
                 Title = title ?? "Updated Event",
+                StartAt = startAt ?? DateTime.Now.AddDays(-1),
+                EndAt = endAt ?? DateTime.Now
+            } as T ?? throw new InvalidCastException(),
+
+            nameof(Event) => new Event
+            {
+                Id = Guid.NewGuid(),
+                Title = title ?? "Event title",
+                Description = description,
+                TotalSeats = totalSeats ?? 20,
+                AvailableSeats = totalSeats ?? 20,
                 StartAt = startAt ?? DateTime.Now.AddDays(-1),
                 EndAt = endAt ?? DateTime.Now
             } as T ?? throw new InvalidCastException(),
