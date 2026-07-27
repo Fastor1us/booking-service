@@ -1,3 +1,5 @@
+using BookingApi.Application;
+using BookingApi.Infrastructure;
 using BookingApi.Infrastructure.Persistence;
 using BookingApi.Presentation;
 using BookingApi.Presentation.Middlewares;

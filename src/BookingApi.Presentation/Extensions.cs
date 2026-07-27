@@ -1,12 +1,5 @@
 using System.Text.Json.Serialization;
-using BookingApi.Application.Interfaces;
-using BookingApi.Application.Services;
 using BookingApi.Domain.Exceptions;
-using BookingApi.Infrastructure.BackgroundServices;
-using BookingApi.Infrastructure.Persistence;
-using BookingApi.Infrastructure.Repositories;
-using BookingApi.Infrastructure.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookingApi.Presentation;
 
@@ -35,46 +28,5 @@ public static class Extensions
         services.AddSwaggerGen();
 
         return services;
-    }
-
-    public static IServiceCollection AddApplication(this IServiceCollection services)
-    {
-        services.AddScoped<IEventService, EventService>();
-        services.AddScoped<IBookingService, BookingService>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
-    {
-        services.AddDbContext<AppDbContext>((serviceProvider, options) =>
-        {
-            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("Connection string is required");
-
-            options.UseNpgsql(connectionString);
-            options.UseLazyLoadingProxies();
-        });
-
-        services.AddScoped<IEventRepository, EFCoreEventRepository>();
-        services.AddScoped<IBookingRepository, EFCoreBookingRepository>();
-        services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
-
-        services.AddHostedService<PendingBookingProcessor>();
-
-        return services;
-    }
-
-    public static void LogInfo(this ILogger logger, string message, params object[] args)
-    {
-        if (logger.IsEnabled(LogLevel.Information))
-            logger.LogInformation(message, args);
-    }
-
-    public static void LogInfo(this ILogger logger, Exception? exception, string message, params object[] args)
-    {
-        if (logger.IsEnabled(LogLevel.Information))
-            logger.LogInformation(exception, message, args);
     }
 }
