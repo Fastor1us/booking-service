@@ -1,7 +1,7 @@
+using BookingApi.Application.Dtos;
 using BookingApi.Domain.Models;
-using BookingApi.Presentation.Dtos;
 
-namespace BookingApi.UnitTests.Helpers;
+namespace BookingApi.Application.Tests.Helpers;
 
 public static class EventFactory
 {
@@ -67,7 +67,7 @@ public static class EventFactory
                 StartAt = startAt ?? DateTime.Now.AddDays(-1),
                 EndAt = endAt ?? DateTime.Now
             } as T ?? throw new InvalidCastException(),
-            
+
             _ => throw new NotSupportedException($"Type {typeof(T).Name} is not supported"),
         };
     }

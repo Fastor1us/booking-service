@@ -1,6 +1,6 @@
 ﻿using BookingApi.Domain.Models;
 
-namespace BookingApi.UnitTests.Helpers;
+namespace BookingApi.Application.Tests.Helpers;
 
 public static class Extensions
 {

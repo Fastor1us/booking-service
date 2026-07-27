@@ -49,7 +49,10 @@ public class EventController(
         [FromBody] CreateEventDto dto, CancellationToken ct)
     {
         var @event = await eventService.AddAsync(dto, ct);
-        return CreatedAtAction(nameof(GetById), new { id = @event.Id }, @event);
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id = @event.Id },
+            @event.MapToResponseDto());
     }
 
     [HttpPut("{id:guid}")]

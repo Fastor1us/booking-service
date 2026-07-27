@@ -1,5 +1,5 @@
 using BookingApi.Application.Dtos;
-using BookingApi.UnitTests.Helpers;
+using BookingApi.Application.Tests.Helpers;
 using System.ComponentModel.DataAnnotations;
 
 namespace BookingApi.Application.Tests;

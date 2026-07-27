@@ -60,6 +60,7 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
         {
             Id = Guid.NewGuid(),
             Title = dto.Title,
+            Description = dto.Description,
             TotalSeats = dto.TotalSeats,
             AvailableSeats = dto.TotalSeats,
             StartAt = dto.StartAt,

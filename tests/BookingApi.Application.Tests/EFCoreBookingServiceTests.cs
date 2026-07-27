@@ -1,12 +1,12 @@
 ﻿using BookingApi.Application.Dtos;
 using BookingApi.Application.Interfaces;
 using BookingApi.Application.Services;
+using BookingApi.Application.Tests.Helpers;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 using BookingApi.Infrastructure.Persistence;
 using BookingApi.Infrastructure.Repositories;
 using BookingApi.Infrastructure.UnitOfWork;
-using BookingApi.UnitTests.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

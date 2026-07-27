@@ -22,14 +22,14 @@ REST API for booking events - create, manage and booking
 - [📦 Models](#models)
   - [EventResponseDto](#eventresponsedto)
   - [PaginatedEventsResponseDto](#paginatedeventsresponsedto)
-  - [PostEventDto](#posteventdto)
-  - [PutEventDto](#puteventdto)
+  - [CreateEventDto](#createeventdto)
+  - [UpdateEventDto](#updateeventdto)
   - [BookingResponseDto](#bookingresponsedto)
   - [BookingStatus Enum](#bookingstatus-enum)
   - [ErrorResponseDto](#errorresponsedto)
 - [📋 HTTP Status Codes](#http-status-codes)
-- [🏗️ Architecture](#architecture)
 - [🧠 Background Processing](#background-processing)
+- [🏗️ Architecture](#️architecture)
 - [🛠️ Technology Stack](#technology-stack)
 
 
@@ -44,17 +44,16 @@ dotnet restore ./src/BookingApi.csproj
 ### Build project
 
 ```bash
-dotnet build ./src/BookingApi.csproj
+dotnet build ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
 ```
 
 ### Run project
 
 ```bash
-dotnet run --project ./src/BookingApi.csproj
+dotnet run --project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
 ```
 
 After running, access [Swagger UI](http://localhost:5142/swagger/index.html)
-
 
 
 ## 🗄️ Database Migrations
@@ -71,21 +70,24 @@ dotnet tool install --global dotnet-ef
 
 ```bash
 dotnet ef migrations add <MigrationName> \
-    --project ./src/BookingApi.csproj
+    --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj \
+    --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
 ```
 
 ### Apply migrations
 
 ```bash
 dotnet ef database update \
-    --project ./src/BookingApi.csproj
+    --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj \
+    --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
 ```
 
 ### Remove last migration
 
 ```bash
 dotnet ef migrations remove \
-    --project ./src/BookingApi.csproj
+    --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj \
+    --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
 ```
 
 ### Automatic Migration
@@ -109,25 +111,25 @@ using (var scope = app.Services.CreateScope())
 
 The solution includes comprehensive testing with two separate test projects:
 
-### 📂 Test Structure  
+### 📂 Test Structure
 
-tests/  
-├── units/  
-│   └── BookingApi.UnitTests  
-├── integrations/  
-│   └── BookingApi.IntegrationTests 
+```
+tests/
+├── BookingApi.Application.Tests/
+└── BookingApi.Infrastructure.Tests/
+```
 
-### Unit Tests (BookingApi.UnitTests)
-- Purpose: Test individual components in isolation
-- Tools: xUnit, Moq, In-Memory Database
-- Scope: Services, Domain logic
-- Characteristics: Fast execution, no external dependencies
+### Unit Tests (BookingApi.Application.Tests)
+- **Purpose:** Test individual components in isolation
+- **Tools:** xUnit, Moq, In-Memory Database
+- **Scope:** Services, Domain logic, Validation
+- **Characteristics:** Fast execution, no external dependencies
 
-### Integration Tests (BookingApi.IntegrationTests)
-- Purpose: Test real database interactions and component integration
-- Tools: xUnit, Testcontainers.PostgreSql
-- Scope: Repositories, UnitOfWork, Db Constraints and Transactions
-- Characteristics: Uses real PostgreSQL container, tests data persistence
+### Integration Tests (BookingApi.Infrastructure.Tests)
+- **Purpose:** Test real database interactions and component integration
+- **Tools:** xUnit, Testcontainers.PostgreSql
+- **Scope:** Repositories, UnitOfWork, Db Constraints and Transactions
+- **Characteristics:** Uses real PostgreSQL container, tests data persistence
 
 ### Run tests
 
@@ -138,13 +140,13 @@ dotnet test
 ### Run only unit tests
 
 ```bash
-dotnet test ./tests/units/BookingApi.UnitTests.csproj
+dotnet test ./tests/BookingApi.Application.Tests/BookingApi.Application.Tests.csproj
 ```
 
 ### Run only integration tests
 
 ```bash
-dotnet test ./tests/integrations/BookingApi.IntegrationTests.csproj
+dotnet test ./tests/BookingApi.Infrastructure.Tests/BookingApi.Infrastructure.Tests.csproj
 ```
 
 ### Test Database Setup
@@ -249,9 +251,9 @@ Create a new event.
 
 **Request Body:**
 
-| Name       | In   | Type                            | Required | Description         |
-| ---------- | ---- | ------------------------------- | -------- | ------------------- |
-| `eventDto` | body | [`PostEventDto`](#posteventdto) | ✅ Yes   | Event creation data |
+| Name       | In   | Type                                  | Required | Description         |
+| ---------- | ---- | ------------------------------------- | -------- | ------------------- |
+| `dto`      | body | [`CreateEventDto`](#createeventdto)   | ✅ Yes  | Event creation data |
 
 **Responses:**
 
@@ -275,9 +277,9 @@ Update an existing event.
 
 **Request Body:**
 
-| Name       | In   | Type                          | Required | Description        |
-| ---------- | ---- | ----------------------------- | -------- | ------------------ |
-| `eventDto` | body | [`PutEventDto`](#puteventdto) | ✅ Yes   | Updated event data |
+| Name       | In   | Type                                   | Required | Description        |
+| ---------- | ---- | -------------------------------------- | -------- | ------------------ |
+| `dto`      | body | [`UpdateEventDto`](#updateeventrequest)| ✅ Yes  | Updated event data |
 
 **Responses:**
 
@@ -322,12 +324,12 @@ Book a ticket for an event. Creates a pending booking request.
 
 **Responses:**
 
-| Status Code | Description                  | Response Type                               |
-| ----------- | ---------------------------- | ------------------------------------------- |
-| 202         | Accepted (booking created)   | [`BookingResponseDto`](#bookingresponsedto) |
-| 404         | Event not found              | [`ErrorResponseDto`](#errorresponsedto)     |
-| 409         | Conflict                     | [`ErrorResponseDto`](#errorresponsedto)     |
-| 500         | Internal server error        | [`ErrorResponseDto`](#errorresponsedto)     |
+| Status Code | Description                   | Response Type                               |
+| ----------- | ----------------------------- | ------------------------------------------- |
+| 202         | Accepted (booking created)    | [`BookingResponseDto`](#bookingresponsedto) |
+| 404         | Event not found               | [`ErrorResponseDto`](#errorresponsedto)     |
+| 409         | Conflict (no available seats) | [`ErrorResponseDto`](#errorresponsedto)     |
+| 500         | Internal server error         | [`ErrorResponseDto`](#errorresponsedto)     |
 
 ---
 
@@ -343,29 +345,30 @@ Get booking details by ID.
 
 **Responses:**
 
-| Status Code | Description           | Response Type                           |
-| ----------- | --------------------- | --------------------------------------- |
-| 200         | Success               | [`Booking`](#booking-model)             |
-| 404         | Booking not found     | [`ErrorResponseDto`](#errorresponsedto) |
-| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
+| Status Code | Description           | Response Type                               |
+| ----------- | --------------------- | ------------------------------------------- |
+| 200         | Success               | [`BookingResponseDto`](#bookingresponsedto) |
+| 404         | Booking not found     | [`ErrorResponseDto`](#errorresponsedto)     |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto)     |
 
 ---
 
-### 📦 Models
+
+## 📦 Models
 
 ### 🎫 `EventResponseDto`
 
 Response model for event data.
 
-| Property         | Type       |Description                          |
-| ---------------- | ---------- | ----------------------------------- |
-| `id`             | `Guid`     | Unique event identifier             |
-| `title`          | `string`   | Event title                         |
-| `description`    | `string`   | Optional event description          |
-| `totalSeats`     | `int`      | Max amount of event's seats         |
-| `availableSeats` | `int`      | Current available seats to booking  |
-| `startAt`        | `DateTime` | Event start date and time           |
-| `endAt`          | `DateTime` | Event end date and time             |
+| Property         | Type             | Description                          |
+| ---------------- | ---------------- | ------------------------------------ |
+| `id`             | `Guid`           | Unique event identifier              |
+| `title`          | `string`         | Event title                          |
+| `description`    | `string?`        | Optional event description           |
+| `totalSeats`     | `int`            | Max amount of event's seats          |
+| `availableSeats` | `int`            | Current available seats for booking  |
+| `startAt`        | `DateTimeOffset` | Event start date and time            |
+| `endAt`          | `DateTimeOffset` | Event end date and time              |
 
 **Example:**
 
@@ -373,11 +376,11 @@ Response model for event data.
 {
   "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "title": "Tech Conference 2024",
+  "description": "Annual technology conference",
   "totalSeats": 20,
   "availableSeats": 5,
-  "description": "Annual technology conference",
-  "startAt": "2024-06-15T09:00:00Z",
-  "endAt": "2024-06-17T18:00:00Z"
+  "startAt": "2024-06-15T09:00:00+00:00",
+  "endAt": "2024-06-17T18:00:00+00:00"
 }
 ```
 
@@ -391,8 +394,6 @@ Response model for paginated event list.
 | ------------ | ------------------------------- | ------------------------------- |
 | `items`      | `IEnumerable<EventResponseDto>` | List of events for current page |
 | `totalCount` | `int`                           | Total number of events          |
-| `pageIndex`  | `int`                           | Current page number (1-based)   |
-| `itemsCount` | `int`                           | Number of items on this page    |
 
 **Example:**
 
@@ -403,56 +404,58 @@ Response model for paginated event list.
       "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
       "title": "Tech Conference 2024",
       "description": "Annual technology conference",
-      "startAt": "2024-06-15T09:00:00Z",
-      "endAt": "2024-06-17T18:00:00Z"
+      "totalSeats": 20,
+      "availableSeats": 5,
+      "startAt": "2024-06-15T09:00:00+00:00",
+      "endAt": "2024-06-17T18:00:00+00:00"
     }
   ],
-  "totalCount": 25,
-  "pageIndex": 2,
-  "itemsCount": 10
+  "totalCount": 1,
+  "pageIndex": 1,
+  "itemsCount": 1
 }
 ```
 
 ---
 
-### ✨ `PostEventDto`
+### ✨ `CreateEventRequest`
 
-Request model for creating a new event.
+Request model for creating a new event (HTTP contract in Presentation layer).
 
-| Property      | Type       | Required | Description                 | Constraints                   |
-| ------------- | ---------- | -------- | --------------------------- | ----------------------------- |
-| `title`       | `string`   | ✅ Yes   | Event title                 | Not empty, max 200 characters |
-| `description` | `string`   | ❌ No    | Optional event description  | Max 1000 characters           |
-| `totalSeats`  | `int`      | ✅ Yes   | Max amount of event's seats | Must be more than 0           |
-| `startAt`     | `DateTime` | ✅ Yes   | Event start date and time   | Must be in the future         |
-| `endAt`       | `DateTime` | ✅ Yes   | Event end date and time     | Must be later than `startAt`  |
+| Property      | Type             | Required | Description                 | Constraints                   |
+| ------------- | ---------------- | -------- | --------------------------- | ----------------------------- |
+| `title`       | `string`         | ✅ Yes   | Event title                 | Not empty, max 200 characters |
+| `description` | `string?`        | ❌ No    | Optional event description  | Max 1000 characters           |
+| `totalSeats`  | `int`            | ✅ Yes   | Max amount of event's seats | Must be greater than 0        |
+| `startAt`     | `DateTimeOffset` | ✅ Yes   | Event start date and time   | Must be in the future         |
+| `endAt`       | `DateTimeOffset` | ✅ Yes   | Event end date and time     | Must be later than `startAt`  |
 
 ---
 
-### 🔄 `PutEventDto`
+### 🔄 `UpdateEventRequest`
 
-Request model for updating an existing event.
+Request model for updating an existing event (HTTP contract in Presentation layer).
 
-| Property      | Type       | Required | Description                | Constraints                   |
-| ------------- | ---------- | -------- | -------------------------- | ----------------------------- |
-| `title`       | `string`   | ✅ Yes   | Event title                | Not empty, max 200 characters |
-| `description` | `string`   | ❌ No    | Optional event description | Max 1000 characters           |
-| `startAt`     | `DateTime` | ✅ Yes   | Event start date and time  | Must be in the future         |
-| `endAt`       | `DateTime` | ✅ Yes   | Event end date and time    | Must be later than `startAt`  |
+| Property      | Type             | Required | Description                | Constraints                   |
+| ------------- | ---------------- | -------- | -------------------------- | ----------------------------- |
+| `title`       | `string`         | ✅ Yes   | Event title                | Not empty, max 200 characters |
+| `description` | `string?`        | ❌ No    | Optional event description | Max 1000 characters           |
+| `startAt`     | `DateTimeOffset` | ✅ Yes   | Event start date and time  | Must be in the future         |
+| `endAt`       | `DateTimeOffset` | ✅ Yes   | Event end date and time    | Must be later than `startAt`  |
 
 ---
 
 ### 🎟️ `BookingResponseDto`
 
-Response model for booking creation (returned from `POST /api/events/{id}/book`).
+Response model for booking data.
 
 | Property      | Type                                   | Description                   |
 | ------------- | -------------------------------------- | ----------------------------- |
-| `Id`          | `Guid`                                 | Unique booking identifier     |
+| `id`          | `Guid`                                 | Unique booking identifier     |
 | `eventId`     | `Guid`                                 | Unique event identifier       |
 | `status`      | [`BookingStatus`](#bookingstatus-enum) | Current status of the booking |
-| `createdAt`   | `DateTime`                             | Booking creation time         |
-| `processedAt` | `DateTime`                             | Booking status changed time   |
+| `createdAt`   | `DateTimeOffset`                       | Booking creation time         |
+| `processedAt` | `DateTimeOffset?`                      | Booking status changed time   |
 
 **Example:**
 
@@ -461,7 +464,7 @@ Response model for booking creation (returned from `POST /api/events/{id}/book`)
   "id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
   "eventId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "status": "Pending",
-  "createdAt": "2024-01-15T10:30:00Z",
+  "createdAt": "2024-01-15T10:30:00+00:00",
   "processedAt": null
 }
 ```
@@ -480,7 +483,7 @@ Response model for booking creation (returned from `POST /api/events/{id}/book`)
 
 ### ❌ `ErrorResponseDto`
 
-Response model for error responses returned by the global exception handling middleware
+Response model for error responses returned by the global exception handling middleware.
 
 | Property  | Type                  | Required | Description                                    |
 | --------- | --------------------- | -------- | ---------------------------------------------- |
@@ -496,81 +499,95 @@ Response model for error responses returned by the global exception handling mid
 }
 ```
 
+**Example (Not Found - 404):**
+
+```json
+{
+  "title": "Event with Id '3fa85f64-5717-4562-b3fc-2c963f66afa6' is not found",
+  "details": []
+}
+```
+
 ---
 
-### HTTP Status Codes
+### 📋 HTTP Status Codes
 
 | Status Code               | When Occurs                                                                                                                                                                          |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 400 Bad Request           | Validation errors (missing required fields, invalid dates)<br>Invalid filter parameters (`to` date before `from`)<br>Invalid pagination parameters (page < 1, pageSize outside 5-50) |
 | 404 Not Found             | Event or Booking with specified ID doesn't exist                                                                                                                                     |
-| 409 Conflict              | Event does not have available seats to booking                                                                                                                                       |
+| 409 Conflict              | Event does not have available seats for booking                                                                                                                                      |
 | 500 Internal Server Error | Unhandled exceptions in the application                                                                                                                                              |
 
-### Example Error Response (400 Bad Request)
-
-```json
-{
-  "title": "Invalid filter parameters",
-  "details": ["'To' date must be later than 'From' date"]
-}
-```
-
-```json
-{
-  "title": "One or more validation errors occurred.",
-  "details": ["EndAt must be later than StartAt", "Title is required"]
-}
-```
-
-### Example Error Response (404 Not Found)
-
-```json
-{
-  "title": "Event with id '3fa85f64-5717-4562-b3fc-2c963f66afa6' was not found",
-  "details": []
-}
-```
+---
 
 
 ## 🏗️ Architecture
 
-The solution follows a layered architecture:
+The solution follows a **Clean Architecture** with clear separation of concerns
 
-- **Presentation Layer** (`BookingApi.Presentation`) - Controllers, DTOs, Filters, Middlewares
-- **Application Layer** (`BookingApi.Application`) - Services, Interfaces
-- **Domain Layer** (`BookingApi.Domain`) - Models, Exceptions
-- **Infrastructure Layer** (`BookingApi.Infrastructure`) - Repositories, Background services
+### Layer Dependencies
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Infrastructure                           │
+│        (Repositories, DbContext, Background Services)       │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ depends on
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Application                              │
+│              (Services, DTOs, Interfaces)                   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ depends on
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Domain                                   │
+│              (Models, Exceptions, Constants)                │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    Presentation                             │
+│           (Controllers, Middlewares, HTTP DTOs)             │
+└────────┬────────────────────────────────────┬───────────────┘
+         │ depends on                         │ depends on
+         ▼                                    ▼
+      Application                         Infrastructure
+```
 
 ### 🏗️ Data Access Pattern
-The application uses the Repository + Unit of Work pattern for data access:
+The application uses the Repository + Unit of Work pattern for data access
 
 #### 📦 Repository Pattern
-- IEventRepository - Data access operations for events
-- IBookingRepository - Data access operations for bookings
-- IRepository<T> - Generic repository interface with common operations
+- `IEventRepository` - Data access operations for events
+- `IBookingRepository` - Data access operations for bookings
+- `IRepository<T>` - Generic repository interface with common operations
 - Provides a clean abstraction over the data source
 
-#### 🔍 Repository Query Capabilities
-- Flexible query building with IQueryable<T>
-- Configurable tracking behavior:
-  - Track - For entities that will be modified
-  - NoTracking - For read-only operations (better performance)
-  - NoTrackingWithIdentityResolution - For complex queries
-
 #### 🔄 Unit of Work Pattern
-- IUnitOfWork - Coordinates multiple repositories in a single transaction
+- `IUnitOfWork` - Coordinates multiple repositories in a single transaction
 - Ensures atomic operations - all changes succeed or none are applied
-- Two transaction modes:
-  1. Explicit Transactions - Manual control with BeginTransactionAsync/CommitTransactionAsync
-  1. Implicit Retry - ExecuteWithRetryAsync for optimistic concurrency handling
 - Lifecycle: Scoped per HTTP request in web applications
-
 
 ## 🧠 Background Processing
 
-The API includes a background service that automatically processes pending bookings with a delay mechanism
+The API includes a background service that automatically processes pending bookings with a delay mechanism:
 
+### Booking Processing Flow
+
+1. **Client books an event** → Creates a pending booking
+2. **Background service** (runs every 5 seconds) checks for pending bookings
+3. **Processing logic:**
+   - Checks if event has available seats
+   - If available → Confirms booking, decrements available seats
+   - If full → Rejects booking
+4. **Result:** Booking status updated (Confirmed/Rejected)
+
+### Background Service Implementation
+- Uses `BackgroundService` from .NET
+- Runs continuously in the background
+- Implements retry logic with exponential backoff
+- Handles concurrency issues with optimistic locking (RowVersion)
 
 ## 🛠️ Technology Stack
 

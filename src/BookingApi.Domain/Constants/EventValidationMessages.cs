@@ -3,6 +3,8 @@ namespace BookingApi.Domain.Constants;
 public static class EventValidationMessages
 {
     public const string TitleRequired = "Title is required";
+    public const string AvailableSeatsCannotBeMoreThanTotalSeats =
+        "AvailableSeats cannot be more than TotalSeats";
     public const string StartAtInvalid =
         "StartAt must be a valid date and time";
     public const string EndAtInvalid = "EndAt must be a valid date and time";
