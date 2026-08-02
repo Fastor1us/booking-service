@@ -28,6 +28,16 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .HasConstraintName("fk_bookings_events")
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(e => e.UserId)
+            .HasColumnName("user_id")
+            .IsRequired();
+
+        builder.HasOne(e => e.User)
+            .WithMany(e => e.Bookings)
+            .HasForeignKey(e => e.UserId)
+            .HasConstraintName("fk_bookings_users")
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(e => e.Status)
             .HasColumnName("status")
             .IsRequired()

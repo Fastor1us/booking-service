@@ -6,7 +6,7 @@ public interface IBookingService
 {
     public Task<Booking> AddAsync(
         Guid eventId,
-        Guid userId,
+        string userLogin,
         CancellationToken ct);
 
     public Task<Booking> GetByIdAsync(
@@ -15,6 +15,6 @@ public interface IBookingService
 
     public Task Cancel(
         Guid bookingId,
-        Guid userId,
+        string userLogin,
         CancellationToken ct);
 }

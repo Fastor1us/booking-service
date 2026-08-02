@@ -10,6 +10,7 @@ public static class Extensions
     {
         services.AddScoped<IEventService, EventService>();
         services.AddScoped<IBookingService, BookingService>();
+        services.AddScoped<IUserService, UserService>();
 
         return services;
     }

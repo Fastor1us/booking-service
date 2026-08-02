@@ -3,14 +3,12 @@ using System.Security.Claims;
 using System.Text;
 using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace BookingApi.Infrastructure.Security;
 
-public class JwtTokenGenerator(
-    string secret,
-    string issuer,
-    string audience) : ITokenGenerator
+public class JwtTokenGenerator(IOptions<JwtSettings> jwt) : ITokenGenerator
 {
     public string Generate(string login, UserRole role)
     {
@@ -20,15 +18,15 @@ public class JwtTokenGenerator(
             new Claim(ClaimTypes.Role, role.ToString()),
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Value.Key));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer,
-            audience,
+            jwt.Value.Issuer,
+            jwt.Value.Audience,
             claims,
-            expires: DateTime.UtcNow.AddDays(1),
+            expires: DateTime.UtcNow.AddMinutes(jwt.Value.ExpiresInMinutes),
             signingCredentials: creds
         );
 

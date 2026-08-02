@@ -18,13 +18,13 @@ public class User
                     UserValidationMessages.LoginRequired);
             }
 
-            if (value.Length < UserConstant.MinLoginLength)
+            if (value.Length < UserConstant.LoginMinLength)
             {
                 throw new ValidationException(
                     UserValidationMessages.LoginTooShort);
             }
 
-            if (value.Length >= UserConstant.MaxLoginLength)
+            if (value.Length >= UserConstant.LoginMaxLength)
             {
                 throw new ValidationException(
                     UserValidationMessages.LoginTooLong);
@@ -46,18 +46,22 @@ public class User
                 UserValidationMessages.PasswordRequired);
         }
 
-        if (password.Length < UserConstant.MinPasswordLength)
+        if (password.Length < UserConstant.PasswordMinLength)
         {
             throw new ValidationException(
                 UserValidationMessages.PasswordTooShort);
         }
 
-        if (password.Length >= UserConstant.MaxPasswordLength)
+        if (password.Length >= UserConstant.PasswordMaxLength)
         {
             throw new ValidationException(
                 UserValidationMessages.PasswordTooLong);
         }
     }
+
+    public virtual ICollection<Booking> Bookings { get; init; } = [];
+
+    public uint RowVersion { get; set; }
 }
 
 public enum UserRole

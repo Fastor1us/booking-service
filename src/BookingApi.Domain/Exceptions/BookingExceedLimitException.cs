@@ -1,6 +1,6 @@
 namespace BookingApi.Domain.Exceptions;
 
-public class BookingExceedLimitException(Guid userId)
-    : Exception($"User with Id '{userId}' has exceed it active bookings limit.")
+public class BookingExceedLimitException(string userLogin)
+    : Exception($"User with Login '{userLogin}' has exceed it active bookings limit.")
 {
 }

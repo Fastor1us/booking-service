@@ -9,21 +9,19 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 {
     public async Task<Booking> AddAsync(
         Guid eventId,
-        Guid userId,
+        string userLogin,
         CancellationToken ct)
     {
         var res = await unitOfWork.ExecuteWithRetryAsync(async _ =>
             {
-                var bookingQuery = unitOfWork.BookingRepository
-                    .GetQuery(QueryTrackerBehavior.NoTrackingWithIdentityResolution);
-                var usersBookings = await unitOfWork.BookingRepository
-                    .CountAsync(bookingQuery.Where(
-                        e => e.UserId == userId 
-                        && e.Status == BookingStatus.Confirmed), ct);
+                var user = await unitOfWork.UserReopitory
+                    .FirstOrDefaultAsync(QueryTrackerBehavior.NoTracking,
+                        e => e.Login == userLogin, ct)
+                    ?? throw new UserNotFoundException(userLogin);
 
-                if (usersBookings >= UserConstant.MaxActiveBookings)
+                if (user.Bookings.Count >= UserConstant.MaxActiveBookings)
                 {
-                    throw new BookingExceedLimitException(userId);
+                    throw new BookingExceedLimitException(userLogin);
                 }
 
                 var @event = await unitOfWork.EventRepository
@@ -44,7 +42,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
                 {
                     Id = Guid.NewGuid(),
                     EventId = eventId,
-                    UserId = userId,
+                    UserId = user.Id,
                     Status = BookingStatus.Pending,
                     CreatedAt = DateTime.Now.ToUniversalTime()
                 };
@@ -73,18 +71,22 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 
     public async Task Cancel(
         Guid bookingId,
-        Guid userId,
+        string userLogin,
         CancellationToken ct)
     {
         await unitOfWork.BeginTransactionAsync(
             System.Data.IsolationLevel.ReadCommitted, ct);
 
         var booking = await unitOfWork.BookingRepository
-                .FirstOrDefaultAsync(b => b.Id == bookingId, ct)
-                ?? throw new BookingNotFoundException(bookingId);
+            .FirstOrDefaultAsync(b => b.Id == bookingId, ct)
+            ?? throw new BookingNotFoundException(bookingId);
+
+        var user = await unitOfWork.UserReopitory
+            .FirstOrDefaultAsync(b => b.Login == userLogin, ct)
+            ?? throw new UserNotFoundException(userLogin);
 
         if (booking.User.Role != UserRole.Admin
-            && booking.UserId != userId)
+            && booking.UserId != user.Id)
         {
             throw new ForbiddenException();
         }
