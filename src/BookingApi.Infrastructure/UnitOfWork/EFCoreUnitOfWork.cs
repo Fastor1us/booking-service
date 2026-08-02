@@ -30,11 +30,11 @@ public class EfCoreUnitOfWork(
             _dbContextTransaction = null;
         }
     }
-    public async Task RollbackTransactionAsync()
+    public async Task RollbackTransactionAsync(CancellationToken ct = default)
     {
         if (_dbContextTransaction != null)
         {
-            await _dbContextTransaction.RollbackAsync();
+            await _dbContextTransaction.RollbackAsync(ct);
         }
     }
 

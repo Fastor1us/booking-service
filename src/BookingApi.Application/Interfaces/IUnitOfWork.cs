@@ -39,7 +39,7 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
         CancellationToken ct = default
     );
     Task CommitTransactionAsync(CancellationToken ct = default);
-    Task RollbackTransactionAsync();
+    Task RollbackTransactionAsync(CancellationToken ct = default);
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 

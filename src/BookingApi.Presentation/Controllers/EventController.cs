@@ -86,9 +86,10 @@ public class EventController(
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<BookingResponseDto>> Book(
-        [FromRoute] Guid id, CancellationToken ct)
+        [FromRoute] Guid bookingId, CancellationToken ct)
     {
-        var booking = await bookingService.AddAsync(id, ct);
+        // TODO:
+        var booking = await bookingService.AddAsync(bookingId, userId, ct);
         return AcceptedAtAction(
             actionName: nameof(BookingController.GetById),
             controllerName: "Booking",
