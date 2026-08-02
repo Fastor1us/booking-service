@@ -9,10 +9,12 @@ namespace BookingApi.Infrastructure.UnitOfWork;
 public class EfCoreUnitOfWork(
     AppDbContext context,
     IEventRepository eventRepository,
-    IBookingRepository bookingRepository) : IUnitOfWork
+    IBookingRepository bookingRepository,
+    IUserRepository userRepository) : IUnitOfWork
 {
     public IEventRepository EventRepository => eventRepository;
     public IBookingRepository BookingRepository => bookingRepository;
+    public IUserRepository UserReopitory => userRepository;
 
     private IDbContextTransaction? _dbContextTransaction = null;
 

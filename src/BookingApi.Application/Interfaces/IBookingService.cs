@@ -8,6 +8,7 @@ public interface IBookingService
         Guid eventId,
         Guid userId,
         CancellationToken ct);
+
     public Task<Booking> GetByIdAsync(
         Guid bookingId,
         CancellationToken ct);
