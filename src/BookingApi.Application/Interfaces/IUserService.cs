@@ -5,7 +5,7 @@ namespace BookingApi.Application.Interfaces;
 
 public interface IUserService
 {
-    public Task RegisterAsync(
+    public Task<User> RegisterAsync(
         CreateUserDto dto,
         CancellationToken ct);
 

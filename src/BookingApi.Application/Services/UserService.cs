@@ -10,7 +10,7 @@ public class UserService(
     IPasswordHasher passwordHasher,
     ITokenGenerator tokenGenerator) : IUserService
 {
-    public async Task RegisterAsync(
+    public async Task<User> RegisterAsync(
         CreateUserDto dto,
         CancellationToken ct)
     {
@@ -35,6 +35,8 @@ public class UserService(
 
         unitOfWork.UserReopitory.Add(user);
         await unitOfWork.SaveChangesAsync(ct);
+
+        return user;
     }
 
     public async Task<string> LoginAsync(

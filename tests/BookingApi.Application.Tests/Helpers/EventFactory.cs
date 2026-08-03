@@ -19,8 +19,8 @@ public static class EventFactory
             Title = title ?? "Event title",
             TotalSeats = totalSeats ?? 20,
             AvailableSeats = availableSeats ?? totalSeats ?? 20,
-            StartAt = startAt ?? DateTime.Now.AddDays(-1),
-            EndAt = endAt ?? DateTime.Now
+            StartAt = startAt ?? DateTime.Now.AddDays(1),
+            EndAt = endAt ?? DateTime.Now.AddDays(2)
         };
     }
 
@@ -37,10 +37,10 @@ public static class EventFactory
                     Title = "Title #" + index.ToString(),
                     TotalSeats = 20,
                     AvailableSeats = 20,
-                    StartAt = date.AddDays(-1 * (count - index)),
-                    EndAt = date.AddDays(-1 * (count - index - 1))
+                    StartAt = date.AddDays(1 + index),
+                    EndAt = date.AddDays(2  + index)
                 };
-            })];
+        })];
     }
 
     public static T Generate<T>(
@@ -57,15 +57,15 @@ public static class EventFactory
                 Title = title ?? "Event title",
                 Description = description,
                 TotalSeats = totalSeats ?? 20,
-                StartAt = startAt ?? DateTime.Now.AddDays(-1),
-                EndAt = endAt ?? DateTime.Now
+                StartAt = startAt ?? DateTime.Now.AddDays(1),
+                EndAt = endAt ?? DateTime.Now.AddDays(2)
             } as T ?? throw new InvalidCastException(),
 
             nameof(UpdateEventDto) => new UpdateEventDto
             {
                 Title = title ?? "Updated Event",
-                StartAt = startAt ?? DateTime.Now.AddDays(-1),
-                EndAt = endAt ?? DateTime.Now
+                StartAt = startAt ?? DateTime.Now.AddDays(1),
+                EndAt = endAt ?? DateTime.Now.AddDays(2)
             } as T ?? throw new InvalidCastException(),
 
             nameof(Event) => new Event
@@ -75,8 +75,8 @@ public static class EventFactory
                 Description = description,
                 TotalSeats = totalSeats ?? 20,
                 AvailableSeats = totalSeats ?? 20,
-                StartAt = startAt ?? DateTime.Now.AddDays(-1),
-                EndAt = endAt ?? DateTime.Now
+                StartAt = startAt ?? DateTime.Now.AddDays(1),
+                EndAt = endAt ?? DateTime.Now.AddDays(2)
             } as T ?? throw new InvalidCastException(),
 
             _ => throw new NotSupportedException($"Type {typeof(T).Name} is not supported"),
