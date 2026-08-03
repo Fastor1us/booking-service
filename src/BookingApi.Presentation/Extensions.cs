@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using BookingApi.Domain.Exceptions;
+using BookingApi.Domain.Models;
 using BookingApi.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
@@ -34,7 +35,9 @@ public static class Extensions
                     options.TokenValidationParameters = new()
                     {
                         ValidateIssuer = true,
+                        ValidIssuer = jwtSettings.Issuer,
                         ValidateAudience = true,
+                        ValidAudience = jwtSettings.Audience,
                         ValidateLifetime = true,
                         ClockSkew = TimeSpan.Zero,
                         ValidateIssuerSigningKey = true,
