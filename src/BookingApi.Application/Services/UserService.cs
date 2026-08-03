@@ -38,19 +38,18 @@ public class UserService(
     }
 
     public async Task<string> LoginAsync(
-        string login,
-        string password,
+        LoginUserDto dto,
         CancellationToken ct)
     {
         var user = await unitOfWork.UserReopitory
-            .FirstOrDefaultAsync(e => e.Login == login, ct)
-            ?? throw new UserNotFoundException(login);
+            .FirstOrDefaultAsync(e => e.Login == dto.Login, ct)
+            ?? throw new UserNotFoundException(dto.Login);
 
-        if (passwordHasher.VerifyPassword(password, user.PasswordHash))
+        if (!passwordHasher.VerifyPassword(dto.Password, user.PasswordHash))
         {
             throw new UserIncorrectPasswordException();
         }
 
-        return tokenGenerator.Generate(login, user.Role);
+        return tokenGenerator.Generate(dto.Login, user.Role);
     }
 }

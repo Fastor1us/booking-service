@@ -69,25 +69,19 @@ dotnet tool install --global dotnet-ef
 ### Create a new migration
 
 ```bash
-dotnet ef migrations add <MigrationName> \
-    --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj \
-    --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
+dotnet ef migrations add <MigrationName> --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
 ```
 
 ### Apply migrations
 
 ```bash
-dotnet ef database update \
-    --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj \
-    --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
+dotnet ef database update --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
 ```
 
 ### Remove last migration
 
 ```bash
-dotnet ef migrations remove \
-    --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj \
-    --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
+dotnet ef migrations remove --project ./src/BookingApi.Infrastructure/BookingApi.Infrastructure.csproj --startup-project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
 ```
 
 ### Automatic Migration

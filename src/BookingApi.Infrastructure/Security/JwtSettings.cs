@@ -8,7 +8,7 @@ public class JwtSettings
 
     [Required]
     [MinLength(32)]
-    public string Key { get; set; } = string.Empty;
+    public string SigningKey { get; set; } = string.Empty;
 
     [Required]
     [MinLength(2)]

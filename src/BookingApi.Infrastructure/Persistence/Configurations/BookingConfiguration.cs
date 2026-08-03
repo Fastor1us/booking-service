@@ -72,6 +72,6 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
 
         builder.ToTable(tb => tb.HasCheckConstraint(
             "ck_bookings_status_valid",
-            "status IN ('Pending', 'Confirmed', 'Rejected')"));
+            $"status IN ({string.Join(", ", Enum.GetNames<BookingStatus>().Select(s => $"'{s}'"))})"));
     }
 }

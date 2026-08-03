@@ -30,7 +30,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(e => e.Role)
             .HasColumnName("role")
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(20);
 
         builder.HasMany(e => e.Bookings)
             .WithOne(e => e.User)
@@ -51,5 +53,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable(tb => tb.HasCheckConstraint(
             "ck_login",
             $"LENGTH(login) >= {UserConstant.LoginMinLength}"));
+
+        builder.ToTable(tb => tb.HasCheckConstraint(
+            "ck_users_role_valid",
+            $"role IN ({string.Join(", ", Enum.GetNames<UserRole>().Select(s => $"'{s}'"))})"));
     }
 }

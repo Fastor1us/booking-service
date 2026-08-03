@@ -80,7 +80,6 @@ public class GlobalExceptionHandlingMiddleware(
         {
             ValidationException or
             BookingPastEventException => StatusCodes.Status400BadRequest,
-            //  => StatusCodes.Status401Unauthorized,
             ForbiddenException => StatusCodes.Status403Forbidden,
             NotFoundException => StatusCodes.Status404NotFound,
             NoAvailableSeatsException or

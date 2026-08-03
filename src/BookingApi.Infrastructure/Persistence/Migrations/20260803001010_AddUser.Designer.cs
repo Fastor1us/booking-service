@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BookingApi.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260802224618_AddUser")]
+    [Migration("20260803001010_AddUser")]
     partial class AddUser
     {
         /// <inheritdoc />
@@ -81,7 +81,7 @@ namespace BookingApi.Infrastructure.Persistence.Migrations
 
                     b.ToTable("bookings", null, t =>
                         {
-                            t.HasCheckConstraint("ck_bookings_status_valid", "status IN ('Pending', 'Confirmed', 'Rejected')");
+                            t.HasCheckConstraint("ck_bookings_status_valid", "status IN ('Pending', 'Confirmed', 'Rejected', 'Cancelled')");
                         });
                 });
 
@@ -165,8 +165,10 @@ namespace BookingApi.Infrastructure.Persistence.Migrations
                         .HasColumnType("bytea")
                         .HasColumnName("password_hash");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("integer")
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("role");
 
                     b.Property<uint>("RowVersion")
@@ -185,6 +187,8 @@ namespace BookingApi.Infrastructure.Persistence.Migrations
                     b.ToTable("users", null, t =>
                         {
                             t.HasCheckConstraint("ck_login", "LENGTH(login) >= 5");
+
+                            t.HasCheckConstraint("ck_users_role_valid", "role IN ('User', 'Admin')");
                         });
                 });
 

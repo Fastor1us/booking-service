@@ -18,7 +18,8 @@ public class JwtTokenGenerator(IOptions<JwtSettings> jwt) : ITokenGenerator
             new Claim(ClaimTypes.Role, role.ToString()),
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Value.Key));
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwt.Value.SigningKey));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

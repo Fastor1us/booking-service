@@ -10,7 +10,6 @@ public interface IUserService
         CancellationToken ct);
 
     public Task<string> LoginAsync(
-        string login,
-        string password,
+        LoginUserDto dto,
         CancellationToken ct);
 }
