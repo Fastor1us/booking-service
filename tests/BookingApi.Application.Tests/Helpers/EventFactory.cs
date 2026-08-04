@@ -79,7 +79,8 @@ public static class EventFactory
                 EndAt = endAt ?? DateTime.Now.AddDays(2)
             } as T ?? throw new InvalidCastException(),
 
-            _ => throw new NotSupportedException($"Type {typeof(T).Name} is not supported"),
+            _ => throw new NotSupportedException(
+                $"Type {typeof(T).Name} is not supported"),
         };
     }
 }

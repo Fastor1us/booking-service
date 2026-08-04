@@ -3,6 +3,7 @@ using BookingApi.Infrastructure.Repositories;
 using BookingApi.Infrastructure.Tests.Base;
 using BookingApi.Infrastructure.Tests.Helpers;
 using BookingApi.Infrastructure.UnitOfWork;
+using Microsoft.EntityFrameworkCore;
 using System.Data;
 
 namespace BookingApi.Infrastructure.Tests;
@@ -16,10 +17,14 @@ public class EfCoreUnitOfWorkTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
-        var unitOfWork = new EfCoreUnitOfWork(context, eventRepository, bookingRepository);
+        var userRepository = new EFCoreUserRepository(context);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
+        var unitOfWork = new EfCoreUnitOfWork(
+            context, eventRepository, bookingRepository, userRepository);
 
         var @event = EventFactory.Generate();
-        var booking = BookingFactory.Generate(@event.Id);
+        var booking = BookingFactory.Generate(@event.Id, user.Id);
 
         // Act
         await unitOfWork.BeginTransactionAsync(IsolationLevel.ReadCommitted);
@@ -49,10 +54,15 @@ public class EfCoreUnitOfWorkTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
-        var unitOfWork = new EfCoreUnitOfWork(context, eventRepository, bookingRepository);
+        var userRepository = new EFCoreUserRepository(context);
+
+        var unitOfWork = new EfCoreUnitOfWork(
+            context, eventRepository, bookingRepository, userRepository);
 
         var @event = EventFactory.Generate();
-        var booking = BookingFactory.Generate(@event.Id);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
+        var booking = BookingFactory.Generate(@event.Id, user.Id);
 
         // Act
         await unitOfWork.BeginTransactionAsync(IsolationLevel.ReadCommitted);
@@ -79,10 +89,15 @@ public class EfCoreUnitOfWorkTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
-        var unitOfWork = new EfCoreUnitOfWork(context, eventRepository, bookingRepository);
+        var userRepository = new EFCoreUserRepository(context);
 
+        var unitOfWork = new EfCoreUnitOfWork(
+            context, eventRepository, bookingRepository, userRepository);
+
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
         var @event = EventFactory.Generate();
-        var booking = BookingFactory.Generate(@event.Id);
+        var booking = BookingFactory.Generate(@event.Id, user.Id);
 
         // Act
         unitOfWork.EventRepository.Add(@event);
@@ -95,7 +110,7 @@ public class EfCoreUnitOfWorkTests : PostgreSqlBase
             .FirstOrDefaultAsync(b => b.Id == booking.Id);
 
         // Assert
-        Assert.Equal(2, savedCount);
+        Assert.Equal(3, savedCount);
         Assert.NotNull(createdEvent);
         Assert.NotNull(createdBooking);
     }
@@ -109,7 +124,9 @@ public class EfCoreUnitOfWorkTests : PostgreSqlBase
 
         var eventRepository1 = new EFCoreEventRepository(context1);
         var bookingRepository1 = new EFCoreBookingRepository(context1);
-        var unitOfWork1 = new EfCoreUnitOfWork(context1, eventRepository1, bookingRepository1);
+        var userRepository1 = new EFCoreUserRepository(context1);
+        var unitOfWork1 = new EfCoreUnitOfWork(
+            context1, eventRepository1, bookingRepository1, userRepository1);
         var eventRepository2 = new EFCoreEventRepository(context2);
 
         var @event = EventFactory.Generate();
@@ -148,7 +165,9 @@ public class EfCoreUnitOfWorkTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
-        var unitOfWork = new EfCoreUnitOfWork(context, eventRepository, bookingRepository);
+        var userRepository = new EFCoreUserRepository(context);
+        var unitOfWork = new EfCoreUnitOfWork(
+            context, eventRepository, bookingRepository, userRepository);
 
         // Act
         await unitOfWork.BeginTransactionAsync(IsolationLevel.ReadCommitted);
@@ -169,12 +188,16 @@ public class EfCoreUnitOfWorkTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
-        var unitOfWork = new EfCoreUnitOfWork(context, eventRepository, bookingRepository);
+        var userRepository = new EFCoreUserRepository(context);
+        var unitOfWork = new EfCoreUnitOfWork(
+            context, eventRepository, bookingRepository, userRepository);
 
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
         var @event1 = EventFactory.Generate();
         var @event2 = EventFactory.Generate();
-        var booking1 = BookingFactory.Generate(@event1.Id);
-        var booking2 = BookingFactory.Generate(@event2.Id);
+        var booking1 = BookingFactory.Generate(@event1.Id, user.Id);
+        var booking2 = BookingFactory.Generate(@event2.Id, user.Id);
 
         // Act
         await unitOfWork.BeginTransactionAsync(IsolationLevel.ReadCommitted);
