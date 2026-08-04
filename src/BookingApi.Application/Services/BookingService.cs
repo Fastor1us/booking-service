@@ -19,7 +19,15 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
                         e => e.Login == userLogin, ct)
                     ?? throw new UserNotFoundException(userLogin);
 
-                if (user.Bookings.Count >= UserConstant.MaxActiveBookings)
+                var bookingQuery = unitOfWork.BookingRepository
+                    .GetQuery(QueryTrackerBehavior.NoTracking)
+                    .Where(e => e.UserId == user.Id 
+                        && (e.Status == BookingStatus.Pending 
+                            || e.Status == BookingStatus.Confirmed));
+                var userBookingCount = await unitOfWork.BookingRepository
+                    .CountAsync(bookingQuery, ct);
+
+                if (userBookingCount >= UserConstant.MaxActiveBookings)
                 {
                     throw new BookingExceedLimitException(userLogin);
                 }

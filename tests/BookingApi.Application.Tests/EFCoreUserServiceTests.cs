@@ -1,4 +1,5 @@
-﻿using BookingApi.Application.Tests.Helpers;
+﻿using BookingApi.Application.Dtos;
+using BookingApi.Application.Tests.Helpers;
 using BookingApi.Domain.Exceptions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -20,6 +21,23 @@ public class EFCoreUserServiceTests : EFCoreServiceTestsBase
         Assert.NotNull(user);
         Assert.Equal(createUserDto.Login, user.Login);
         Assert.Equal(createUserDto.Role, user.Role);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_ExistentLogin_Throws()
+    {
+        // Arrange
+        var createUserDto = UserFactory.GenerateCreateDto();
+        var user = await _userService.RegisterAsync(createUserDto, _ct);
+        var expectedException = new UserAlreadyExistsException(user.Login);
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+           () => _userService.RegisterAsync(createUserDto, _ct));
+
+        // Assert
+        Assert.IsType<UserAlreadyExistsException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
     }
 
     [Fact]

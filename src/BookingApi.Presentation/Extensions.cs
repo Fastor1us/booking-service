@@ -1,11 +1,11 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using BookingApi.Domain.Exceptions;
-using BookingApi.Domain.Models;
 using BookingApi.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 namespace BookingApi.Presentation;
 
@@ -64,7 +64,23 @@ public static class Extensions
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
 
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(options =>
+        {
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                In = ParameterLocation.Header,
+                Type = SecuritySchemeType.Http,
+                Scheme = "Bearer",
+                BearerFormat = "JWT",
+                Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
+            });
+
+            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+            });
+        });
 
         return services;
     }

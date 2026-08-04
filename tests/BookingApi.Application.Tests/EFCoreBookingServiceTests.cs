@@ -1,5 +1,6 @@
 ﻿using BookingApi.Application.Dtos;
 using BookingApi.Application.Tests.Helpers;
+using BookingApi.Domain.Constants;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
 
@@ -117,6 +118,74 @@ public class EFCoreBookingServiceTests : EFCoreServiceTestsBase
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
         Assert.Equal(expectedException.Message, exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_PastEvent_ThrowsBookingPastEventException()
+    {
+        // Arrange
+        var createEventDto = EventFactory.Generate<CreateEventDto>(startAt: DateTime.Now.AddDays(-1));
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var expectedException = new BookingPastEventException(addedEvent.Id);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.AddAsync(addedEvent.Id, user.Login, _ct));
+
+        // Assert
+        Assert.IsType<BookingPastEventException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ExceedMaxActiveBookingsUserLimit_ThrowsBookingPastEventException()
+    {
+        // Arrange
+        var maxActiveBookings = UserConstant.MaxActiveBookings;
+        var createEventDto = EventFactory.Generate<CreateEventDto>(totalSeats: maxActiveBookings + 1);
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var expectedException = new BookingExceedLimitException(user.Login);
+        for (int i = 0; i < maxActiveBookings; i++)
+        {
+            await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
+        }
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.AddAsync(addedEvent.Id, user.Login, _ct));
+
+        // Assert
+        Assert.IsType<BookingExceedLimitException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_EveryUserHasItsOwnMaxActiveBookingsLimit()
+    {
+        // Arrange
+        var maxActiveBookings = UserConstant.MaxActiveBookings;
+        var createEventDto = EventFactory.Generate<CreateEventDto>(totalSeats: maxActiveBookings + 1);
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user1 = await _userService.RegisterAsync(UserFactory.GenerateCreateDto("user1"), _ct);
+        var user2 = await _userService.RegisterAsync(UserFactory.GenerateCreateDto("user2"), _ct);
+        var expectedException = new BookingExceedLimitException(user1.Login);
+        for (int i = 0; i < maxActiveBookings; i++)
+        {
+            await _bookingService.AddAsync(addedEvent.Id, user1.Login, _ct);
+        }
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.AddAsync(addedEvent.Id, user1.Login, _ct));
+        var user2Booking = await _bookingService.AddAsync(addedEvent.Id, user2.Login, _ct);
+
+        // Assert
+        Assert.IsType<BookingExceedLimitException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+        Assert.NotNull(user2Booking);
+        Assert.Equal(addedEvent.Id, user2Booking.EventId);
     }
 
     [Fact]
