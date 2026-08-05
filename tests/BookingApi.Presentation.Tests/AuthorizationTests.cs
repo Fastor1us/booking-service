@@ -58,6 +58,7 @@ public class AuthorizationTests : PostgreSqlBase
         var createResponse = await Client.PostAsJsonAsync("/api/events", createEventDto);
         var updateResponse = await Client.PutAsJsonAsync("/api/events/" + Guid.NewGuid(), updateDto);
         var deleteResponse = await Client.DeleteAsync("/api/events/" + Guid.NewGuid());
+        var bookingResponse = await Client.GetAsync("/api/bookings/" + Guid.NewGuid());
         var bookResponse = await Client.PostAsync("/api/events/" + Guid.NewGuid() + "/book", null);
         var cancelResponse = await Client.DeleteAsync($"/api/bookings/{Guid.NewGuid()}");
 
@@ -65,6 +66,7 @@ public class AuthorizationTests : PostgreSqlBase
         Assert.Equal(HttpStatusCode.Unauthorized, createResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, updateResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, deleteResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, bookingResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, bookResponse.StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, cancelResponse.StatusCode);
     }

@@ -205,10 +205,10 @@ Integration tests use **Testcontainers** to spin up a real PostgreSQL database i
 
 ### 📖 Booking Controller (`/api/bookings`)
 
-| Method | Endpoint                | Description       | Success Response | Authorization |
-| ------ | ----------------------- | ----------------- | ---------------- | -------------- |
-| GET    | `/api/bookings/{id}`    | Get booking by ID | 200 OK           | ✅ User/Admin   |
-| POST   | `/api/bookings/{id}/cancel` | Cancel booking | 204 No Content   | ✅ User/Admin  |
+| Method   | Endpoint             | Description       | Success Response | Authorization  |
+| -------- | -------------------- | ----------------- | ---------------- | -------------- |
+| GET      | `/api/bookings/{id}` | Get booking by ID | 200 OK           | ✅ User/Admin  |
+| DELETE   | `/api/bookings/{id}` | Cancel booking    | 204 No Content   | ✅ User/Admin  |
 
 ### 📊 Query Parameters
 
@@ -473,7 +473,7 @@ Get booking details by ID.
 
 ---
 
-### ❌ POST `/api/bookings/{id}/cancel`
+### ❌ DELETE `/api/bookings/{id}`
 
 Cancel a booking.
 
