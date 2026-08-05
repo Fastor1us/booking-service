@@ -13,4 +13,6 @@ public class CreateEventDto : EventRequestDto
     public int TotalSeats { get; set; }
 }
 
-public class UpdateEventDto : EventRequestDto { }
+public class UpdateEventDto : EventRequestDto
+{
+}

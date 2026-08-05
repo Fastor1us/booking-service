@@ -9,10 +9,12 @@ namespace BookingApi.Infrastructure.UnitOfWork;
 public class EfCoreUnitOfWork(
     AppDbContext context,
     IEventRepository eventRepository,
-    IBookingRepository bookingRepository) : IUnitOfWork
+    IBookingRepository bookingRepository,
+    IUserRepository userRepository) : IUnitOfWork
 {
     public IEventRepository EventRepository => eventRepository;
     public IBookingRepository BookingRepository => bookingRepository;
+    public IUserRepository UserReopitory => userRepository;
 
     private IDbContextTransaction? _dbContextTransaction = null;
 
@@ -30,11 +32,11 @@ public class EfCoreUnitOfWork(
             _dbContextTransaction = null;
         }
     }
-    public async Task RollbackTransactionAsync()
+    public async Task RollbackTransactionAsync(CancellationToken ct = default)
     {
         if (_dbContextTransaction != null)
         {
-            await _dbContextTransaction.RollbackAsync();
+            await _dbContextTransaction.RollbackAsync(ct);
         }
     }
 

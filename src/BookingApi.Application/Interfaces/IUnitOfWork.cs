@@ -33,13 +33,16 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
 {
     IEventRepository EventRepository { get; }
     IBookingRepository BookingRepository { get; }
+    IUserRepository UserReopitory { get; }
 
     Task BeginTransactionAsync(
         System.Data.IsolationLevel isolationLevel,
         CancellationToken ct = default
     );
+
     Task CommitTransactionAsync(CancellationToken ct = default);
-    Task RollbackTransactionAsync();
+
+    Task RollbackTransactionAsync(CancellationToken ct = default);
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 

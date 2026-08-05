@@ -1,6 +1,5 @@
 ﻿using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Constants;
-using BookingApi.Domain.Models;
 using BookingApi.Infrastructure.Repositories;
 using BookingApi.Infrastructure.Tests.Base;
 using BookingApi.Infrastructure.Tests.Helpers;
@@ -312,12 +311,12 @@ public class EFCoreEventRepositoryTests : PostgreSqlBase
         var filteredEvents = await eventRepository.ToListAsync(
             eventRepository
                 .GetQuery(QueryTrackerBehavior.NoTracking)
-                .Where(e => e.StartAt > now.AddDays(-5))
+                .Where(e => e.StartAt > now.AddDays(15))
                 .OrderBy(e => e.StartAt));
 
         // Assert
-        Assert.Equal(6, filteredEvents.Count);
-        Assert.Equal("Title #15", filteredEvents[0].Title);
+        Assert.Equal(7, filteredEvents.Count);
+        Assert.Equal("Title #14", filteredEvents[0].Title);
     }
 
     [Fact]

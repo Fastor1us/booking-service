@@ -2,15 +2,18 @@ using BookingApi.Application.Dtos;
 using BookingApi.Application.Interfaces;
 using BookingApi.Presentation.Dtos;
 using BookingApi.Presentation.Mappers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi.Presentation.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/events")]
 public class EventController(
     IEventService eventService, IBookingService bookingService) : ControllerBase
 {
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
@@ -22,6 +25,7 @@ public class EventController(
         return Ok(@event.MapToResponseDto());
     }
 
+    [AllowAnonymous]
     [HttpGet]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
@@ -41,9 +45,12 @@ public class EventController(
         return Ok(@event.MapToPaginatedResponseDto(paginationParams));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<EventResponseDto>> Add(
         [FromBody] CreateEventDto dto, CancellationToken ct)
@@ -55,9 +62,12 @@ public class EventController(
             @event.MapToResponseDto());
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<EventResponseDto>> Put(
@@ -69,8 +79,11 @@ public class EventController(
         return NoContent();
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> Remove(
@@ -80,15 +93,18 @@ public class EventController(
         return NoContent();
     }
 
+    [Authorize(Roles = "User,Admin")]
     [HttpPost("{id:guid}/book")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<BookingResponseDto>> Book(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        var booking = await bookingService.AddAsync(id, ct);
+        var booking = await bookingService.AddAsync(id, User.Identity!.Name!, ct);
         return AcceptedAtAction(
             actionName: nameof(BookingController.GetById),
             controllerName: "Booking",

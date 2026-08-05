@@ -16,10 +16,13 @@ public class EFCoreBookingRepositoryTests : PostgreSqlBase
         // Arrange
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
+        var userRepository = new EFCoreUserRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
         var @event = EventFactory.Generate();
         eventRepository.Add(@event);
-        var booking = BookingFactory.Generate(@event.Id);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
+        var booking = BookingFactory.Generate(@event.Id, user.Id);
         bookingRepository.Add(booking);
 
         await context.SaveChangesAsync();
@@ -40,8 +43,11 @@ public class EFCoreBookingRepositoryTests : PostgreSqlBase
         // Arrange
         var context = CreateContext();
         var bookingRepository = new EFCoreBookingRepository(context);
+        var userRepository = new EFCoreUserRepository(context);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
         var nonExistentEventId = Guid.NewGuid();
-        var booking = BookingFactory.Generate(nonExistentEventId);
+        var booking = BookingFactory.Generate(nonExistentEventId, user.Id);
         bookingRepository.Add(booking);
 
         // Act
@@ -60,9 +66,12 @@ public class EFCoreBookingRepositoryTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
+        var userRepository = new EFCoreUserRepository(context);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
         var @event = EventFactory.Generate();
         eventRepository.Add(@event);
-        var bookings = BookingFactory.Generate(@event.Id, 3);
+        var bookings = BookingFactory.Generate(@event.Id, user.Id, 3);
         foreach (var b in bookings)
         {
             bookingRepository.Add(b);
@@ -90,7 +99,10 @@ public class EFCoreBookingRepositoryTests : PostgreSqlBase
         var bookingRepository = new EFCoreBookingRepository(context);
         var @event = EventFactory.Generate();
         eventRepository.Add(@event);
-        var booking = BookingFactory.Generate(@event.Id);
+        var userRepository = new EFCoreUserRepository(context);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
+        var booking = BookingFactory.Generate(@event.Id, user.Id);
         bookingRepository.Add(booking);
 
         await context.SaveChangesAsync();
@@ -116,7 +128,10 @@ public class EFCoreBookingRepositoryTests : PostgreSqlBase
         var bookingRepository = new EFCoreBookingRepository(context);
         var @event = EventFactory.Generate();
         eventRepository.Add(@event);
-        var booking = BookingFactory.Generate(@event.Id);
+        var userRepository = new EFCoreUserRepository(context);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
+        var booking = BookingFactory.Generate(@event.Id, user.Id);
         bookingRepository.Add(booking);
 
         await context.SaveChangesAsync();
@@ -155,16 +170,19 @@ public class EFCoreBookingRepositoryTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
+        var userRepository = new EFCoreUserRepository(context);
 
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
         var @event = EventFactory.Generate();
         eventRepository.Add(@event);
         await context.SaveChangesAsync();
 
         var bookings = new List<Booking>
         {
-            BookingFactory.Generate(@event.Id, bookingStatus: BookingStatus.Pending),
-            BookingFactory.Generate(@event.Id, bookingStatus: BookingStatus.Pending),
-            BookingFactory.Generate(@event.Id, bookingStatus: BookingStatus.Confirmed)
+            BookingFactory.Generate(@event.Id, user.Id, bookingStatus: BookingStatus.Pending),
+            BookingFactory.Generate(@event.Id, user.Id, bookingStatus: BookingStatus.Pending),
+            BookingFactory.Generate(@event.Id, user.Id, bookingStatus: BookingStatus.Confirmed)
         };
         foreach (var b in bookings)
         {
@@ -195,8 +213,11 @@ public class EFCoreBookingRepositoryTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
+        var userRepository = new EFCoreUserRepository(context);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
         var @event = EventFactory.Generate();
-        var booking = BookingFactory.Generate(@event.Id);
+        var booking = BookingFactory.Generate(@event.Id, user.Id);
         eventRepository.Add(@event);
         bookingRepository.Add(booking);
 
@@ -225,9 +246,12 @@ public class EFCoreBookingRepositoryTests : PostgreSqlBase
         var context = CreateContext();
         var eventRepository = new EFCoreEventRepository(context);
         var bookingRepository = new EFCoreBookingRepository(context);
+        var userRepository = new EFCoreUserRepository(context);
+        var user = UserFactory.Generate();
+        userRepository.Add(user);
         var @event = EventFactory.Generate();
         eventRepository.Add(@event);
-        var bookings = BookingFactory.Generate(@event.Id, 5);
+        var bookings = BookingFactory.Generate(@event.Id, user.Id, 5);
         foreach (var b in bookings)
         {
             bookingRepository.Add(b);

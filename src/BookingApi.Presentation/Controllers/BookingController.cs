@@ -1,10 +1,12 @@
 using BookingApi.Application.Interfaces;
 using BookingApi.Presentation.Dtos;
 using BookingApi.Presentation.Mappers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookingApi.Presentation.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/bookings")]
 public class BookingController(IBookingService bookingService) : ControllerBase
@@ -18,5 +20,17 @@ public class BookingController(IBookingService bookingService) : ControllerBase
     {
         var booking = await bookingService.GetByIdAsync(id, ct);
         return Ok(booking.MapToResponseDto());
+    }
+
+    [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> Cancel(
+        [FromRoute] Guid id, CancellationToken ct)
+    {
+        await bookingService.CancelAsync(id, User.Identity!.Name!, ct);
+
+        return NoContent();
     }
 }

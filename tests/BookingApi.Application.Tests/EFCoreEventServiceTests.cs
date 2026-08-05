@@ -1,53 +1,11 @@
 ﻿using BookingApi.Application.Dtos;
-using BookingApi.Application.Interfaces;
-using BookingApi.Application.Services;
 using BookingApi.Application.Tests.Helpers;
 using BookingApi.Domain.Exceptions;
-using BookingApi.Infrastructure.Persistence;
-using BookingApi.Infrastructure.Repositories;
-using BookingApi.Infrastructure.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BookingApi.Application.Tests;
 
-public class EFCoreEventServiceTests : IDisposable
+public class EFCoreEventServiceTests : EFCoreServiceTestsBase
 {
-    private readonly ServiceProvider _serviceProvider;
-    private readonly IServiceScope _scope;
-    private readonly IEventService _eventService;
-    private readonly CancellationToken _ct;
-
-    public EFCoreEventServiceTests()
-    {
-        var dbName = Guid.NewGuid().ToString();
-        var services = new ServiceCollection();
-
-        services.AddDbContext<AppDbContext>(options =>
-            options.UseInMemoryDatabase(dbName));
-
-        services.AddScoped<IEventRepository, EFCoreEventRepository>();
-        services.AddScoped<IBookingRepository, EFCoreBookingRepository>();
-        services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
-
-        services.AddScoped<IEventService, EventService>();
-
-        _serviceProvider = services.BuildServiceProvider();
-        _scope = _serviceProvider.CreateScope();
-
-        var context = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        context.Database.EnsureCreated();
-
-        _eventService = _scope.ServiceProvider.GetRequiredService<IEventService>();
-        _ct = CancellationToken.None;
-    }
-
-    public void Dispose()
-    {
-        _scope?.Dispose();
-        _serviceProvider?.Dispose();
-    }
-
     #region GetByIdAsync
     [Fact]
     public async Task GetByIdAsync_ExistingId_ReturnsCorrectEvent()

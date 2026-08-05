@@ -6,6 +6,7 @@ using BookingApi.Infrastructure.BackgroundServices;
 using BookingApi.Infrastructure.Repositories;
 using BookingApi.Infrastructure.UnitOfWork;
 using BookingApi.Application.Interfaces;
+using BookingApi.Infrastructure.Security;
 
 namespace BookingApi.Infrastructure;
 
@@ -23,8 +24,12 @@ public static class Extensions
             options.UseLazyLoadingProxies();
         });
 
+        services.AddSingleton<IPasswordHasher, Sha256PasswordHasher>();
+        services.AddSingleton<ITokenGenerator, JwtTokenGenerator>();
+
         services.AddScoped<IEventRepository, EFCoreEventRepository>();
         services.AddScoped<IBookingRepository, EFCoreBookingRepository>();
+        services.AddScoped<IUserRepository, EFCoreUserRepository>();
         services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
 
         services.AddHostedService<PendingBookingProcessor>();

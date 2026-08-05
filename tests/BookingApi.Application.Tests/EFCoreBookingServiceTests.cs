@@ -1,57 +1,13 @@
 ﻿using BookingApi.Application.Dtos;
-using BookingApi.Application.Interfaces;
-using BookingApi.Application.Services;
 using BookingApi.Application.Tests.Helpers;
+using BookingApi.Domain.Constants;
 using BookingApi.Domain.Exceptions;
 using BookingApi.Domain.Models;
-using BookingApi.Infrastructure.Persistence;
-using BookingApi.Infrastructure.Repositories;
-using BookingApi.Infrastructure.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace BookingApi.Application.Tests;
 
-public class EFCoreBookingServiceTests : IDisposable
+public class EFCoreBookingServiceTests : EFCoreServiceTestsBase
 {
-    private readonly ServiceProvider _serviceProvider;
-    private readonly IServiceScope _scope;
-    private readonly IBookingService _bookingService;
-    private readonly IEventService _eventService;
-    private readonly CancellationToken _ct;
-
-    public EFCoreBookingServiceTests()
-    {
-        var dbName = Guid.NewGuid().ToString();
-        var services = new ServiceCollection();
-
-        services.AddDbContext<AppDbContext>(options =>
-            options.UseInMemoryDatabase(dbName));
-
-        services.AddScoped<IEventRepository, EFCoreEventRepository>();
-        services.AddScoped<IBookingRepository, EFCoreBookingRepository>();
-        services.AddScoped<IUnitOfWork, EfCoreUnitOfWork>();
-
-        services.AddScoped<IEventService, EventService>();
-        services.AddScoped<IBookingService, BookingService>();
-
-        _serviceProvider = services.BuildServiceProvider();
-        _scope = _serviceProvider.CreateScope();
-
-        var context = _scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        context.Database.EnsureCreated();
-
-        _bookingService = _scope.ServiceProvider.GetRequiredService<IBookingService>();
-        _eventService = _scope.ServiceProvider.GetRequiredService<IEventService>();
-        _ct = CancellationToken.None;
-    }
-
-    public void Dispose()
-    {
-        _scope?.Dispose();
-        _serviceProvider?.Dispose();
-    }
-
     #region GetByIdAsync
     [Fact]
     public async Task GetByIdAsync_ValidBookingId_ReturnsCorrectBooking()
@@ -59,7 +15,8 @@ public class EFCoreBookingServiceTests : IDisposable
         // Arrange
         var createEventDto = EventFactory.Generate<CreateEventDto>();
         var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
-        var createdBooking = await _bookingService.AddAsync(addedEvent.Id, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var createdBooking = await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
 
         // Act
         var result = await _bookingService.GetByIdAsync(createdBooking.Id, _ct);
@@ -97,9 +54,10 @@ public class EFCoreBookingServiceTests : IDisposable
         // Arrange
         var createEventDto = EventFactory.Generate<CreateEventDto>();
         var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
 
         // Act
-        var result = await _bookingService.AddAsync(addedEvent.Id, _ct);
+        var result = await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
 
         // Assert
         Assert.NotNull(result);
@@ -116,9 +74,10 @@ public class EFCoreBookingServiceTests : IDisposable
         var createEventDto = EventFactory.Generate<CreateEventDto>(totalSeats: 5);
         var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
         var initialAvailableSeats = addedEvent.AvailableSeats;
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
 
         // Act
-        await _bookingService.AddAsync(addedEvent.Id, _ct);
+        await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
 
         // Assert
         var updatedEvent = await _eventService.GetByIdAsync(addedEvent.Id, _ct);
@@ -132,11 +91,12 @@ public class EFCoreBookingServiceTests : IDisposable
         var createEventDto = EventFactory.Generate<CreateEventDto>(totalSeats: 1);
         var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
         var expectedException = new NoAvailableSeatsException(addedEvent.Id);
-        await _bookingService.AddAsync(addedEvent.Id, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
 
         // Act
         var exception = await Record.ExceptionAsync(
-            () => _bookingService.AddAsync(addedEvent.Id, _ct));
+            () => _bookingService.AddAsync(addedEvent.Id, user.Login, _ct));
 
         // Assert
         Assert.IsType<NoAvailableSeatsException>(exception);
@@ -149,14 +109,83 @@ public class EFCoreBookingServiceTests : IDisposable
         // Arrange
         var nonExistentEventId = Guid.NewGuid();
         var expectedException = new EventNotFoundException(nonExistentEventId);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
 
         // Act
         var exception = await Record.ExceptionAsync(
-            () => _bookingService.AddAsync(nonExistentEventId, _ct));
+            () => _bookingService.AddAsync(nonExistentEventId, user.Login, _ct));
 
         // Assert
         Assert.IsType<EventNotFoundException>(exception);
         Assert.Equal(expectedException.Message, exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_PastEvent_ThrowsBookingPastEventException()
+    {
+        // Arrange
+        var createEventDto = EventFactory.Generate<CreateEventDto>(startAt: DateTime.Now.AddDays(-1));
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var expectedException = new BookingPastEventException(addedEvent.Id);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.AddAsync(addedEvent.Id, user.Login, _ct));
+
+        // Assert
+        Assert.IsType<BookingPastEventException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ExceedMaxActiveBookingsUserLimit_ThrowsBookingPastEventException()
+    {
+        // Arrange
+        var maxActiveBookings = UserConstant.MaxActiveBookings;
+        var createEventDto = EventFactory.Generate<CreateEventDto>(totalSeats: maxActiveBookings + 1);
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var expectedException = new BookingExceedLimitException(user.Login);
+        for (int i = 0; i < maxActiveBookings; i++)
+        {
+            await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
+        }
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.AddAsync(addedEvent.Id, user.Login, _ct));
+
+        // Assert
+        Assert.IsType<BookingExceedLimitException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateAsync_EveryUserHasItsOwnMaxActiveBookingsLimit()
+    {
+        // Arrange
+        var maxActiveBookings = UserConstant.MaxActiveBookings;
+        var createEventDto = EventFactory.Generate<CreateEventDto>(totalSeats: maxActiveBookings + 1);
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user1 = await _userService.RegisterAsync(UserFactory.GenerateCreateDto("user1"), _ct);
+        var user2 = await _userService.RegisterAsync(UserFactory.GenerateCreateDto("user2"), _ct);
+        var expectedException = new BookingExceedLimitException(user1.Login);
+        for (int i = 0; i < maxActiveBookings; i++)
+        {
+            await _bookingService.AddAsync(addedEvent.Id, user1.Login, _ct);
+        }
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.AddAsync(addedEvent.Id, user1.Login, _ct));
+        var user2Booking = await _bookingService.AddAsync(addedEvent.Id, user2.Login, _ct);
+
+        // Assert
+        Assert.IsType<BookingExceedLimitException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+        Assert.NotNull(user2Booking);
+        Assert.Equal(addedEvent.Id, user2Booking.EventId);
     }
 
     [Fact]
@@ -166,12 +195,13 @@ public class EFCoreBookingServiceTests : IDisposable
         var createEventDto = EventFactory.Generate<CreateEventDto>(totalSeats: 3);
         var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
         var eventId = addedEvent.Id;
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
 
         // Act
         var tasks = new List<Task<Booking>>();
         for (int i = 0; i < 3; i++)
         {
-            tasks.Add(_bookingService.AddAsync(eventId, _ct));
+            tasks.Add(_bookingService.AddAsync(eventId, user.Login, _ct));
         }
         var results = await Task.WhenAll(tasks);
         var updatedEvent = await _eventService.GetByIdAsync(eventId, _ct);
@@ -194,12 +224,13 @@ public class EFCoreBookingServiceTests : IDisposable
         var createEventDto = EventFactory.Generate<CreateEventDto>(totalSeats: 2);
         var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
         var eventId = addedEvent.Id;
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
 
         // Act
         var tasks = new List<Task<Booking>>();
         for (int i = 0; i < 3; i++)
         {
-            tasks.Add(_bookingService.AddAsync(eventId, _ct));
+            tasks.Add(_bookingService.AddAsync(eventId, user.Login, _ct));
         }
 
         var exceptions = new List<Exception>();
@@ -229,11 +260,12 @@ public class EFCoreBookingServiceTests : IDisposable
         var createEventDto2 = EventFactory.Generate<CreateEventDto>(totalSeats: 5);
         var event1 = await _eventService.AddAsync(createEventDto1, _ct);
         var event2 = await _eventService.AddAsync(createEventDto2, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
 
         // Act
-        await _bookingService.AddAsync(event1.Id, _ct);
-        await _bookingService.AddAsync(event1.Id, _ct);
-        await _bookingService.AddAsync(event2.Id, _ct);
+        await _bookingService.AddAsync(event1.Id, user.Login, _ct);
+        await _bookingService.AddAsync(event1.Id, user.Login, _ct);
+        await _bookingService.AddAsync(event2.Id, user.Login, _ct);
         var updatedEvent1 = await _eventService.GetByIdAsync(event1.Id, _ct);
         var updatedEvent2 = await _eventService.GetByIdAsync(event2.Id, _ct);
 
@@ -249,14 +281,92 @@ public class EFCoreBookingServiceTests : IDisposable
         var beforeCreation = DateTime.UtcNow;
         var createEventDto = EventFactory.Generate<CreateEventDto>();
         var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
 
         // Act
-        var result = await _bookingService.AddAsync(addedEvent.Id, _ct);
+        var result = await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
         var afterCreation = DateTime.UtcNow;
 
         // Assert
         Assert.True(result.CreatedAt >= beforeCreation);
         Assert.True(result.CreatedAt <= afterCreation);
+    }
+    #endregion
+
+    #region CancelAsync
+    [Fact]
+    public async Task CancelAsync_OwnBooking_ShouldCancelSuccessfully()
+    {
+        // Arrange
+        var createEventDto = EventFactory.Generate<CreateEventDto>();
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var booking = await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
+
+        // Act
+        await _bookingService.CancelAsync(booking.Id, user.Login, _ct);
+        var cancelledBooking = await _bookingService.GetByIdAsync(booking.Id, _ct);
+
+        // Assert
+        Assert.Equal(BookingStatus.Cancelled, cancelledBooking.Status);
+    }
+
+    [Fact]
+    public async Task CancelAsync_AdminCancellingOtherUsersBooking_ShouldCancelSuccessfully()
+    {
+        // Arrange
+        var createEventDto = EventFactory.Generate<CreateEventDto>();
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var admin = await _userService.RegisterAsync(
+            UserFactory.GenerateCreateDto("admin", "admin", UserRole.Admin), _ct);
+        var booking = await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
+
+        // Act
+        await _bookingService.CancelAsync(booking.Id, admin.Login, _ct);
+        var cancelledBooking = await _bookingService.GetByIdAsync(booking.Id, _ct);
+
+        // Assert
+        Assert.Equal(BookingStatus.Cancelled, cancelledBooking.Status);
+    }
+
+    [Fact]
+    public async Task CancelAsync_UserTryCancelOtherUsersBooking_ThrowsBookingUnauthorizedCancelException()
+    {
+        // Arrange
+        var createEventDto = EventFactory.Generate<CreateEventDto>();
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user1 = await _userService.RegisterAsync(UserFactory.GenerateCreateDto("user1"), _ct);
+        var user2 = await _userService.RegisterAsync(UserFactory.GenerateCreateDto("user2"), _ct);
+        var booking = await _bookingService.AddAsync(addedEvent.Id, user1.Login, _ct);
+        var expectedException = new ForbiddenException();
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.CancelAsync(booking.Id, user2.Login, _ct));
+        var unchangedBooking = await _bookingService.GetByIdAsync(booking.Id, _ct);
+
+        // Assert
+        Assert.IsType<ForbiddenException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+        Assert.Equal(BookingStatus.Pending, unchangedBooking.Status);
+    }
+
+    [Fact]
+    public async Task CancelAsync_NonExistentBooking_ThrowsBookingNotFoundException()
+    {
+        // Arrange
+        var nonExistentBookingId = Guid.NewGuid();
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var expectedException = new BookingNotFoundException(nonExistentBookingId);
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.CancelAsync(nonExistentBookingId, user.Login, _ct));
+
+        // Assert
+        Assert.IsType<BookingNotFoundException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
     }
     #endregion
 }
