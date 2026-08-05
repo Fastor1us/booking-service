@@ -1,6 +1,5 @@
 ﻿using BookingApi.Application.Interfaces;
 using BookingApi.Domain.Constants;
-using BookingApi.Domain.Models;
 using BookingApi.Infrastructure.Repositories;
 using BookingApi.Infrastructure.Tests.Base;
 using BookingApi.Infrastructure.Tests.Helpers;

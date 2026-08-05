@@ -292,4 +292,81 @@ public class EFCoreBookingServiceTests : EFCoreServiceTestsBase
         Assert.True(result.CreatedAt <= afterCreation);
     }
     #endregion
+
+    #region CancelAsync
+    [Fact]
+    public async Task CancelAsync_OwnBooking_ShouldCancelSuccessfully()
+    {
+        // Arrange
+        var createEventDto = EventFactory.Generate<CreateEventDto>();
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var booking = await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
+
+        // Act
+        await _bookingService.CancelAsync(booking.Id, user.Login, _ct);
+        var cancelledBooking = await _bookingService.GetByIdAsync(booking.Id, _ct);
+
+        // Assert
+        Assert.Equal(BookingStatus.Cancelled, cancelledBooking.Status);
+    }
+
+    [Fact]
+    public async Task CancelAsync_AdminCancellingOtherUsersBooking_ShouldCancelSuccessfully()
+    {
+        // Arrange
+        var createEventDto = EventFactory.Generate<CreateEventDto>();
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var admin = await _userService.RegisterAsync(
+            UserFactory.GenerateCreateDto("admin", "admin", UserRole.Admin), _ct);
+        var booking = await _bookingService.AddAsync(addedEvent.Id, user.Login, _ct);
+
+        // Act
+        await _bookingService.CancelAsync(booking.Id, admin.Login, _ct);
+        var cancelledBooking = await _bookingService.GetByIdAsync(booking.Id, _ct);
+
+        // Assert
+        Assert.Equal(BookingStatus.Cancelled, cancelledBooking.Status);
+    }
+
+    [Fact]
+    public async Task CancelAsync_UserTryCancelOtherUsersBooking_ThrowsBookingUnauthorizedCancelException()
+    {
+        // Arrange
+        var createEventDto = EventFactory.Generate<CreateEventDto>();
+        var addedEvent = await _eventService.AddAsync(createEventDto, _ct);
+        var user1 = await _userService.RegisterAsync(UserFactory.GenerateCreateDto("user1"), _ct);
+        var user2 = await _userService.RegisterAsync(UserFactory.GenerateCreateDto("user2"), _ct);
+        var booking = await _bookingService.AddAsync(addedEvent.Id, user1.Login, _ct);
+        var expectedException = new ForbiddenException();
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.CancelAsync(booking.Id, user2.Login, _ct));
+        var unchangedBooking = await _bookingService.GetByIdAsync(booking.Id, _ct);
+
+        // Assert
+        Assert.IsType<ForbiddenException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+        Assert.Equal(BookingStatus.Pending, unchangedBooking.Status);
+    }
+
+    [Fact]
+    public async Task CancelAsync_NonExistentBooking_ThrowsBookingNotFoundException()
+    {
+        // Arrange
+        var nonExistentBookingId = Guid.NewGuid();
+        var user = await _userService.RegisterAsync(UserFactory.GenerateCreateDto(), _ct);
+        var expectedException = new BookingNotFoundException(nonExistentBookingId);
+
+        // Act
+        var exception = await Record.ExceptionAsync(
+            () => _bookingService.CancelAsync(nonExistentBookingId, user.Login, _ct));
+
+        // Assert
+        Assert.IsType<BookingNotFoundException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+    }
+    #endregion
 }

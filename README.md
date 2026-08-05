@@ -129,7 +129,8 @@ The solution includes comprehensive testing with three separate test projects:
 tests/
 ├── BookingApi.Application.Tests/
 ├── BookingApi.Domain.Tests/
-└── BookingApi.Infrastructure.Tests/
+├── BookingApi.Infrastructure.Tests/
+└── BookingApi.Presentation.Tests/
 ```
 
 ### BookingApi.Application.Tests ```Unit Tests```
@@ -149,6 +150,13 @@ tests/
 - **Tools:** xUnit, Testcontainers.PostgreSql
 - **Scope:** Repositories, UnitOfWork, Db Constraints and Transactions
 - **Characteristics:** Uses real PostgreSQL container, tests data persistence
+
+### BookingApi.Presentation.Tests ```E2E Tests```
+- **Purpose:** Test endpoints
+- **Tools:** xUnit, Testcontainers.PostgreSql
+- **Scope:** Presentation layer, authorization rules
+- **Characteristics:** Uses real PostgreSQL container and presentation API
+
 
 ### Run tests
 
@@ -199,7 +207,7 @@ Integration tests use **Testcontainers** to spin up a real PostgreSQL database i
 
 | Method | Endpoint                | Description       | Success Response | Authorization |
 | ------ | ----------------------- | ----------------- | ---------------- | -------------- |
-| GET    | `/api/bookings/{id}`    | Get booking by ID | 200 OK           | ❌ Anonymous   |
+| GET    | `/api/bookings/{id}`    | Get booking by ID | 200 OK           | ✅ User/Admin   |
 | POST   | `/api/bookings/{id}/cancel` | Cancel booking | 204 No Content   | ✅ User/Admin  |
 
 ### 📊 Query Parameters
@@ -500,16 +508,14 @@ Request model for user registration.
 
 | Property   | Type     | Required | Description                  | Constraints          |
 | ---------- | -------- | -------- | ---------------------------- | -------------------- |
-| `username` | `string` | ✅ Yes   | Unique username              | 3-50 characters      |
-| `email`    | `string` | ✅ Yes   | Valid email address          | Email format         |
-| `password` | `string` | ✅ Yes   | User password                | Minimum 6 characters |
+| `username` | `string` | ✅ Yes   | Unique username              | 5-20 characters      |
+| `password` | `string` | ✅ Yes   | User password                | 5-20 characters      |
 
 **Example:**
 
 ```json
 {
   "username": "johndoe",
-  "email": "john@example.com",
   "password": "SecurePassword123"
 }
 ```

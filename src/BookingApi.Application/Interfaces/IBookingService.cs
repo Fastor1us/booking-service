@@ -13,7 +13,7 @@ public interface IBookingService
         Guid bookingId,
         CancellationToken ct);
 
-    public Task Cancel(
+    public Task CancelAsync(
         Guid bookingId,
         string userLogin,
         CancellationToken ct);

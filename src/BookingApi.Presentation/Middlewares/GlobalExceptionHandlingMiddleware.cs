@@ -79,6 +79,7 @@ public class GlobalExceptionHandlingMiddleware(
         => ex switch
         {
             ValidationException or
+            UserAlreadyExistsException or
             BookingPastEventException => StatusCodes.Status400BadRequest,
             ForbiddenException => StatusCodes.Status403Forbidden,
             NotFoundException => StatusCodes.Status404NotFound,

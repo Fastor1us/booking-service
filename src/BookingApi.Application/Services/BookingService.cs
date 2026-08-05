@@ -77,14 +77,11 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
             ?? throw new BookingNotFoundException(bookingId);
     }
 
-    public async Task Cancel(
+    public async Task CancelAsync(
         Guid bookingId,
         string userLogin,
         CancellationToken ct)
     {
-        await unitOfWork.BeginTransactionAsync(
-            System.Data.IsolationLevel.ReadCommitted, ct);
-
         var booking = await unitOfWork.BookingRepository
             .FirstOrDefaultAsync(b => b.Id == bookingId, ct)
             ?? throw new BookingNotFoundException(bookingId);
@@ -93,7 +90,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
             .FirstOrDefaultAsync(b => b.Login == userLogin, ct)
             ?? throw new UserNotFoundException(userLogin);
 
-        if (booking.User.Role != UserRole.Admin
+        if (user.Role != UserRole.Admin
             && booking.UserId != user.Id)
         {
             throw new ForbiddenException();
@@ -110,11 +107,6 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
             booking.Status = BookingStatus.Cancelled;
 
             await unitOfWork.SaveChangesAsync(ct);
-            await unitOfWork.CommitTransactionAsync(ct);
-        }
-        else
-        {
-            await unitOfWork.RollbackTransactionAsync(ct);
         }
     }
 }

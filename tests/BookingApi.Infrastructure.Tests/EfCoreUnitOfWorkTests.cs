@@ -3,7 +3,6 @@ using BookingApi.Infrastructure.Repositories;
 using BookingApi.Infrastructure.Tests.Base;
 using BookingApi.Infrastructure.Tests.Helpers;
 using BookingApi.Infrastructure.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
 using System.Data;
 
 namespace BookingApi.Infrastructure.Tests;

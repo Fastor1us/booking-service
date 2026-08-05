@@ -11,7 +11,6 @@ namespace BookingApi.Presentation.Controllers;
 [Route("api/bookings")]
 public class BookingController(IBookingService bookingService) : ControllerBase
 {
-    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
@@ -23,14 +22,14 @@ public class BookingController(IBookingService bookingService) : ControllerBase
         return Ok(booking.MapToResponseDto());
     }
 
-    [HttpPost("{id:guid}/cancel")]
+    [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Cancel(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        await bookingService.Cancel(id, User.Identity!.Name!, ct);
+        await bookingService.CancelAsync(id, User.Identity!.Name!, ct);
 
         return NoContent();
     }
