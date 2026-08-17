@@ -1,0 +1,24 @@
+﻿<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<UserSecretsId>2f338f9f-8bf7-491e-8c0f-09794c1b14e1</UserSecretsId>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="Aspire.Hosting.Kafka" Version="13.4.6" />
+	  <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
+
+		<ProjectReference Include="..\Services\UserService\UserService.Presentation\UserService.Presentation.csproj" />
+		<ProjectReference Include="..\Services\EventService\EventService.Presentation\EventService.Presentation.csproj" />
+		<ProjectReference Include="..\Services\BookingService\BookingService.Presentation\BookingService.Presentation.csproj" />
+	</ItemGroup>
+
+</Project>
