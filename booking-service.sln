@@ -50,7 +50,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Application", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Domain", "src\Services\UserService\UserService.Domain\UserService.Domain.csproj", "{7B2C5F8D-B0AE-D789-D8F4-71815B4658FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Infrasturcture", "src\Services\UserService\UserService.Infrasturcture\UserService.Infrasturcture.csproj", "{789C52E8-25D1-3DBF-E766-69B6048E8A88}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Infrastructure", "src\Services\UserService\UserService.Infrastructure\UserService.Infrastructure.csproj", "{789C52E8-25D1-3DBF-E766-69B6048E8A88}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UserService.Presentation", "src\Services\UserService\UserService.Presentation\UserService.Presentation.csproj", "{766222C7-3A26-9E46-5ECB-37A60D43755E}"
 EndProject

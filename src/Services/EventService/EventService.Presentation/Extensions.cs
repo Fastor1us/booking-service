@@ -1,13 +1,13 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
+using System.Text.Json.Serialization;
+using EventService.Domain.Exceptions;
+using EventService.Infrastructure.Secure;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using System.Text;
-using System.Text.Json.Serialization;
-using UserService.Domain.Exceptions;
-using UserService.Infrastructure.Security;
 
-namespace UserService.Presentation;
+namespace EventService.Presentation;
 
 public static class Extensions
 {

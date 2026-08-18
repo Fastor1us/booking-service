@@ -7,7 +7,7 @@ public static class Extensions
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IUserService, Services.UserService>();
 
         return services;
     }

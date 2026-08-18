@@ -18,7 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\ServiceDefaults\ServiceDefaults.csproj" />
     <ProjectReference Include="..\UserService.Application\UserService.Application.csproj" />
-    <ProjectReference Include="..\UserService.Infrasturcture\UserService.Infrasturcture.csproj" />
+    <ProjectReference Include="..\UserService.Infrastructure\UserService.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
-using UserService.Infrasturcture.Persistence;
+using UserService.Infrastructure.Persistence;
 using UserService.Application;
-using UserService.Infrasturcture;
+using UserService.Infrastructure;
 using UserService.Presentation;
 using UserService.Presentation.Middlewares;
 using Microsoft.EntityFrameworkCore;
