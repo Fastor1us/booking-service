@@ -1,0 +1,30 @@
+BookingService
+    -> EventService.Contracts
+    -> UserService.Contracts
+
+EventService
+    -> BookingService.Contracts
+
+UserService
+    -> BookingService.Contracts
+
+
+
+EventService.Contracts
+├── ReserveEventSeat.cs
+├── EventSeatReserved.cs
+├── EventSeatReservationRejected.cs
+├── ReleaseEventSeat.cs
+└── EventSeatReleased.cs
+
+
+UserService.Contracts
+├── ValidateUser.cs
+├── UserValidated.cs
+└── UserValidationRejected.cs
+
+
+BookingService.Contracts
+├── BookingRequested.cs
+├── BookingConfirmed.cs
+└── BookingRejected.cs

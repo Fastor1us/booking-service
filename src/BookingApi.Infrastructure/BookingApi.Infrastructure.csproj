@@ -15,9 +15,4 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.22.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\BookingApi.Application\BookingApi.Application.csproj" />
-    <ProjectReference Include="..\BookingApi.Domain\BookingApi.Domain.csproj" />
-  </ItemGroup>
-
 </Project>

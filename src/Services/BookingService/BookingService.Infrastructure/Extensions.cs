@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
-using EventService.Infrastructure.Persistence;
-using EventService.Application.Interfaces;
+using BookingService.Infrastructure.Persistence;
+using BookingService.Infrastructure.Repositories;
+using BookingService.Application.Interfaces;
 
-namespace EventService.Infrastructure;
+namespace BookingService.Infrastructure;
 
 public static class Extensions
 {
@@ -19,8 +20,10 @@ public static class Extensions
             options.UseNpgsql(connectionString);
         });
 
-        services.AddScoped<IEventRepository, Repositories.EventRepository>();
+        services.AddScoped<IBookingRepository, BookingRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
+
+        //services.AddHostedService<PendingBookingProcessor>();
 
         return services;
     }
