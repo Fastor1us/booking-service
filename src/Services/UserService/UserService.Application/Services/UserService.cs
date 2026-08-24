@@ -52,6 +52,6 @@ public class UserService(
             throw new UserIncorrectPasswordException();
         }
 
-        return tokenGenerator.Generate(dto.Login, user.Role);
+        return tokenGenerator.Generate(user.Id, user.Role);
     }
 }

@@ -92,23 +92,4 @@ public class EventController(
         await eventService.RemoveAsync(id, ct);
         return NoContent();
     }
-
-    //[Authorize(Roles = "User,Admin")]
-    //[HttpPost("{id:guid}/book")]
-    //[ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status202Accepted)]
-    //[ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
-    //[ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
-    //[ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
-    //[ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status409Conflict)]
-    //[ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
-    //public async Task<ActionResult<BookingResponseDto>> Book(
-    //    [FromRoute] Guid id, CancellationToken ct)
-    //{
-    //    var booking = await bookingService.AddAsync(id, User.Identity!.Name!, ct);
-    //    return AcceptedAtAction(
-    //        actionName: nameof(BookingController.GetById),
-    //        controllerName: "Booking",
-    //        routeValues: new { id = booking.Id },
-    //        value: booking.MapToResponseDto());
-    //}
 }

@@ -1,6 +1,8 @@
 using BookingService.Application.Interfaces;
 using BookingService.Domain.Exceptions;
 using BookingService.Domain.Models;
+using Contracts.EventService.Commands;
+using System.Text.Json;
 
 namespace BookingService.Application.Services;
 
@@ -8,69 +10,41 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 {
     public async Task<Booking> AddAsync(
         Guid eventId,
-        string userLogin,
+        Guid userId,
         CancellationToken ct)
     {
-        return new Booking
+        var booking = new Booking
         {
             Id = Guid.NewGuid(),
             EventId = eventId,
-            UserId = Guid.NewGuid(), // user.Id,
+            UserId = userId,
             Status = BookingStatus.Pending,
-            CreatedAt = DateTime.Now.ToUniversalTime()
+            CreatedAt = DateTimeOffset.UtcNow
         };
 
-        //var res = await unitOfWork.ExecuteWithRetryAsync(async _ =>
-        //    {
-        //        var user = await unitOfWork.UserReopitory
-        //            .FirstOrDefaultAsync(QueryTrackerBehavior.NoTracking,
-        //                e => e.Login == userLogin, ct)
-        //            ?? throw new UserNotFoundException(userLogin);
+        unitOfWork.BookingRepository.Add(booking);
 
-        //        var bookingQuery = unitOfWork.BookingRepository
-        //            .GetQuery(QueryTrackerBehavior.NoTracking)
-        //            .Where(e => e.UserId == user.Id 
-        //                && (e.Status == BookingStatus.Pending 
-        //                    || e.Status == BookingStatus.Confirmed));
-        //        var userBookingCount = await unitOfWork.BookingRepository
-        //            .CountAsync(bookingQuery, ct);
+        var reserveCommand = new ReserveEventSeat(
+            BookingId: booking.Id,
+            UserId: booking.UserId,
+            EventId: booking.EventId);
 
-        //        if (userBookingCount >= UserConstant.MaxActiveBookings)
-        //        {
-        //            throw new BookingExceedLimitException(userLogin);
-        //        }
+        Guid correlationId = Guid.NewGuid();
 
-        //        var @event = await unitOfWork.EventRepository
-        //            .FirstOrDefaultAsync(e => e.Id == eventId, ct)
-        //            ?? throw new EventNotFoundException(eventId);
+        unitOfWork.OutboxRepository.Add(new Messaging.OutboxMessage
+        {
+            Id = correlationId,
+            Topic = "event.commands",
+            Key = booking.EventId.ToString(),
+            MessageType = "event.reserve-seat",
+            CorrelationId = correlationId,
+            Payload = JsonSerializer.Serialize(reserveCommand),
+            PublishedAtUtc = DateTimeOffset.UtcNow
+        });
 
-        //        if (@event.StartAt <= DateTime.Now)
-        //        {
-        //            throw new BookingPastEventException(@event.Id);
-        //        }
+        await unitOfWork.SaveChangesAsync(ct);
 
-        //        if (@event.AvailableSeats == 0)
-        //            throw new NoAvailableSeatsException(eventId);
-
-        //        @event.AvailableSeats--;
-
-        //        var booking = new Booking
-        //        {
-        //            Id = Guid.NewGuid(),
-        //            EventId = eventId,
-        //            UserId = user.Id,
-        //            Status = BookingStatus.Pending,
-        //            CreatedAt = DateTime.Now.ToUniversalTime()
-        //        };
-
-        //        unitOfWork.BookingRepository.Add(booking);
-        //        await unitOfWork.SaveChangesAsync(ct);
-
-        //        return booking;
-        //    },
-        //    ct);
-
-        //return res;
+        return booking;
     }
 
     public async Task<Booking> GetByIdAsync(
@@ -90,31 +64,6 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         string userLogin,
         CancellationToken ct)
     {
-        //var booking = await unitOfWork.BookingRepository
-        //    .FirstOrDefaultAsync(b => b.Id == bookingId, ct)
-        //    ?? throw new BookingNotFoundException(bookingId);
-
-        //var user = await unitOfWork.UserReopitory
-        //    .FirstOrDefaultAsync(b => b.Login == userLogin, ct)
-        //    ?? throw new UserNotFoundException(userLogin);
-
-        //if (user.Role != UserRole.Admin
-        //    && booking.UserId != user.Id)
-        //{
-        //    throw new ForbiddenException();
-        //}
-
-        //if (booking.Status != BookingStatus.Cancelled)
-        //{
-        //    if (booking.Status == BookingStatus.Confirmed
-        //        || booking.Status == BookingStatus.Pending)
-        //    {
-        //        booking.Event?.AvailableSeats += 1;
-        //    }
-
-        //    booking.Status = BookingStatus.Cancelled;
-
-        //    await unitOfWork.SaveChangesAsync(ct);
-        //}
+        throw new NotImplementedException();
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace BookingService.Application.Sagas;
+﻿using Contracts.EventService.Events;
+
+namespace BookingService.Application.Sagas;
 
 public interface IBookingSagaOrchestrator
 {
@@ -10,13 +12,13 @@ public interface IBookingSagaOrchestrator
         EventSeatReservationRejected message,
         CancellationToken ct);
 
-    Task HandleAsync(
-        UserValidated message,
-        CancellationToken ct);
+    //Task HandleAsync(
+    //    UserValidated message,
+    //    CancellationToken ct);
 
-    Task HandleAsync(
-        UserValidationRejected message,
-        CancellationToken ct);
+    //Task HandleAsync(
+    //    UserValidationRejected message,
+    //    CancellationToken ct);
 
     Task HandleAsync(
         EventSeatReleased message,

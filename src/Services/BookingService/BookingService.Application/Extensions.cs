@@ -1,5 +1,4 @@
 using BookingService.Application.Interfaces;
-using BookingService.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace BookingService.Application;

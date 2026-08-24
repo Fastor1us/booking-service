@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Contracts\Contracts.EventService\Contracts.EventService.csproj" />
     <ProjectReference Include="..\BookingService.Domain\BookingService.Domain.csproj" />
   </ItemGroup>
 

@@ -3,14 +3,17 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore;
 using BookingService.Application.Interfaces;
 using BookingService.Infrastructure.Persistence;
+using BookingService.Application.Messaging;
 
 namespace BookingService.Infrastructure.UnitOfWork;
 
 public class UnitOfWork(
     AppDbContext context,
-    IBookingRepository bookingRepository) : IUnitOfWork
+    IBookingRepository bookingRepository,
+    IOutboxRepository outboxRepository) : IUnitOfWork
 {
     public IBookingRepository BookingRepository => bookingRepository;
+    public IOutboxRepository OutboxRepository => outboxRepository;
 
     private IDbContextTransaction? _dbContextTransaction = null;
 

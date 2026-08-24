@@ -1,11 +1,13 @@
-using System.Text;
-using System.Text.Json.Serialization;
 using BookingService.Domain.Exceptions;
 using BookingService.Infrastructure.Secure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json.Serialization;
 
 namespace BookingService.Presentation;
 
@@ -83,5 +85,18 @@ public static class Extensions
         });
 
         return services;
+    }
+
+    public static Guid GetUserId(this ClaimsPrincipal principal)
+    {
+        var value = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+               //?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(value, out var userId))
+        {
+            throw new UnauthorizedAccessException("User identifier claim is missing.");
+        }
+
+        return userId;
     }
 }

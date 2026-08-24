@@ -13,7 +13,9 @@ public static class Extensions
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
+
+            var connectionString = configuration.GetConnectionString("eventsdb")
+                ?? configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string is required");
 
             options.UseNpgsql(connectionString);

@@ -4,5 +4,5 @@ namespace UserService.Application.Interfaces;
 
 public interface ITokenGenerator
 {
-    string Generate(string login, UserRole role);
+    string Generate(Guid userId, UserRole role);
 }

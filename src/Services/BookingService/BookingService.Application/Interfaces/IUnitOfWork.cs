@@ -1,3 +1,5 @@
+using BookingService.Application.Messaging;
+
 namespace BookingService.Application.Interfaces;
 
 /// <summary>
@@ -32,6 +34,7 @@ namespace BookingService.Application.Interfaces;
 public interface IUnitOfWork : IDisposable, IAsyncDisposable
 {
     IBookingRepository BookingRepository { get; }
+    IOutboxRepository OutboxRepository { get; }
 
     Task BeginTransactionAsync(
         System.Data.IsolationLevel isolationLevel,

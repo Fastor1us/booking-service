@@ -11,6 +11,22 @@ namespace BookingService.Presentation.Controllers;
 [Route("api/bookings")]
 public class BookingController(IBookingService bookingService) : ControllerBase
 {
+    [HttpPost]
+    [ProducesResponseType(typeof(BookingResponseDto), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<BookingResponseDto>> Create(
+        [FromBody] CreateBookingRequest request, CancellationToken ct)
+    {
+        var userId = User.GetUserId();
+
+        var booking = await bookingService.AddAsync(request.EventId, userId, ct);
+
+        return AcceptedAtAction(
+            nameof(GetById),
+            new { id = booking.Id },
+            booking.MapToResponseDto());
+    }
+
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(BookingResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]

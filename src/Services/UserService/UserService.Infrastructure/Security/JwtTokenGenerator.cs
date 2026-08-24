@@ -10,14 +10,14 @@ namespace UserService.Infrastructure.Security;
 
 public class JwtTokenGenerator(IOptions<JwtSettings> jwt) : ITokenGenerator
 {
-    public string Generate(string login, UserRole role)
+    public string Generate(Guid userId, UserRole role)
     {
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, login),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(ClaimTypes.Role, role.ToString()),
         };
-
+        
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(jwt.Value.SigningKey));
 
