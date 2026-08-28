@@ -50,6 +50,6 @@ userService.WaitFor(usersDb);
 eventService.WaitFor(eventsDb);
 bookingService.WaitFor(bookingsDb);
 
-builder.Services.AddServiceDiscovery();
+//builder.Services.AddServiceDiscovery();
 
 builder.Build().Run();
