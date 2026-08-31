@@ -1,4 +1,5 @@
 ﻿using BookingService.Infrastructure.Persistence;
+using Confluent.Kafka;
 using Messaging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,9 +8,9 @@ using Microsoft.Extensions.Logging;
 
 namespace BookingService.Infrastructure.BackgroundServices;
 
-public sealed class OutboxPollerBackgroundService(
+public sealed class OutboxRelay(
     IServiceScopeFactory scopeFactory,
-    ILogger<OutboxPollerBackgroundService> logger)
+    ILogger<OutboxRelay> logger)
     : BackgroundService
 {
     private static readonly TimeSpan PollingInterval = TimeSpan.FromSeconds(1);
@@ -70,18 +71,42 @@ public sealed class OutboxPollerBackgroundService(
 
         foreach (var message in messages)
         {
-            await producer.ProduceAsync(
-                topic: message.Topic,
-                key: message.Key,
-                messageType: message.MessageType,
-                payload: message.Payload,
-                ct);
+            try
+            {
+                await producer.ProduceAsync(
+                    topic: message.Topic,
+                    key: message.Key,
+                    messageType: message.MessageType,
+                    payload: message.Payload,
+                    ct);
 
-            logger.LogInformation(
-                "Publish Outbox message {id}",
-                message.Id);
+                logger.LogInformation(
+                    "Publish Outbox message {id}",
+                    message.Id);
 
-            publishedIds.Add(message.Id);
+                // TODO удалять и при ошибке, но
+                // 1) с помещением инфы в dead message таблицу
+                // 2) устновки статуса Rejected
+                publishedIds.Add(message.Id);
+            }
+            catch (ProduceException<string, string> ex)
+            {
+                logger.LogError(
+                    "Publish failed. Code={Code}, Reason={Reason}, IsFatal={IsFatal}, DeliveryResult={DeliveryResult}",
+                    ex.Error.Code, ex.Error.Reason, ex.Error.IsFatal, ex.DeliveryResult);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"{ex.Message}");
+                // добавить систему retry - вдруг брокер не может принимать сообщения
+                // если было много неудачных попыток, то помещать в очередь бракованных отправок
+                // и выставлять Booking.Status = Rejected
+
+                // TODO: добавить причину Rejected в доменную модель
+
+                // TODO: помещать в таблицу outbox-failed DLQ
+            }
+            
         }
 
         await context.OutboxMessages

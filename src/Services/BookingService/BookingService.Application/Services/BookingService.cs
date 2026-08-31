@@ -1,7 +1,8 @@
 using BookingService.Application.Interfaces;
 using BookingService.Domain.Exceptions;
 using BookingService.Domain.Models;
-using Contracts.EventService.Commands;
+using Messaging.Kafka.Contracts.Commands;
+using Messaging.Kafka.Contracts.Constants;
 using System.Text.Json;
 
 namespace BookingService.Application.Services;
@@ -34,9 +35,9 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         unitOfWork.OutboxRepository.Add(new Messaging.OutboxMessage
         {
             Id = correlationId,
-            Topic = "event.commands",
+            Topic = Topics.BookingCommandsTopic,
             Key = booking.EventId.ToString(),
-            MessageType = "event.reserve-seat",
+            MessageType = Commands.ReserveSeat,
             CorrelationId = correlationId,
             Payload = JsonSerializer.Serialize(reserveCommand),
             PublishedAtUtc = DateTimeOffset.UtcNow

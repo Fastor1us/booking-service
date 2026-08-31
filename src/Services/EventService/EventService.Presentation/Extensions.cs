@@ -1,11 +1,12 @@
-using System.Text;
-using System.Text.Json.Serialization;
 using EventService.Domain.Exceptions;
 using EventService.Infrastructure.Secure;
+using Messaging.Kafka;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Text;
+using System.Text.Json.Serialization;
 
 namespace EventService.Presentation;
 
@@ -45,6 +46,8 @@ public static class Extensions
                             Encoding.UTF8.GetBytes(jwtSettings.SigningKey))
                     };
                 });
+
+        services.Configure<KafkaOptions>(configuration.GetSection("Kafka"));
 
         services.AddControllers()
             .ConfigureApiBehaviorOptions(options =>

@@ -31,7 +31,7 @@ public static class Extensions
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
 
         services.AddSingleton<IMessageProducer, KafkaProducer>();
-        //services.AddHostedService<OutboxProcessor>();
+        services.AddHostedService<OutboxRelay>();
 
         return services;
     }

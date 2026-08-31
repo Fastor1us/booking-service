@@ -13,6 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Messaging\Messaging.Kafka.Contracts\Messaging.Kafka.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging\Messaging.Kafka\Messaging.Kafka.csproj" />
     <ProjectReference Include="..\EventService.Application\EventService.Application.csproj" />
     <ProjectReference Include="..\EventService.Domain\EventService.Domain.csproj" />
   </ItemGroup>

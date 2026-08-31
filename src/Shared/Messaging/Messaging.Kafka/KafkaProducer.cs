@@ -13,8 +13,10 @@ public sealed class KafkaProducer(IOptions<KafkaOptions> options)
             {
                 BootstrapServers = options.Value.BootstrapServers,
                 Acks = Acks.All,
-                EnableIdempotence = true,
-                MaxInFlight = 5,
+                AllowAutoCreateTopics = true,
+                MessageTimeoutMs = 5000, // TODO: remove - dev only
+                RequestTimeoutMs = 5000, // TODO: remove - dev only
+                SocketTimeoutMs = 10000 // TODO: remove - dev only
             })
         .Build();
 

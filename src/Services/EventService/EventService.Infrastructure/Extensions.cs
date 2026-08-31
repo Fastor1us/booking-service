@@ -1,8 +1,9 @@
+using EventService.Application.Interfaces;
+using EventService.Infrastructure.Messaging;
+using EventService.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using EventService.Infrastructure.Persistence;
-using EventService.Application.Interfaces;
 
 namespace EventService.Infrastructure;
 
@@ -23,6 +24,9 @@ public static class Extensions
 
         services.AddScoped<IEventRepository, Repositories.EventRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
+
+        services.AddHostedService<BrokerListener>();
+        services.AddScoped<ReserveSeatHandler>();
 
         return services;
     }
