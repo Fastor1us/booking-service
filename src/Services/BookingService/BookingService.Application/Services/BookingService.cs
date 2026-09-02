@@ -39,8 +39,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
             Key = booking.EventId.ToString(),
             MessageType = Commands.ReserveSeat,
             CorrelationId = correlationId,
-            Payload = JsonSerializer.Serialize(reserveCommand),
-            PublishedAtUtc = DateTimeOffset.UtcNow
+            Payload = JsonSerializer.Serialize(reserveCommand)
         });
 
         await unitOfWork.SaveChangesAsync(ct);

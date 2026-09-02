@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BookingService.Infrastructure.Persistence.Configurations;
 
-public sealed class OutboxConfiguration : IEntityTypeConfiguration<OutboxMessage>
+public sealed class OutboxMessagesConfiguration : IEntityTypeConfiguration<OutboxMessage>
 {
     public void Configure(EntityTypeBuilder<OutboxMessage> builder)
     {
@@ -42,14 +42,27 @@ public sealed class OutboxConfiguration : IEntityTypeConfiguration<OutboxMessage
             .HasColumnType("jsonb")
             .IsRequired();
 
-        builder.Property(e => e.PublishedAtUtc)
-            .HasColumnName("published_at_utc");
+        builder.Property(e => e.NextAttemptAt)
+            .HasColumnName("next_attempt_at_utc");
+
+        builder.Property(e => e.RetryCount)
+            .HasColumnName("retry_count");
+
+        builder.Property(e => e.Errors)
+            .HasColumnName("errors")
+            .HasColumnType("text[]");
+
+        builder.Property(b => b.RowVersion)
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
 
         builder.HasIndex(e => new
         {
-            e.PublishedAtUtc,
+            e.NextAttemptAt,
             e.Id
         })
-            .HasDatabaseName("ix_outbox_messages_pending");
+            .HasDatabaseName("ix_outbox_messages_next_attempt_at");
     }
 }

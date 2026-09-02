@@ -1,12 +1,7 @@
 ﻿namespace BookingService.Application.Messaging;
 
-public sealed class OutboxMessage
+public sealed class OutboxMessage : OutboxBase
 {
-    public Guid Id { get; set; }
-    public string Topic { get; set; } = null!;
-    public string Key { get; set; } = null!;
-    public string MessageType { get; set; } = null!;
-    public Guid CorrelationId { get; set; }
-    public string Payload { get; set; } = null!;
-    public DateTimeOffset? PublishedAtUtc { get; set; }
+    public DateTimeOffset? NextAttemptAt { get; set; } = DateTimeOffset.UtcNow;
+    public int RetryCount { get; set; } = 0;
 }

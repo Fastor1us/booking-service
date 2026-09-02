@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -30,16 +31,38 @@ namespace BookingService.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "outbox_messages",
+                name: "outbox_dead_letters",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
+                    moved_to_dead_letters_at_utc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     topic = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     message_key = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     message_type = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     correlation_id = table.Column<Guid>(type: "uuid", nullable: false),
                     payload = table.Column<string>(type: "jsonb", nullable: false),
-                    published_at_utc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    errors = table.Column<List<string>>(type: "text[]", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_outbox_dead_letters", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "outbox_messages",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    next_attempt_at_utc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    retry_count = table.Column<int>(type: "integer", nullable: false),
+                    topic = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    message_key = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    message_type = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    correlation_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    payload = table.Column<string>(type: "jsonb", nullable: false),
+                    errors = table.Column<List<string>>(type: "text[]", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -67,9 +90,14 @@ namespace BookingService.Infrastructure.Persistence.Migrations
                 column: "status");
 
             migrationBuilder.CreateIndex(
-                name: "ix_outbox_messages_pending",
+                name: "ix_outbox_dead_letters_moved_at",
+                table: "outbox_dead_letters",
+                columns: new[] { "moved_to_dead_letters_at_utc", "id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_outbox_messages_next_attempt_at",
                 table: "outbox_messages",
-                columns: new[] { "published_at_utc", "id" });
+                columns: new[] { "next_attempt_at_utc", "id" });
         }
 
         /// <inheritdoc />
@@ -77,6 +105,9 @@ namespace BookingService.Infrastructure.Persistence.Migrations
         {
             migrationBuilder.DropTable(
                 name: "bookings");
+
+            migrationBuilder.DropTable(
+                name: "outbox_dead_letters");
 
             migrationBuilder.DropTable(
                 name: "outbox_messages");

@@ -16,10 +16,9 @@ public abstract class KafkaConsumer(
     protected abstract string Topic { get; set; }
     protected abstract string GroupId { get; set; }
 
-    // Добавить идемпотентность!! - Inbox
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await EnsureTopicExistsAsync(stoppingToken);
+        //await EnsureTopicExistsAsync(stoppingToken);
 
         var config = new ConsumerConfig
         {
