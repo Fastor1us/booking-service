@@ -1,9 +1,11 @@
 using BookingService.Application.Interfaces;
 using BookingService.Domain.Exceptions;
 using BookingService.Domain.Models;
-using Messaging.Kafka.Contracts.Commands;
-using Messaging.Kafka.Contracts.Constants;
 using System.Text.Json;
+using Messaging.Kafka.Constants;
+using Messaging.Abstractions.Contracts.Constants;
+using Messaging.Abstractions.Contracts.Commands;
+using Messaging.Abstractions.Outbox;
 
 namespace BookingService.Application.Services;
 
@@ -32,10 +34,10 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 
         Guid correlationId = Guid.NewGuid();
 
-        unitOfWork.OutboxRepository.Add(new Messaging.OutboxMessage
+        unitOfWork.OutboxRepository.Add(new OutboxMessage
         {
             Id = correlationId,
-            Topic = Topics.BookingCommandsTopic,
+            Topic = Topics.BookingCommandsTopic, // TODO Messaging.Kafka.Constants
             Key = booking.EventId.ToString(),
             MessageType = Commands.ReserveSeat,
             CorrelationId = correlationId,

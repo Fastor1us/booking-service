@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Shared\Messaging\Messaging.Kafka.Contracts\Messaging.Kafka.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Messaging\Messaging.Kafka\Messaging.Kafka.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Abstractions\Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Kafka\Messaging.Kafka.csproj" />
     <ProjectReference Include="..\BookingService.Domain\BookingService.Domain.csproj" />
   </ItemGroup>
 

@@ -1,9 +1,9 @@
-﻿using BookingService.Application.Messaging;
-using BookingService.Domain.Models;
+﻿using BookingService.Domain.Models;
 using BookingService.Infrastructure.Persistence;
 using Confluent.Kafka;
 using Messaging.Abstractions;
-using Messaging.Kafka.Contracts.Commands;
+using Messaging.Abstractions.Contracts.Commands;
+using Messaging.Abstractions.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

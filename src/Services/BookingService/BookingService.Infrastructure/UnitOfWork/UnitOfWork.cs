@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore;
 using BookingService.Application.Interfaces;
 using BookingService.Infrastructure.Persistence;
-using BookingService.Application.Messaging;
 
 namespace BookingService.Infrastructure.UnitOfWork;
 

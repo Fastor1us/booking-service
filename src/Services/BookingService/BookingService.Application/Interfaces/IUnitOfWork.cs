@@ -1,5 +1,3 @@
-using BookingService.Application.Messaging;
-
 namespace BookingService.Application.Interfaces;
 
 /// <summary>

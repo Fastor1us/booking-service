@@ -1,5 +1,4 @@
 using BookingService.Application.Interfaces;
-using BookingService.Application.Messaging;
 using BookingService.Infrastructure.BackgroundServices;
 using BookingService.Infrastructure.Persistence;
 using BookingService.Infrastructure.Repositories;

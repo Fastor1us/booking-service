@@ -1,7 +1,11 @@
 using EventService.Application.Interfaces;
-using EventService.Infrastructure.Messaging;
 using EventService.Infrastructure.Messaging.Handlers;
 using EventService.Infrastructure.Persistence;
+using Messaging.Abstractions;
+using Messaging.Abstractions.Contracts.Constants;
+using Messaging.Kafka;
+using Messaging.Kafka.Constants;
+using Messaging.Kafka.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,8 +30,28 @@ public static class Extensions
         services.AddScoped<IEventRepository, Repositories.EventRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
 
-        services.AddHostedService<BrokerListener>();
         services.AddScoped<ReserveSeatHandler>();
+        services.AddSingleton<KafkaConsumerRegistry>(_ =>
+        {
+            return new KafkaConsumerRegistry
+            {
+                Workers =
+                [
+                    new KafkaWorker
+                    {
+                        Topic = Topics.BookingCommandsTopic,
+                        GroupId = GroupIds.EventGroup,
+                        Handlers = new Dictionary<string, HandlerType>
+                        {
+                            [Commands.ReserveSeat] = HandlerType.From<ReserveSeatHandler>(),
+                        }
+                    }
+                ]
+            };
+        });
+        services.AddHostedService<KafkaConsumerHost>();
+        services.AddSingleton<IMessageProducer, KafkaProducer>();
+        //services.AddHostedService<OutboxRelay>();
 
         return services;
     }

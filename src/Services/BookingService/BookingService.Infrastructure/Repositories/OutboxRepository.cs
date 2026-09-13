@@ -1,6 +1,6 @@
 ﻿using BookingService.Application.Interfaces;
-using BookingService.Application.Messaging;
 using BookingService.Infrastructure.Persistence;
+using Messaging.Abstractions.Outbox;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingService.Infrastructure.Repositories;

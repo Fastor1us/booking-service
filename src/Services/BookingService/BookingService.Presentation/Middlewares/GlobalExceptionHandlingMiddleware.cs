@@ -79,7 +79,7 @@ public class GlobalExceptionHandlingMiddleware(
         => ex switch
         {
             ValidationException or
-            BookingPastEventException => StatusCodes.Status400BadRequest,
+            BookingPastEventException => StatusCodes.Status400BadRequest, // TODO
             NotFoundException => StatusCodes.Status404NotFound,
             _ => StatusCodes.Status500InternalServerError
         };
