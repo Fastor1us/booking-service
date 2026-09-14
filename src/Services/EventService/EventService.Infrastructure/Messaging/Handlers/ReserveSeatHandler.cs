@@ -1,18 +1,24 @@
 ﻿using EventService.Domain.Exceptions;
 using EventService.Infrastructure.Persistence;
+using Messaging.Abstractions;
 using Messaging.Abstractions.Contracts.Commands;
 using Messaging.Abstractions.Contracts.Constants;
+using Messaging.Abstractions.Contracts.Events;
 using Messaging.Abstractions.Inbox;
+using Messaging.Abstractions.Outbox;
+using Messaging.Kafka.Constants;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.Serialization;
+using System.Text.Json;
 
 namespace EventService.Infrastructure.Messaging.Handlers;
 
 // Topics.BookingCommandsTopic
 // GroupIds.EventGroup
 // Commands.ReserveSeat
-public class ReserveSeatHandler(AppDbContext context) : MessagingHandlerBase<ReserveEventSeat>
+public class ReserveSeatHandler(AppDbContext context) : IMessageHandler
 {
-    public override async Task HandleAsync(
+    public async Task HandleAsync(
         Guid correlationId,
         string payload,
         CancellationToken ct)
@@ -33,10 +39,12 @@ public class ReserveSeatHandler(AppDbContext context) : MessagingHandlerBase<Res
             ReceivedAt = DateTime.UtcNow,
         });
 
-        var cmd = GetCommand(payload);
+        var cmd = GetCommand<ReserveEventSeat>(payload);
         var @event = await context.Events
             .FirstOrDefaultAsync(e => e.Id == cmd.EventId, ct);
 
+        // TODO
+        // заменить try catch на new EventNotFoundException(cmd.EventId).Message
         try
         {
             if (@event == null)
@@ -58,6 +66,19 @@ public class ReserveSeatHandler(AppDbContext context) : MessagingHandlerBase<Res
                 // делаем запись в OutboxMessages
                 @event!.AvailableSeats--;
 
+                var message = new EventSeatReserved(
+                    BookingId: cmd.BookingId,
+                    EventId: cmd.EventId);
+
+                context.OutboxMessages.Add(new OutboxMessage
+                {
+                    Id = correlationId,
+                    Topic = Topics.EventEventsTopic, // TODO Messaging.Kafka.Constants
+                    Key = cmd.EventId.ToString(),
+                    MessageType = Events.SeatReserved,
+                    CorrelationId = correlationId,
+                    Payload = JsonSerializer.Serialize(message)
+                });
                 // TODO write to Outbound with Success Command
             }
         }
@@ -68,5 +89,11 @@ public class ReserveSeatHandler(AppDbContext context) : MessagingHandlerBase<Res
 
         await context.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
+    }
+
+    private static T GetCommand<T>(string payload)
+    {
+        return JsonSerializer.Deserialize<T>(payload)
+            ?? throw new SerializationException($"Is not able payload to serialize to {typeof(T)}");
     }
 }

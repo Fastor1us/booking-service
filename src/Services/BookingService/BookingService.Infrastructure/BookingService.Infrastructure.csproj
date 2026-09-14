@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared\Messaging.Abstractions\Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Outbox\Messaging.Outbox.csproj" />
     <ProjectReference Include="..\..\..\Shared\Messaging.Persistence.EFCore\Messaging.Persistence.EFCore.csproj" />
     <ProjectReference Include="..\BookingService.Application\BookingService.Application.csproj" />
     <ProjectReference Include="..\BookingService.Domain\BookingService.Domain.csproj" />

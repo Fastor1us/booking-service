@@ -1,9 +1,11 @@
 using BookingService.Application.Interfaces;
-using BookingService.Infrastructure.BackgroundServices;
+using BookingService.Application.Services;
 using BookingService.Infrastructure.Persistence;
 using BookingService.Infrastructure.Repositories;
 using Messaging.Abstractions;
+using Messaging.Abstractions.Outbox;
 using Messaging.Kafka;
+using Messaging.Outbox;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +29,10 @@ public static class Extensions
 
         services.AddScoped<IBookingRepository, BookingRepository>();
         services.AddScoped<IOutboxRepository, OutboxRepository>();
+        services.AddScoped<IOutboxDeadLetterRepository, OutboxDeadLetterRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
+        services.AddScoped<IOutboxStore, OutboxStore>();
+        services.AddScoped<IOutboxCompensator, OutboxCompensator>();
 
         services.AddSingleton<IMessageProducer, KafkaProducer>();
         services.AddHostedService<OutboxRelay>();

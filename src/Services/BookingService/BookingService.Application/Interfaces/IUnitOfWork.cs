@@ -33,6 +33,7 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
 {
     IBookingRepository BookingRepository { get; }
     IOutboxRepository OutboxRepository { get; }
+    IOutboxDeadLetterRepository OutboxDeadLetterRepository { get; }
 
     Task BeginTransactionAsync(
         System.Data.IsolationLevel isolationLevel,

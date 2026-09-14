@@ -1,6 +1,7 @@
 using BookingService.Application.Interfaces;
 using BookingService.Domain.Models;
 using BookingService.Infrastructure.Persistence;
+using Messaging.Abstractions.Outbox;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingService.Infrastructure.Repositories;
@@ -42,5 +43,10 @@ public sealed class BookingRepository(AppDbContext context)
     public override void Add(Booking booking)
     {
         context.Bookings.Add(booking);
+    }
+
+    public override void Remove(Booking booking)
+    {
+        context.Bookings.Remove(booking);
     }
 }

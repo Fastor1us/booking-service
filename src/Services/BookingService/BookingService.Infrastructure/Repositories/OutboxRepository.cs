@@ -39,8 +39,13 @@ public sealed class OutboxRepository(AppDbContext context)
         return context.OutboxMessages.FirstOrDefaultAsync(predicate, ct);
     }
 
-    public override void Add(OutboxMessage booking)
+    public override void Add(OutboxMessage outboxMessage)
     {
-        context.OutboxMessages.Add(booking);
+        context.OutboxMessages.Add(outboxMessage);
+    }
+
+    public override void Remove(OutboxMessage outboxMessage)
+    {
+        context.OutboxMessages.Remove(outboxMessage);
     }
 }

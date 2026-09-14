@@ -29,7 +29,6 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 
         var reserveCommand = new ReserveEventSeat(
             BookingId: booking.Id,
-            UserId: booking.UserId,
             EventId: booking.EventId);
 
         Guid correlationId = Guid.NewGuid();

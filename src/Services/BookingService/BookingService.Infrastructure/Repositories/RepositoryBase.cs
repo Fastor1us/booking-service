@@ -38,4 +38,5 @@ public abstract class RepositoryBase<T> : IRepository<T> where T : class
         QueryTrackerBehavior behavior = QueryTrackerBehavior.Track);
 
     public abstract void Add(T entity);
+    public abstract void Remove(T entity);
 }

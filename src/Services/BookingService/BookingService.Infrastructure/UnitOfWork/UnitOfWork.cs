@@ -9,10 +9,12 @@ namespace BookingService.Infrastructure.UnitOfWork;
 public class UnitOfWork(
     AppDbContext context,
     IBookingRepository bookingRepository,
-    IOutboxRepository outboxRepository) : IUnitOfWork
+    IOutboxRepository outboxRepository,
+    IOutboxDeadLetterRepository outboxDeadLetterRepository) : IUnitOfWork
 {
     public IBookingRepository BookingRepository => bookingRepository;
     public IOutboxRepository OutboxRepository => outboxRepository;
+    public IOutboxDeadLetterRepository OutboxDeadLetterRepository => outboxDeadLetterRepository;
 
     private IDbContextTransaction? _dbContextTransaction = null;
 

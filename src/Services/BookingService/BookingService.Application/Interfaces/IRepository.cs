@@ -58,4 +58,5 @@ public interface IRepository<T> where T : class
     Task<List<T>> ToListAsync(IQueryable<T> query, CancellationToken ct = default);
 
     public void Add(T entity);
+    public void Remove(T entity);
 }
