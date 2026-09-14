@@ -5,6 +5,7 @@ using UserService.Infrastructure.Repositories;
 using UserService.Infrastructure.Persistence;
 using UserService.Application.Interfaces;
 using UserService.Infrastructure.Security;
+using Messaging.Persistence.EfCore.Extensions;
 
 namespace UserService.Infrastructure;
 

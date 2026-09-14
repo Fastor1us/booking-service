@@ -1,4 +1,5 @@
 using EventService.Domain.Models;
+using Messaging.Abstractions.Persistence;
 
 namespace EventService.Application.Interfaces;
 

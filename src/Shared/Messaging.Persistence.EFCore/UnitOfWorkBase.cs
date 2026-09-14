@@ -1,38 +1,42 @@
-using System.Data;
-using UserService.Application.Interfaces;
-using UserService.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore.Storage;
+﻿using Messaging.Abstractions.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Data;
 
-namespace UserService.Infrastructure.UnitOfWork;
+namespace Messaging.Persistence.EfCore;
 
-public class UnitOfWork(
-    AppDbContext context,
-    IUserRepository userRepository) : IUnitOfWork
+public abstract class UnitOfWorkBase(
+    DbContext context,
+    IOutboxRepository outboxRepository,
+    IOutboxDeadLetterRepository outboxDeadLetterRepository) : IUnitOfWorkBase
 {
-    public IUserRepository UserRepository => userRepository;
+    public IOutboxRepository OutboxRepository => outboxRepository;
+    public IOutboxDeadLetterRepository OutboxDeadLetterRepository => outboxDeadLetterRepository;
 
-    private IDbContextTransaction? _dbContextTransaction = null;
+    private IDbContextTransaction? _transaction = null;
 
-    public async Task BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken ct = default)
+    public async Task BeginTransactionAsync(
+        IsolationLevel isolationLevel, 
+        CancellationToken ct = default)
     {
-        _dbContextTransaction = await context.Database.BeginTransactionAsync(isolationLevel, ct);
+        _transaction = await context.Database
+            .BeginTransactionAsync(isolationLevel, ct);
     }
 
     public async Task CommitTransactionAsync(CancellationToken ct = default)
     {
-        if (_dbContextTransaction != null)
+        if (_transaction != null)
         {
-            await _dbContextTransaction.CommitAsync(ct);
-            await _dbContextTransaction.DisposeAsync();
-            _dbContextTransaction = null;
+            await _transaction.CommitAsync(ct);
+            await _transaction.DisposeAsync();
+            _transaction = null;
         }
     }
     public async Task RollbackTransactionAsync(CancellationToken ct = default)
     {
-        if (_dbContextTransaction != null)
+        if (_transaction != null)
         {
-            await _dbContextTransaction.RollbackAsync(ct);
+            await _transaction.RollbackAsync(ct);
         }
     }
 
@@ -106,15 +110,15 @@ public class UnitOfWork(
 
     public void Dispose()
     {
-        _dbContextTransaction?.Dispose();
+        _transaction?.Dispose();
         context.Dispose();
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (_dbContextTransaction != null)
+        if (_transaction != null)
         {
-            await _dbContextTransaction.DisposeAsync();
+            await _transaction.DisposeAsync();
         }
         await context.DisposeAsync();
     }

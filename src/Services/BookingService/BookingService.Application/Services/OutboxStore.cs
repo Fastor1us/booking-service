@@ -1,5 +1,6 @@
 ﻿using BookingService.Application.Interfaces;
 using Messaging.Abstractions.Outbox;
+using Messaging.Abstractions.Persistence;
 
 namespace BookingService.Application.Services;
 

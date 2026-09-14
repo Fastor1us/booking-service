@@ -4,8 +4,11 @@ using BookingService.Infrastructure.Persistence;
 using BookingService.Infrastructure.Repositories;
 using Messaging.Abstractions;
 using Messaging.Abstractions.Outbox;
+using Messaging.Abstractions.Persistence;
 using Messaging.Kafka;
 using Messaging.Outbox;
+using Messaging.Persistence.EfCore;
+using Messaging.Persistence.EfCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,8 +31,7 @@ public static class Extensions
         });
 
         services.AddScoped<IBookingRepository, BookingRepository>();
-        services.AddScoped<IOutboxRepository, OutboxRepository>();
-        services.AddScoped<IOutboxDeadLetterRepository, OutboxDeadLetterRepository>();
+        services.AddMessagingOutbox<AppDbContext>();
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
         services.AddScoped<IOutboxStore, OutboxStore>();
         services.AddScoped<IOutboxCompensator, OutboxCompensator>();

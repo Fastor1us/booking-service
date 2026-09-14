@@ -1,19 +1,21 @@
-using EventService.Application.Interfaces;
+﻿using Messaging.Abstractions.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace EventService.Infrastructure.Repositories;
+namespace Messaging.Persistence.EfCore;
 
-public abstract class RepositoryBase<T>
-    : IRepository<T> where T : class
+public abstract class RepositoryBase<T> : IRepository<T> where T : class
 {
     public abstract Task<T?> FirstOrDefaultAsync(
         System.Linq.Expressions.Expression<Func<T, bool>> predicate,
         CancellationToken ct = default);
 
-    public abstract Task<T?> FirstOrDefaultAsync(
+    public virtual Task<T?> FirstOrDefaultAsync(
         QueryTrackerBehavior behavior,
         System.Linq.Expressions.Expression<Func<T, bool>> predicate,
-        CancellationToken ct = default);
+        CancellationToken ct = default)
+    {
+        return GetQuery(behavior).FirstOrDefaultAsync(predicate, ct);
+    }
 
     public async Task<T?> FirstOrDefaultAsync(
         IQueryable<T> query,
@@ -39,4 +41,5 @@ public abstract class RepositoryBase<T>
         QueryTrackerBehavior behavior = QueryTrackerBehavior.Track);
 
     public abstract void Add(T entity);
+    public abstract void Remove(T entity);
 }

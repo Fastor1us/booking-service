@@ -1,7 +1,7 @@
-﻿using Messaging.Persistence.EFCore.Configurations;
+﻿using Messaging.Persistence.EfCore.Configurations;
 using Microsoft.EntityFrameworkCore;
 
-namespace Messaging.Persistence.EFCore.Extensions;
+namespace Messaging.Persistence.EfCore.Extensions;
 
 public static class ModelBuilderExtensions
 {

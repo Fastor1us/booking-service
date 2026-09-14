@@ -1,6 +1,8 @@
 using EventService.Application.Interfaces;
 using EventService.Domain.Models;
 using EventService.Infrastructure.Persistence;
+using Messaging.Abstractions.Persistence;
+using Messaging.Persistence.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventService.Infrastructure.Repositories;
@@ -25,14 +27,6 @@ public sealed class EventRepository(AppDbContext context)
     }
 
     public override Task<Event?> FirstOrDefaultAsync(
-        QueryTrackerBehavior behavior,
-        System.Linq.Expressions.Expression<Func<Event, bool>> predicate,
-        CancellationToken ct = default)
-    {
-        return GetQuery(behavior).FirstOrDefaultAsync(predicate, ct);
-    }
-
-    public override Task<Event?> FirstOrDefaultAsync(
         System.Linq.Expressions.Expression<Func<Event, bool>> predicate,
         CancellationToken ct = default)
     {
@@ -40,6 +34,7 @@ public sealed class EventRepository(AppDbContext context)
     }
 
     public override void Add(Event @event) => context.Events.Add(@event);
+    public override void Remove(Event @event) => context.Events.Remove(@event);
 
     public Task<int> ExecuteUpdateByIdAsync(
         Event @event,

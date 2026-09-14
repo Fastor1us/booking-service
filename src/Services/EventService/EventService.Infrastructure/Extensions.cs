@@ -6,6 +6,7 @@ using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Kafka;
 using Messaging.Kafka.Constants;
 using Messaging.Kafka.Models;
+using Messaging.Persistence.EfCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,6 +29,7 @@ public static class Extensions
         });
 
         services.AddScoped<IEventRepository, Repositories.EventRepository>();
+        services.AddMessagingOutbox<AppDbContext>();
         services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
 
         services.AddScoped<ReserveSeatHandler>();

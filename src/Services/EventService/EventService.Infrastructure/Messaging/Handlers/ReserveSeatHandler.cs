@@ -1,4 +1,5 @@
-﻿using EventService.Domain.Exceptions;
+﻿using Confluent.Kafka;
+using EventService.Domain.Exceptions;
 using EventService.Infrastructure.Persistence;
 using Messaging.Abstractions;
 using Messaging.Abstractions.Contracts.Commands;
@@ -43,49 +44,47 @@ public class ReserveSeatHandler(AppDbContext context) : IMessageHandler
         var @event = await context.Events
             .FirstOrDefaultAsync(e => e.Id == cmd.EventId, ct);
 
-        // TODO
-        // заменить try catch на new EventNotFoundException(cmd.EventId).Message
-        try
+        string? errorMessage = null;
+        if (@event == null)
         {
-            if (@event == null)
-            {
-                throw new EventNotFoundException(cmd.EventId);
-            }
-            else
-            {
-                if (@event.StartAt <= DateTimeOffset.UtcNow)
-                {
-                    throw new BookingPastEventException(cmd.EventId);
-                }
-                else if (@event.AvailableSeats < 1)
-                {
-                    throw new NoAvailableSeatsException(cmd.EventId);
-                }
-
-                // если есть свободные места и событие еще не началось, то вычитаем место
-                // делаем запись в OutboxMessages
-                @event!.AvailableSeats--;
-
-                var message = new EventSeatReserved(
-                    BookingId: cmd.BookingId,
-                    EventId: cmd.EventId);
-
-                context.OutboxMessages.Add(new OutboxMessage
-                {
-                    Id = correlationId,
-                    Topic = Topics.EventEventsTopic, // TODO Messaging.Kafka.Constants
-                    Key = cmd.EventId.ToString(),
-                    MessageType = Events.SeatReserved,
-                    CorrelationId = correlationId,
-                    Payload = JsonSerializer.Serialize(message)
-                });
-                // TODO write to Outbound with Success Command
-            }
+            errorMessage = new EventNotFoundException(cmd.EventId).Message;
         }
-        catch (Exception ex)
+        else if (@event.StartAt <= DateTimeOffset.UtcNow)
         {
-            // TODO write to Outbound with Reject Command and Reason
+            errorMessage = new BookingPastEventException(cmd.EventId).Message;
         }
+        else if (@event.AvailableSeats < 1)
+        {
+            errorMessage = new NoAvailableSeatsException(cmd.EventId).Message;
+        }
+
+        object message = string.Empty;
+        if (errorMessage == null)
+        {
+            @event!.AvailableSeats--;
+
+            message = new EventSeatReserved(
+               BookingId: cmd.BookingId,
+               EventId: cmd.EventId);
+        }
+        else
+        {
+            message = new EventSeatReservationRejected(
+               BookingId: cmd.BookingId,
+               EventId: cmd.EventId);
+        }
+
+        context.OutboxMessages.Add(new OutboxMessage
+        {
+            Id = correlationId,
+            Topic = Topics.EventEventsTopic,  // TODO Messaging.Kafka.Constants
+            Key = cmd.EventId.ToString(),
+            MessageType = errorMessage == null 
+                ? Events.SeatReserved 
+                : Events.SeatReservationRejected,
+            CorrelationId = correlationId,
+            Payload = JsonSerializer.Serialize(message)
+        });
 
         await context.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);

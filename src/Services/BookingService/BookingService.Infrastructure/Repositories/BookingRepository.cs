@@ -1,7 +1,8 @@
 using BookingService.Application.Interfaces;
 using BookingService.Domain.Models;
 using BookingService.Infrastructure.Persistence;
-using Messaging.Abstractions.Outbox;
+using Messaging.Abstractions.Persistence;
+using Messaging.Persistence.EfCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingService.Infrastructure.Repositories;
@@ -23,14 +24,6 @@ public sealed class BookingRepository(AppDbContext context)
             _ =>
                 context.Bookings,
         };
-    }
-
-    public override Task<Booking?> FirstOrDefaultAsync(
-        QueryTrackerBehavior behavior,
-        System.Linq.Expressions.Expression<Func<Booking, bool>> predicate,
-        CancellationToken ct = default)
-    {
-        return GetQuery(behavior).FirstOrDefaultAsync(predicate, ct);
     }
 
     public override Task<Booking?> FirstOrDefaultAsync(

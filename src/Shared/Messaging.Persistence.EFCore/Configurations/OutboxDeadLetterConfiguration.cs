@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Messaging.Persistence.EFCore.Configurations;
+namespace Messaging.Persistence.EfCore.Configurations;
 
 public sealed class OutboxDeadLetterConfiguration
     : IEntityTypeConfiguration<OutboxDeadLetter>

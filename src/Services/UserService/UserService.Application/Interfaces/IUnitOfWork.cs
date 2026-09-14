@@ -29,9 +29,9 @@ namespace UserService.Application.Interfaces;
 ///     </item>
 /// </list>
 /// </remarks>
-public interface IUnitOfWork : IDisposable, IAsyncDisposable
+public interface IUnitOfWork
 {
-    IUserRepository UserReopitory { get; }
+    IUserRepository UserRepository { get; }
 
     Task BeginTransactionAsync(
         System.Data.IsolationLevel isolationLevel,

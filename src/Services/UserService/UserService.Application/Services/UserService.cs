@@ -14,7 +14,7 @@ public class UserService(
         CreateUserDto dto,
         CancellationToken ct)
     {
-        var isUserExist = await unitOfWork.UserReopitory
+        var isUserExist = await unitOfWork.UserRepository
             .FirstOrDefaultAsync(e => e.Login == dto.Login, ct)
             != null;
 
@@ -33,7 +33,7 @@ public class UserService(
             Role = dto.Role ?? UserRole.User
         };
 
-        unitOfWork.UserReopitory.Add(user);
+        unitOfWork.UserRepository.Add(user);
         await unitOfWork.SaveChangesAsync(ct);
 
         return user;
@@ -43,7 +43,7 @@ public class UserService(
         LoginUserDto dto,
         CancellationToken ct)
     {
-        var user = await unitOfWork.UserReopitory
+        var user = await unitOfWork.UserRepository
             .FirstOrDefaultAsync(e => e.Login == dto.Login, ct)
             ?? throw new UserNotFoundException(dto.Login);
 

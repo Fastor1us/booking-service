@@ -50,7 +50,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messaging.Abstractions", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messaging.Kafka", "src\Shared\Messaging.Kafka\Messaging.Kafka.csproj", "{6CFC36DD-FDF5-533A-43B8-922C191D1526}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messaging.Persistence.EFCore", "src\Shared\Messaging.Persistence.EFCore\Messaging.Persistence.EFCore.csproj", "{80D5020E-DE1D-4EE6-B173-B0BE49B24322}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messaging.Persistence.EfCore", "src\Shared\Messaging.Persistence.EfCore\Messaging.Persistence.EfCore.csproj", "{80D5020E-DE1D-4EE6-B173-B0BE49B24322}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messaging.Outbox", "src\Shared\Messaging.Outbox\Messaging.Outbox.csproj", "{29CCAB9D-5305-4CE3-A59C-36B94E1D87F8}"
 EndProject

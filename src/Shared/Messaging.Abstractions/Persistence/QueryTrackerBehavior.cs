@@ -1,4 +1,4 @@
-namespace EventService.Application.Interfaces;
+﻿namespace Messaging.Abstractions.Persistence;
 
 /// <summary>
 /// Defines how entities are tracked by the data context during queries.

@@ -3,6 +3,7 @@ using EventService.Application.Interfaces;
 using EventService.Domain.Constants;
 using EventService.Domain.Exceptions;
 using EventService.Domain.Models;
+using Messaging.Abstractions.Persistence;
 
 namespace EventService.Application.Services;
 

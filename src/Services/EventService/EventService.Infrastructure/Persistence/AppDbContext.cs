@@ -1,12 +1,14 @@
 using EventService.Domain.Models;
 using Messaging.Abstractions.Inbox;
 using Messaging.Abstractions.Outbox;
-using Messaging.Persistence.EFCore.Extensions;
+using Messaging.Persistence.EfCore;
+using Messaging.Persistence.EfCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventService.Infrastructure.Persistence;
 
-public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
+    : DbContext(options), IOutboxDbContext, IInboxDbContext
 {
     public DbSet<Event> Events => Set<Event>();
     public DbSet<OutboxDeadLetter> OutboxDeadLetters => Set<OutboxDeadLetter>();

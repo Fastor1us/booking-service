@@ -1,6 +1,6 @@
 ﻿using Messaging.Abstractions.Outbox;
 
-namespace BookingService.Application.Interfaces;
+namespace Messaging.Abstractions.Persistence;
 
 public interface IOutboxRepository : IRepository<OutboxMessage>
 {

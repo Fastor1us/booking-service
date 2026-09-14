@@ -6,6 +6,7 @@ using Messaging.Kafka.Constants;
 using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Abstractions.Contracts.Commands;
 using Messaging.Abstractions.Outbox;
+using Messaging.Abstractions.Persistence;
 
 namespace BookingService.Application.Services;
 

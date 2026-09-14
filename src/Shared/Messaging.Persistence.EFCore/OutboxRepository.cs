@@ -1,12 +1,12 @@
-﻿using BookingService.Application.Interfaces;
-using BookingService.Infrastructure.Persistence;
-using Messaging.Abstractions.Outbox;
+﻿using Messaging.Abstractions.Outbox;
+using Messaging.Abstractions.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace BookingService.Infrastructure.Repositories;
+namespace Messaging.Persistence.EfCore;
 
-public sealed class OutboxRepository(AppDbContext context)
+public sealed class OutboxRepository<TContext>(TContext context)
     : RepositoryBase<OutboxMessage>, IOutboxRepository
+    where TContext : DbContext, IOutboxDbContext
 {
     public override IQueryable<OutboxMessage> GetQuery(
         QueryTrackerBehavior behavior = QueryTrackerBehavior.Track)
@@ -22,14 +22,6 @@ public sealed class OutboxRepository(AppDbContext context)
             _ =>
                 context.OutboxMessages,
         };
-    }
-
-    public override Task<OutboxMessage?> FirstOrDefaultAsync(
-        QueryTrackerBehavior behavior,
-        System.Linq.Expressions.Expression<Func<OutboxMessage, bool>> predicate,
-        CancellationToken ct = default)
-    {
-        return GetQuery(behavior).FirstOrDefaultAsync(predicate, ct);
     }
 
     public override Task<OutboxMessage?> FirstOrDefaultAsync(

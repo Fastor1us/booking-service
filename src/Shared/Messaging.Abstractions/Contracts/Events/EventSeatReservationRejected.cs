@@ -1,5 +1,5 @@
 ﻿namespace Messaging.Abstractions.Contracts.Events;
 
-public class EventSeatReservationRejected
-{
-}
+public sealed record EventSeatReservationRejected(
+    Guid BookingId,
+    Guid EventId);

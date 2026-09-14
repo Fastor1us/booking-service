@@ -15,7 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared\Messaging.Abstractions\Messaging.Abstractions.csproj" />
     <ProjectReference Include="..\..\..\Shared\Messaging.Kafka\Messaging.Kafka.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Messaging.Persistence.EFCore\Messaging.Persistence.EFCore.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Persistence.EFCore\Messaging.Persistence.EfCore.csproj" />
     <ProjectReference Include="..\EventService.Application\EventService.Application.csproj" />
     <ProjectReference Include="..\EventService.Domain\EventService.Domain.csproj" />
   </ItemGroup>
