@@ -1,4 +1,5 @@
 using BookingService.Domain.Models;
+using Domain.Models;
 
 namespace BookingService.Application.Interfaces;
 
@@ -15,6 +16,7 @@ public interface IBookingService
 
     public Task CancelAsync(
         Guid bookingId,
-        string userLogin,
+        Guid userId,
+        UserRole userRole,
         CancellationToken ct);
 }

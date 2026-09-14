@@ -45,7 +45,10 @@ public class BookingController(IBookingService bookingService) : ControllerBase
     public async Task<IActionResult> Cancel(
         [FromRoute] Guid id, CancellationToken ct)
     {
-        await bookingService.CancelAsync(id, User.Identity!.Name!, ct);
+        var userId = User.GetUserId();
+        var userRole = User.GetUserRole();
+
+        await bookingService.CancelAsync(id, userId, userRole, ct);
 
         return NoContent();
     }

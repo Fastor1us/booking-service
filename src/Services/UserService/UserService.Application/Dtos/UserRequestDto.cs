@@ -1,4 +1,4 @@
-using UserService.Domain.Models;
+using Domain.Models;
 
 namespace UserService.Application.Dtos;
 

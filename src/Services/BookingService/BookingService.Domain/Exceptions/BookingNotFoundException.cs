@@ -1,3 +1,5 @@
+using Domain.Exceptions;
+
 namespace BookingService.Domain.Exceptions;
 
 public class BookingNotFoundException(Guid id)

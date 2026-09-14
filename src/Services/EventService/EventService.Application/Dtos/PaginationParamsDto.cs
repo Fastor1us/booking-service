@@ -1,4 +1,4 @@
-using EventService.Domain.Exceptions;
+using Domain.Exceptions;
 
 namespace EventService.Application.Dtos;
 

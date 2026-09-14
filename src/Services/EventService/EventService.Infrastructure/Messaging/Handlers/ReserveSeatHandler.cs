@@ -1,22 +1,18 @@
-﻿using Confluent.Kafka;
-using EventService.Domain.Exceptions;
+﻿using EventService.Domain.Exceptions;
 using EventService.Infrastructure.Persistence;
 using Messaging.Abstractions;
+using Messaging.Abstractions.Constants;
 using Messaging.Abstractions.Contracts.Commands;
 using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Abstractions.Contracts.Events;
 using Messaging.Abstractions.Inbox;
 using Messaging.Abstractions.Outbox;
-using Messaging.Kafka.Constants;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.Serialization;
 using System.Text.Json;
 
 namespace EventService.Infrastructure.Messaging.Handlers;
 
-// Topics.BookingCommandsTopic
-// GroupIds.EventGroup
-// Commands.ReserveSeat
 public class ReserveSeatHandler(AppDbContext context) : IMessageHandler
 {
     public async Task HandleAsync(
@@ -77,7 +73,7 @@ public class ReserveSeatHandler(AppDbContext context) : IMessageHandler
         context.OutboxMessages.Add(new OutboxMessage
         {
             Id = correlationId,
-            Topic = Topics.EventEventsTopic,  // TODO Messaging.Kafka.Constants
+            Topic = Topics.EventEventsTopic,
             Key = cmd.EventId.ToString(),
             MessageType = errorMessage == null 
                 ? Events.SeatReserved 

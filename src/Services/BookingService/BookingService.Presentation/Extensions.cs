@@ -1,11 +1,11 @@
-using BookingService.Domain.Exceptions;
 using BookingService.Infrastructure.Secure;
+using Domain.Exceptions;
+using Domain.Models;
 using Messaging.Kafka;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -43,6 +43,8 @@ public static class Extensions
                         ValidAudience = jwtSettings.Audience,
                         ValidateLifetime = true,
                         ClockSkew = TimeSpan.Zero,
+                        NameClaimType = ClaimTypes.NameIdentifier,
+                        RoleClaimType = ClaimTypes.Role,
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = new SymmetricSecurityKey(
                             Encoding.UTF8.GetBytes(jwtSettings.SigningKey))
@@ -93,7 +95,6 @@ public static class Extensions
     public static Guid GetUserId(this ClaimsPrincipal principal)
     {
         var value = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-               //?? principal.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
         if (!Guid.TryParse(value, out var userId))
         {
@@ -101,5 +102,17 @@ public static class Extensions
         }
 
         return userId;
+    }
+
+    public static UserRole GetUserRole(this ClaimsPrincipal principal)
+    {
+        var value = principal.FindFirstValue(ClaimTypes.Role);
+
+        if (!Enum.TryParse<UserRole>(value, ignoreCase: true, out var role))
+        {
+            throw new UnauthorizedAccessException("User role claim is missing or invalid.");
+        }
+
+        return role;
     }
 }

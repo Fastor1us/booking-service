@@ -1,10 +1,11 @@
-using EventService.Domain.Exceptions;
+using Domain.Exceptions;
 using EventService.Infrastructure.Secure;
 using Messaging.Kafka;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -41,6 +42,8 @@ public static class Extensions
                         ValidAudience = jwtSettings.Audience,
                         ValidateLifetime = true,
                         ClockSkew = TimeSpan.Zero,
+                        NameClaimType = ClaimTypes.NameIdentifier,
+                        RoleClaimType = ClaimTypes.Role,
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = new SymmetricSecurityKey(
                             Encoding.UTF8.GetBytes(jwtSettings.SigningKey))

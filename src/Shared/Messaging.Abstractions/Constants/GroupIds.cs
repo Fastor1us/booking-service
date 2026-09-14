@@ -1,4 +1,4 @@
-﻿namespace Messaging.Kafka.Constants;
+﻿namespace Messaging.Abstractions.Constants;
 
 public class GroupIds
 {

@@ -1,5 +1,5 @@
 ﻿namespace Messaging.Abstractions.Contracts.Commands;
 
-public class ReleaseEventSeat
-{
-}
+public sealed record ReleaseEventSeat(
+    Guid BookingId,
+    Guid EventId);

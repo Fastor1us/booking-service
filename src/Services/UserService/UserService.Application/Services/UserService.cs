@@ -1,3 +1,4 @@
+using Domain.Models;
 using UserService.Application.Dtos;
 using UserService.Application.Interfaces;
 using UserService.Domain.Exceptions;

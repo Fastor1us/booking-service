@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Domain.Exceptions;
 using EventService.Domain.Exceptions;
 using EventService.Presentation.Dtos;
 using Microsoft.EntityFrameworkCore;

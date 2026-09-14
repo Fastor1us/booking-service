@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BookingService.Domain.Exceptions;
+namespace Domain.Exceptions;
 
 public class ModelValidationException : ValidationException
 {

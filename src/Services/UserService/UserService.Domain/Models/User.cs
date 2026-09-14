@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Domain.Models;
+using System.ComponentModel.DataAnnotations;
 using UserService.Domain.Constants;
 
 namespace UserService.Domain.Models;
@@ -60,10 +61,4 @@ public class User
     }
 
     public uint RowVersion { get; set; }
-}
-
-public enum UserRole
-{
-    User,
-    Admin
 }

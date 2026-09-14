@@ -1,3 +1,5 @@
+using Domain.Exceptions;
+
 namespace EventService.Domain.Exceptions;
 
 public class EventNotFoundException(Guid id)

@@ -1,12 +1,14 @@
 using BookingService.Application.Interfaces;
 using BookingService.Domain.Exceptions;
 using BookingService.Domain.Models;
-using System.Text.Json;
-using Messaging.Kafka.Constants;
-using Messaging.Abstractions.Contracts.Constants;
+using Domain.Exceptions;
+using Domain.Models;
+using Messaging.Abstractions.Constants;
 using Messaging.Abstractions.Contracts.Commands;
+using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Abstractions.Outbox;
 using Messaging.Abstractions.Persistence;
+using System.Text.Json;
 
 namespace BookingService.Application.Services;
 
@@ -28,7 +30,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 
         unitOfWork.BookingRepository.Add(booking);
 
-        var reserveCommand = new ReserveEventSeat(
+        var message = new ReserveEventSeat(
             BookingId: booking.Id,
             EventId: booking.EventId);
 
@@ -37,11 +39,11 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         unitOfWork.OutboxRepository.Add(new OutboxMessage
         {
             Id = correlationId,
-            Topic = Topics.BookingCommandsTopic, // TODO Messaging.Kafka.Constants
+            Topic = Topics.BookingCommandsTopic,
             Key = booking.EventId.ToString(),
             MessageType = Commands.ReserveSeat,
             CorrelationId = correlationId,
-            Payload = JsonSerializer.Serialize(reserveCommand)
+            Payload = JsonSerializer.Serialize(message)
         });
 
         await unitOfWork.SaveChangesAsync(ct);
@@ -63,9 +65,38 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 
     public async Task CancelAsync(
         Guid bookingId,
-        string userLogin,
+        Guid userId,
+        UserRole userRole,
         CancellationToken ct)
     {
-        throw new NotImplementedException();
+        var booking = await unitOfWork.BookingRepository
+            .FirstOrDefaultAsync(b => b.Id == bookingId, ct)
+            ?? throw new BookingNotFoundException(bookingId);
+
+        var isOwner = booking.UserId == userId;
+        var isAdmin = userRole == UserRole.Admin;
+
+        if (!isOwner && !isAdmin)
+            throw new ForbiddenException();
+
+        var message = new ReleaseEventSeat(
+            BookingId: booking.Id,
+            EventId: booking.EventId);
+
+        booking.Status = BookingStatus.Cancelled;
+
+        Guid correlationId = Guid.NewGuid();
+
+        unitOfWork.OutboxRepository.Add(new OutboxMessage
+        {
+            Id = correlationId,
+            Topic = Topics.BookingCommandsTopic,
+            Key = booking.EventId.ToString(),
+            MessageType = Commands.ReleaseSeat,
+            CorrelationId = correlationId,
+            Payload = JsonSerializer.Serialize(message)
+        });
+
+        await unitOfWork.SaveChangesAsync(ct);
     }
 }

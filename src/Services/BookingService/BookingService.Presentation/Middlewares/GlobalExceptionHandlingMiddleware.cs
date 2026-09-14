@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using BookingService.Domain.Exceptions;
 using BookingService.Presentation.Dtos;
+using Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace BookingService.Presentation.Middlewares;
