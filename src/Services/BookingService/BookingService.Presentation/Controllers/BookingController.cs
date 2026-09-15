@@ -3,6 +3,7 @@ using BookingService.Presentation.Dtos;
 using BookingService.Presentation.Mappers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Security.Jwt;
 
 namespace BookingService.Presentation.Controllers;
 

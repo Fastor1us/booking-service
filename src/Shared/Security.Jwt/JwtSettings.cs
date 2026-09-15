@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace UserService.Infrastructure.Security;
+namespace Security.Jwt;
 
 public class JwtSettings
 {

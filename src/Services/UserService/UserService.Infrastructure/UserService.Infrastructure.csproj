@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared\Messaging.Persistence.EfCore\Messaging.Persistence.EfCore.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Security.Jwt\Security.Jwt.csproj" />
     <ProjectReference Include="..\UserService.Application\UserService.Application.csproj" />
     <ProjectReference Include="..\UserService.Domain\UserService.Domain.csproj" />
   </ItemGroup>

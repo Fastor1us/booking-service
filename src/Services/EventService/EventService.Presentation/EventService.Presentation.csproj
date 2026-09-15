@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\ServiceDefaults\ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Security.Jwt\Security.Jwt.csproj" />
     <ProjectReference Include="..\EventService.Application\EventService.Application.csproj" />
     <ProjectReference Include="..\EventService.Infrastructure\EventService.Infrastructure.csproj" />
   </ItemGroup>

@@ -1,12 +1,6 @@
 ﻿using Domain.Exceptions;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
-using System.Security.Claims;
-using System.Text;
+using Security.Jwt;
 using System.Text.Json.Serialization;
-using UserService.Infrastructure.Security;
 
 namespace UserService.Presentation;
 
@@ -18,36 +12,7 @@ public static class Extensions
             .BuildServiceProvider()
             .GetRequiredService<IConfiguration>();
 
-        services.AddOptions<JwtSettings>()
-            .Bind(configuration.GetSection("Jwt"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
-        services
-            .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(
-                JwtBearerDefaults.AuthenticationScheme,
-                options =>
-                {
-                    var serviceProvider = services.BuildServiceProvider();
-                    var jwtSettings = serviceProvider
-                        .GetRequiredService<IOptions<JwtSettings>>().Value;
-
-                    options.TokenValidationParameters = new()
-                    {
-                        ValidateIssuer = true,
-                        ValidIssuer = jwtSettings.Issuer,
-                        ValidateAudience = true,
-                        ValidAudience = jwtSettings.Audience,
-                        ValidateLifetime = true,
-                        ClockSkew = TimeSpan.Zero,
-                        NameClaimType = ClaimTypes.NameIdentifier,
-                        RoleClaimType = ClaimTypes.Role,
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(jwtSettings.SigningKey))
-                    };
-                });
+        services.AddJwtAuthentication(configuration);
 
         services.AddControllers()
             .ConfigureApiBehaviorOptions(options =>
@@ -67,25 +32,7 @@ public static class Extensions
                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
             });
 
-        services.AddSwaggerGen(options =>
-        {
-            options.AddSecurityDefinition(
-                JwtBearerDefaults.AuthenticationScheme,
-                new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",
-                    In = ParameterLocation.Header,
-                    Type = SecuritySchemeType.Http,
-                    Scheme = JwtBearerDefaults.AuthenticationScheme,
-                    BearerFormat = "JWT",
-                    Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\""
-                });
-
-            options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
-            {
-                [new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme, document)] = []
-            });
-        });
+        services.AddJwtSwagger();
 
         return services;
     }

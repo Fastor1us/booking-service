@@ -4,6 +4,7 @@ using System.Text;
 using Domain.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Security.Jwt;
 using UserService.Application.Interfaces;
 
 namespace UserService.Infrastructure.Security;
