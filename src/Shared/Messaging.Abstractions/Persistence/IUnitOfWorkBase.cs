@@ -4,8 +4,11 @@ namespace Messaging.Abstractions.Persistence;
 
 public interface IUnitOfWorkBase : IDisposable, IAsyncDisposable
 {
-    IOutboxRepository OutboxRepository { get; }
-    IOutboxDeadLetterRepository OutboxDeadLetterRepository { get; }
+    IOutboxRepository OutboxMessages { get; }
+    IOutboxDeadLetterRepository OutboxDeadLetters { get; }
+    IInboxRepository InboxMessages { get; }
+
+    Task BeginTransactionAsync(CancellationToken ct = default);
 
     Task BeginTransactionAsync(
         IsolationLevel isolationLevel,

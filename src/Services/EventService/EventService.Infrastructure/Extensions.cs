@@ -1,5 +1,5 @@
 using EventService.Application.Interfaces;
-using EventService.Infrastructure.Messaging.Handlers;
+using EventService.Application.Messaging.Handlers;
 using EventService.Infrastructure.Persistence;
 using Messaging.Abstractions;
 using Messaging.Abstractions.Constants;

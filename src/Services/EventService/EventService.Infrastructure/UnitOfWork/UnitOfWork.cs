@@ -13,5 +13,5 @@ public class UnitOfWork(
     : UnitOfWorkBase(context, outboxRepository, outboxDeadLetterRepository),
       IUnitOfWork
 {
-    public IEventRepository EventRepository => eventRepository;
+    public IEventRepository Events => eventRepository;
 }

@@ -8,15 +8,22 @@ namespace Messaging.Persistence.EfCore;
 public abstract class UnitOfWorkBase(
     DbContext context,
     IOutboxRepository outboxRepository,
-    IOutboxDeadLetterRepository outboxDeadLetterRepository) : IUnitOfWorkBase
+    IOutboxDeadLetterRepository outboxDeadLetterRepository,
+    IInboxRepository inboxRepository) : IUnitOfWorkBase
 {
-    public IOutboxRepository OutboxRepository => outboxRepository;
-    public IOutboxDeadLetterRepository OutboxDeadLetterRepository => outboxDeadLetterRepository;
+    public IOutboxRepository OutboxMessages => outboxRepository;
+    public IOutboxDeadLetterRepository OutboxDeadLetters => outboxDeadLetterRepository;
+    public IInboxRepository InboxMessages => inboxRepository;
 
     private IDbContextTransaction? _transaction = null;
 
+    public async Task BeginTransactionAsync(CancellationToken ct = default)
+    {
+        _transaction = await context.Database.BeginTransactionAsync(ct);
+    }
+
     public async Task BeginTransactionAsync(
-        IsolationLevel isolationLevel, 
+        IsolationLevel isolationLevel,
         CancellationToken ct = default)
     {
         _transaction = await context.Database
@@ -37,6 +44,8 @@ public abstract class UnitOfWorkBase(
         if (_transaction != null)
         {
             await _transaction.RollbackAsync(ct);
+            await _transaction.DisposeAsync();
+            _transaction = null;
         }
     }
 
@@ -110,7 +119,12 @@ public abstract class UnitOfWorkBase(
 
     public void Dispose()
     {
-        _transaction?.Dispose();
+        if (_transaction != null)
+        {
+            _transaction?.Rollback();
+            _transaction?.Dispose();
+            _transaction = null;
+        }
         context.Dispose();
     }
 
@@ -118,7 +132,9 @@ public abstract class UnitOfWorkBase(
     {
         if (_transaction != null)
         {
+            await _transaction.RollbackAsync();
             await _transaction.DisposeAsync();
+            _transaction = null;
         }
         await context.DisposeAsync();
     }

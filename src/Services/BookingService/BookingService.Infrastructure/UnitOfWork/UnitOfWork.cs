@@ -13,5 +13,5 @@ public class UnitOfWork(
     : UnitOfWorkBase(context, outboxRepository, outboxDeadLetterRepository),
       IUnitOfWork
 {
-    public IBookingRepository BookingRepository => bookingRepository;
+    public IBookingRepository Bookings => bookingRepository;
 }

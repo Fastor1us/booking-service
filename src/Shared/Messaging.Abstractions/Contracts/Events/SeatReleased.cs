@@ -1,5 +1,3 @@
 ﻿namespace Messaging.Abstractions.Contracts.Events;
 
-public sealed record SeatReleased(
-    Guid BookingId,
-    Guid EventId);
+public sealed record SeatReleased(Guid BookingId);

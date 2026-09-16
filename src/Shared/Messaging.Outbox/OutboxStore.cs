@@ -10,26 +10,26 @@ public sealed class OutboxStore(IUnitOfWorkBase unitOfWork) : IOutboxStore
         DateTimeOffset now,
         CancellationToken ct = default)
     {
-        var query = unitOfWork.OutboxRepository
+        var query = unitOfWork.OutboxMessages
             .GetQuery(QueryTrackerBehavior.Track)
             .Where(m => m.NextAttemptAt <= now)
             .OrderBy(m => m.NextAttemptAt)
             .Take(batchSize);
 
-        return await unitOfWork.OutboxRepository.ToListAsync(query, ct);
+        return await unitOfWork.OutboxMessages.ToListAsync(query, ct);
     }
 
     public async Task MarkAsPublishedAsync(
         IReadOnlyCollection<Guid> ids,
         CancellationToken ct = default)
     {
-        var query = unitOfWork.OutboxRepository
+        var query = unitOfWork.OutboxMessages
             .GetQuery(QueryTrackerBehavior.Track)
             .Where(m => ids.Contains(m.Id));
 
-        var toRemove = await unitOfWork.OutboxRepository.ToListAsync(query, ct);
+        var toRemove = await unitOfWork.OutboxMessages.ToListAsync(query, ct);
         foreach (var m in toRemove)
-            unitOfWork.OutboxRepository.Remove(m);
+            unitOfWork.OutboxMessages.Remove(m);
     }
 
     public Task SaveChangesAsync(CancellationToken ct = default)
@@ -39,8 +39,8 @@ public sealed class OutboxStore(IUnitOfWorkBase unitOfWork) : IOutboxStore
         OutboxMessage message,
         CancellationToken ct = default)
     {
-        unitOfWork.OutboxRepository.Remove(message);
-        unitOfWork.OutboxDeadLetterRepository.Add(CreateDeadLetter(message));
+        unitOfWork.OutboxMessages.Remove(message);
+        unitOfWork.OutboxDeadLetters.Add(CreateDeadLetter(message));
         return Task.CompletedTask;
     }
 

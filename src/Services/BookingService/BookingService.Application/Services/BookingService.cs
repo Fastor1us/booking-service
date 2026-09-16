@@ -28,7 +28,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        unitOfWork.BookingRepository.Add(booking);
+        unitOfWork.Bookings.Add(booking);
 
         var message = new ReserveEventSeat(
             BookingId: booking.Id,
@@ -36,7 +36,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 
         Guid correlationId = Guid.NewGuid();
 
-        unitOfWork.OutboxRepository.Add(new OutboxMessage
+        unitOfWork.OutboxMessages.Add(new OutboxMessage
         {
             Id = correlationId,
             Topic = Topics.BookingCommandsTopic,
@@ -55,7 +55,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         Guid bookingId,
         CancellationToken ct)
     {
-        return await unitOfWork.BookingRepository
+        return await unitOfWork.Bookings
             .FirstOrDefaultAsync(
                 QueryTrackerBehavior.NoTracking,
                 e => e.Id == bookingId,
@@ -69,7 +69,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         UserRole userRole,
         CancellationToken ct)
     {
-        var booking = await unitOfWork.BookingRepository
+        var booking = await unitOfWork.Bookings
             .FirstOrDefaultAsync(b => b.Id == bookingId, ct)
             ?? throw new BookingNotFoundException(bookingId);
 
@@ -92,7 +92,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 
         Guid correlationId = Guid.NewGuid();
 
-        unitOfWork.OutboxRepository.Add(new OutboxMessage
+        unitOfWork.OutboxMessages.Add(new OutboxMessage
         {
             Id = correlationId,
             Topic = Topics.BookingCommandsTopic,

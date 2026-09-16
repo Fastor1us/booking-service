@@ -4,5 +4,5 @@ namespace BookingService.Application.Interfaces;
 
 public interface IUnitOfWork : IUnitOfWorkBase
 {
-    IBookingRepository BookingRepository { get; }
+    IBookingRepository Bookings { get; }
 }

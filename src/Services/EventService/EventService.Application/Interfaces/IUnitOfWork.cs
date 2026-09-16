@@ -4,5 +4,5 @@ namespace EventService.Application.Interfaces;
 
 public interface IUnitOfWork : IUnitOfWorkBase
 {
-    IEventRepository EventRepository { get; }
+    IEventRepository Events { get; }
 }

@@ -25,7 +25,7 @@ public sealed class OutboxCompensator(
                     if (cmd is null)
                         return false;
 
-                    var booking = await unitOfWork.BookingRepository
+                    var booking = await unitOfWork.Bookings
                         .FirstOrDefaultAsync(b => b.Id == cmd.BookingId, ct);
 
                     if (booking is null)

@@ -11,7 +11,7 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
 {
     public async Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        return await unitOfWork.EventRepository
+        return await unitOfWork.Events
             .FirstOrDefaultAsync(
                 QueryTrackerBehavior.NoTracking,
                 e => e.Id == id,
@@ -27,7 +27,7 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
         await unitOfWork.BeginTransactionAsync(
             System.Data.IsolationLevel.RepeatableRead, ct);
 
-        var eventRepository = unitOfWork.EventRepository;
+        var eventRepository = unitOfWork.Events;
 
         var query = eventRepository
             .GetQuery(QueryTrackerBehavior.NoTrackingWithIdentityResolution);
@@ -69,7 +69,7 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
             EndAt = dto.EndAt
         };
 
-        unitOfWork.EventRepository.Add(@event);
+        unitOfWork.Events.Add(@event);
         await unitOfWork.SaveChangesAsync(ct);
 
         return @event;
@@ -87,13 +87,13 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
             EndAt = dto.EndAt
         };
 
-        await unitOfWork.EventRepository
+        await unitOfWork.Events
             .ExecuteUpdateByIdAsync(@event, ct);
     }
 
     public async Task RemoveAsync(Guid id, CancellationToken ct)
     {
-        await unitOfWork.EventRepository
+        await unitOfWork.Events
             .ExecuteDeleteByIdAsync(id, ct);
     }
 }
