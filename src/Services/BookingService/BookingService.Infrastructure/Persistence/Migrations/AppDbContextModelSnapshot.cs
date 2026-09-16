@@ -74,7 +74,7 @@ namespace BookingService.Infrastructure.Persistence.Migrations
 
                     b.ToTable("bookings", null, t =>
                         {
-                            t.HasCheckConstraint("ck_bookings_status_valid", "status IN ('Pending', 'Confirmed', 'Rejected', 'Cancelled')");
+                            t.HasCheckConstraint("ck_bookings_status_valid", "status IN ('Pending', 'Confirmed', 'Rejected', 'Cancelling', 'Cancelled')");
                         });
                 });
 

@@ -1,10 +1,9 @@
-﻿using BookingService.Application.Interfaces;
-using Messaging.Abstractions.Outbox;
+﻿using Messaging.Abstractions.Outbox;
 using Messaging.Abstractions.Persistence;
 
-namespace BookingService.Application.Services;
+namespace Messaging.Outbox;
 
-public sealed class OutboxStore(IUnitOfWork unitOfWork) : IOutboxStore
+public sealed class OutboxStore(IUnitOfWorkBase unitOfWork) : IOutboxStore
 {
     public async Task<IReadOnlyList<OutboxMessage>> GetPendingAsync(
         int batchSize,

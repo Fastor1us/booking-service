@@ -27,7 +27,7 @@ namespace BookingService.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_bookings", x => x.id);
-                    table.CheckConstraint("ck_bookings_status_valid", "status IN ('Pending', 'Confirmed', 'Rejected', 'Cancelled')");
+                    table.CheckConstraint("ck_bookings_status_valid", "status IN ('Pending', 'Confirmed', 'Rejected', 'Cancelling', 'Cancelled')");
                 });
 
             migrationBuilder.CreateTable(

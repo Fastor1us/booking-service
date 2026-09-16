@@ -79,11 +79,16 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         if (!isOwner && !isAdmin)
             throw new ForbiddenException();
 
+        if (booking.Status != BookingStatus.Confirmed)
+        {
+            throw new CancelNotConfirmedBookingException(bookingId);
+        }
+
         var message = new ReleaseEventSeat(
             BookingId: booking.Id,
             EventId: booking.EventId);
 
-        booking.Status = BookingStatus.Cancelled;
+        booking.Status = BookingStatus.Cancelling;
 
         Guid correlationId = Guid.NewGuid();
 

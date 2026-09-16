@@ -1,8 +1,8 @@
-using System.ComponentModel.DataAnnotations;
 using BookingService.Domain.Exceptions;
 using BookingService.Presentation.Dtos;
 using Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace BookingService.Presentation.Middlewares;
 
@@ -80,7 +80,7 @@ public class GlobalExceptionHandlingMiddleware(
         => ex switch
         {
             ValidationException or
-            BookingPastEventException => StatusCodes.Status400BadRequest, // TODO
+            CancelNotConfirmedBookingException => StatusCodes.Status400BadRequest,
             NotFoundException => StatusCodes.Status404NotFound,
             _ => StatusCodes.Status500InternalServerError
         };

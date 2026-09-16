@@ -6,6 +6,7 @@ using Messaging.Abstractions.Constants;
 using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Kafka;
 using Messaging.Kafka.Models;
+using Messaging.Outbox;
 using Messaging.Persistence.EfCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,31 +30,26 @@ public static class Extensions
         });
 
         services.AddScoped<IEventRepository, Repositories.EventRepository>();
-        services.AddMessagingOutbox<AppDbContext>();
-        services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
+        services.AddOutboxRepositories<AppDbContext>();
 
-        services.AddScoped<ReserveSeatHandler>();
-        services.AddSingleton<KafkaConsumerRegistry>(_ =>
-        {
-            return new KafkaConsumerRegistry
-            {
-                Workers =
-                [
-                    new KafkaWorker
-                    {
-                        Topic = Topics.BookingCommandsTopic,
-                        GroupId = GroupIds.EventGroup,
-                        Handlers = new Dictionary<string, HandlerType>
-                        {
-                            [Commands.ReserveSeat] = HandlerType.From<ReserveSeatHandler>(),
-                        }
-                    }
-                ]
-            };
-        });
-        services.AddHostedService<KafkaConsumerHost>();
         services.AddSingleton<IMessageProducer, KafkaProducer>();
-        //services.AddHostedService<OutboxRelay>();
+        services.AddUnitOfWorkWithOutbox<IUnitOfWork, UnitOfWork.UnitOfWork>();
+        services.AddKafkaConsumers(new KafkaConsumerRegistry
+        {
+            Workers =
+            [
+                new KafkaWorker
+                {
+                    Topic = Topics.BookingCommandsTopic,
+                    GroupId = GroupIds.EventGroup,
+                    Handlers = new Dictionary<string, HandlerType>
+                    {
+                        [Commands.ReserveSeat] = HandlerType.From<ReserveSeatHandler>(),
+                        [Commands.ReleaseSeat] = HandlerType.From<ReleaseSeatHandler>(),
+                    }
+                }
+            ]
+        });
 
         return services;
     }

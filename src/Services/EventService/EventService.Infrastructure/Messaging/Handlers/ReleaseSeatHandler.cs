@@ -13,7 +13,7 @@ using System.Text.Json;
 
 namespace EventService.Infrastructure.Messaging.Handlers;
 
-public class ReserveSeatHandler(AppDbContext context) : IMessageHandler
+public class ReleaseSeatHandler(AppDbContext context) : IMessageHandler
 {
     public async Task HandleAsync(
         Guid correlationId,
@@ -31,12 +31,12 @@ public class ReserveSeatHandler(AppDbContext context) : IMessageHandler
         {
             Id = correlationId,
             CorrelationId = correlationId,
-            MessageType = Commands.ReserveSeat,
+            MessageType = Commands.ReleaseSeat,
             Payload = payload,
             ReceivedAt = DateTime.UtcNow,
         });
 
-        var cmd = GetCommand<ReserveEventSeat>(payload);
+        var cmd = GetCommand<ReleaseEventSeat>(payload);
         var @event = await context.Events
             .FirstOrDefaultAsync(e => e.Id == cmd.EventId, ct);
 
@@ -47,25 +47,21 @@ public class ReserveSeatHandler(AppDbContext context) : IMessageHandler
         }
         else if (@event.StartAt <= DateTimeOffset.UtcNow)
         {
-            errorMessage = new BookingPastEventException(cmd.EventId).Message;
-        }
-        else if (@event.AvailableSeats < 1)
-        {
-            errorMessage = new NoAvailableSeatsException(cmd.EventId).Message;
+            errorMessage = new CancelPastEventException(cmd.EventId).Message;
         }
 
         object message = string.Empty;
         if (errorMessage == null)
         {
-            @event!.AvailableSeats--;
+            @event!.AvailableSeats++;
 
-            message = new SeatReserved(
+            message = new SeatReleased(
                BookingId: cmd.BookingId,
                EventId: cmd.EventId);
         }
         else
         {
-            message = new SeatReservationRejected(
+            message = new SeatReleasingRejected(
                BookingId: cmd.BookingId,
                EventId: cmd.EventId);
         }
@@ -76,8 +72,8 @@ public class ReserveSeatHandler(AppDbContext context) : IMessageHandler
             Topic = Topics.EventEventsTopic,
             Key = cmd.EventId.ToString(),
             MessageType = errorMessage == null 
-                ? Events.SeatReserved 
-                : Events.SeatReservationRejected,
+                ? Events.SeatReleased
+                : Events.SeatReleasingRejected,
             CorrelationId = correlationId,
             Payload = JsonSerializer.Serialize(message)
         });

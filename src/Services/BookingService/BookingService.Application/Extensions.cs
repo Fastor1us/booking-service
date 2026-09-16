@@ -11,8 +11,7 @@ public static class Extensions
     {
         services.AddScoped<IBookingService, Services.BookingService>();
         services.AddScoped<IOutboxCompensator, OutboxCompensator>();
-        services.AddScoped<IOutboxStore, OutboxStore>();
-
+        
         return services;
     }
 }

@@ -1,13 +1,13 @@
 using BookingService.Application.Interfaces;
-using BookingService.Application.Services;
+using BookingService.Infrastructure.Messaging.Handlers;
 using BookingService.Infrastructure.Persistence;
 using BookingService.Infrastructure.Repositories;
 using Messaging.Abstractions;
-using Messaging.Abstractions.Outbox;
-using Messaging.Abstractions.Persistence;
+using Messaging.Abstractions.Constants;
+using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Kafka;
+using Messaging.Kafka.Models;
 using Messaging.Outbox;
-using Messaging.Persistence.EfCore;
 using Messaging.Persistence.EfCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,13 +31,28 @@ public static class Extensions
         });
 
         services.AddScoped<IBookingRepository, BookingRepository>();
-        services.AddMessagingOutbox<AppDbContext>();
-        services.AddScoped<IUnitOfWork, UnitOfWork.UnitOfWork>();
-        services.AddScoped<IOutboxStore, OutboxStore>();
-        services.AddScoped<IOutboxCompensator, OutboxCompensator>();
+        services.AddOutboxRepositories<AppDbContext>();
 
         services.AddSingleton<IMessageProducer, KafkaProducer>();
-        services.AddHostedService<OutboxRelay>();
+        services.AddUnitOfWorkWithOutbox<IUnitOfWork, UnitOfWork.UnitOfWork>();
+        services.AddKafkaConsumers(new KafkaConsumerRegistry
+        {
+            Workers =
+            [
+                new KafkaWorker
+                {
+                    Topic = Topics.EventEventsTopic,
+                    GroupId = GroupIds.BookingGroup,
+                    Handlers = new Dictionary<string, HandlerType>
+                    {
+                        [Events.SeatReserved] = HandlerType.From<SeatReservedHandler>(),
+                        [Events.SeatReservationRejected] = HandlerType.From<SeatReservationRejectedHandler>(),
+                        [Events.SeatReleased] = HandlerType.From<SeatReleasedHandler>(),
+                        [Events.SeatReleasingRejected] = HandlerType.From<SeatReleasingRejectedHandler>(),
+                    }
+                }
+            ]
+        });
 
         return services;
     }
