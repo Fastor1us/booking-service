@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="2.15.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageReference Include="NLog" Version="6.2.1" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Messaging.Abstractions\Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Inbox\Messaging.Inbox.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Outbox\Messaging.Outbox.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Persistence.EfCore\Messaging.Persistence.EfCore.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Security.Jwt\Security.Jwt.csproj" />
+    <ProjectReference Include="..\BookingService.Application\BookingService.Application.csproj" />
+    <ProjectReference Include="..\BookingService.Domain\BookingService.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Persistence\Migrations\" />
+  </ItemGroup>
+
+</Project>

@@ -1,11 +1,11 @@
-# Booking API
+# Booking Service
 REST API for booking events - create, manage and booking with JWT authentication and role-based authorization
-
+Booking Service is the micro-service solution including three serives: BookingService, EventService and UserService
+Every service speak to each other sending messages via broker asynchronously 
 
 ## 📋 Requirements
 
 - [.NET 10.0](https://dotnet.microsoft.com/download/dotnet/10.0)
-- [PostgreSQL](https://www.postgresql.org/)
 - [Docker](https://www.docker.com/)
 - CLI / IDE
 
@@ -37,25 +37,21 @@ REST API for booking events - create, manage and booking with JWT authentication
 
 ## 🚀 Quick Start
 
-### Restore dependencies
-
-```bash
-dotnet restore ./src/BookingApi.csproj
-```
-
-### Build project
-
-```bash
-dotnet build ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
-```
+Solution provides Aspire technology to run all project at once with required dependencies, such as PostgreSQL and Kafka
 
 ### Run project
 
+via Aspire:
+
 ```bash
-dotnet run --project ./src/BookingApi.Presentation/BookingApi.Presentation.csproj
+dotnet run --project "src/Aspire/AppHost/AppHost.csproj"
 ```
 
-After running, access [Swagger UI](http://localhost:5142/swagger/index.html)
+via docker compose:
+
+```bash
+docker compose up
+```
 
 
 ## 🔐 Authentication & Authorization
@@ -64,7 +60,7 @@ The API uses **JWT (JSON Web Token)** authentication with role-based authorizati
 
 ### JWT Configuration
 
-The JWT settings are configured in `appsettings.json`:
+The JWT settings are configured in `appsettings.json` at every service:
 
 ```json
 {
@@ -119,70 +115,6 @@ The API implements a role-based access control (RBAC) model:
    - The padlock icon will appear locked on secured endpoints
 
 
-## 🧪 Testing
-
-The solution includes comprehensive testing with three separate test projects:
-
-### 📂 Test Structure
-
-```
-tests/
-├── BookingApi.Application.Tests/
-├── BookingApi.Domain.Tests/
-├── BookingApi.Infrastructure.Tests/
-└── BookingApi.Presentation.Tests/
-```
-
-### BookingApi.Application.Tests ```Unit Tests```
-- **Purpose:** Test individual components in isolation
-- **Tools:** xUnit, Moq, In-Memory Database
-- **Scope:** Services, business logic
-- **Characteristics:** Fast execution, no external dependencies
-
-### BookingApi.Domain.Tests ```Unit Tests```
-- **Purpose:** Test individual components in isolation
-- **Tools:** xUnit, Moq
-- **Scope:** Domain logic, Validation
-- **Characteristics:** Fast execution, no external dependencies
-
-### BookingApi.Infrastructure.Tests ```Integration Tests```
-- **Purpose:** Test real database interactions and component integration
-- **Tools:** xUnit, Testcontainers.PostgreSql
-- **Scope:** Repositories, UnitOfWork, Db Constraints and Transactions
-- **Characteristics:** Uses real PostgreSQL container, tests data persistence
-
-### BookingApi.Presentation.Tests ```E2E Tests```
-- **Purpose:** Test endpoints
-- **Tools:** xUnit, Testcontainers.PostgreSql
-- **Scope:** Presentation layer, authorization rules
-- **Characteristics:** Uses real PostgreSQL container and presentation API
-
-
-### Run tests
-
-```bash
-dotnet test
-```
-
-### Run only unit tests
-
-```bash
-dotnet test ./tests/BookingApi.Application.Tests/BookingApi.Application.Tests.csproj
-```
-
-### Run only integration tests
-
-```bash
-dotnet test ./tests/BookingApi.Infrastructure.Tests/BookingApi.Infrastructure.Tests.csproj
-```
-
-### Test Database Setup
-Integration tests use **Testcontainers** to spin up a real PostgreSQL database in Docker:
-- One container instance reused across all test classes
-- Automatic cleanup between tests
-- No manual database configuration required
-
-
 ## 🌐 API Endpoints
 
 ### 🔑 Auth Controller (`/api/auth`)
@@ -201,14 +133,15 @@ Integration tests use **Testcontainers** to spin up a real PostgreSQL database i
 | POST   | `/api/events`           | Create new event                  | 201 Created      | ✅ Admin       |
 | PUT    | `/api/events/{id}`      | Update existing event             | 204 No Content   | ✅ Admin       |
 | DELETE | `/api/events/{id}`      | Delete event                      | 204 No Content   | ✅ Admin       |
-| POST   | `/api/events/{id}/book` | Book an event                     | 202 Accepted     | ✅ User/Admin  |
+
 
 ### 📖 Booking Controller (`/api/bookings`)
 
 | Method   | Endpoint             | Description       | Success Response | Authorization  |
 | -------- | -------------------- | ----------------- | ---------------- | -------------- |
+| POST     | `/api/bookings`      | Book an event     | 202 Accepted     | ✅ User/Admin  |
 | GET      | `/api/bookings/{id}` | Get booking by ID | 200 OK           | ✅ User/Admin  |
-| DELETE   | `/api/bookings/{id}` | Cancel booking    | 204 No Content   | ✅ User/Admin  |
+| DELETE   | `/api/bookings/{id}` | Cancel booking    | 202 Accepted     | ✅ User/Admin  |
 
 ### 📊 Query Parameters
 
@@ -426,17 +359,17 @@ Delete an event.
 
 ---
 
-### 🎫 POST `/api/events/{id}/book`
+### 🎫 POST `/api/bookings`
 
 Book a ticket for an event. Creates a pending booking request.
 
 **Authorization:** ✅ User or Admin
 
-**Parameters:**
+**Request Body:**
 
-| Name | In   | Type   | Required | Description                    |
-| ---- | ---- | ------ | -------- | ------------------------------ |
-| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
+| Name  | In   | Type                                             | Required | Description                    |
+| ----- | ---- | ------------------------------------------------ | -------- | ------------------------------ |
+| `dto` | body |  [`CreateBookingRequest`](#createbookingrequest) | ✅ Yes   | Unique identifier of the event |
 
 **Responses:**
 
@@ -455,7 +388,7 @@ Book a ticket for an event. Creates a pending booking request.
 
 Get booking details by ID.
 
-**Authorization:** ❌ Anonymous
+**Authorization:** ✅ User or Admin
 
 **Parameters:**
 
@@ -468,6 +401,8 @@ Get booking details by ID.
 | Status Code | Description           | Response Type                               |
 | ----------- | --------------------- | ------------------------------------------- |
 | 200         | Success               | [`BookingResponseDto`](#bookingresponsedto) |
+| 401         | Unauthorized          | [`ErrorResponseDto`](#errorresponsedto)     |
+| 403         | Forbidden (not owner) | [`ErrorResponseDto`](#errorresponsedto)     |
 | 404         | Booking not found     | [`ErrorResponseDto`](#errorresponsedto)     |
 | 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto)     |
 
@@ -681,12 +616,13 @@ Response model for booking data.
 
 ### 🏷️ `BookingStatus` Enum
 
-| Value       | Description                                     |
-| ----------- | ----------------------------------------------- |
-| `Pending`   | Booking request created, waiting for processing |
-| `Confirmed` | Booking has been confirmed successfully         |
-| `Rejected`  | Booking request was rejected (e.g., event full) |
-| `Cancelled` | Booking was cancelled by user                   |
+| Value        | Description                                     |
+| ------------ | ----------------------------------------------- |
+| `Pending`    | Booking request created, waiting for processing |
+| `Confirmed`  | Booking has been confirmed successfully         |
+| `Rejected`   | Booking request was rejected (e.g., event full) |
+| `Cancelling` | Booking cancelling, waiting for processing      |
+| `Cancelled`  | Booking was cancelled by user                   |
 
 ---
 
@@ -733,67 +669,14 @@ Response model for error responses returned by the global exception handling mid
 ---
 
 
-## 🧠 Background Processing
-
-The API includes a background service that automatically processes pending bookings with a delay mechanism:
-
-### Booking Processing Flow
-
-1. **Client books an event** → Creates a pending booking
-2. **Background service** → Checks for pending bookings
-3. **Processing logic:** → Confirms bookings
-4. **Result:** Bookings status updated
-
-### Background Service Implementation
-- Uses `BackgroundService` from .NET
-- Runs continuously in the background
-- Handles concurrency issues with optimistic locking (RowVersion)
-
-
 ## 🏗️ Architecture
 
 The solution follows a **Clean Architecture** with clear separation of concerns
 
-### Layer Dependencies
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Infrastructure                           │
-│        (Repositories, DbContext, Background Services)       │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ depends on
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Application                              │
-│              (Services, DTOs, Interfaces)                   │
-└─────────────────────────┬───────────────────────────────────┘
-                          │ depends on
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Domain                                   │
-│              (Models, Exceptions, Constants)                │
-└─────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│                    Presentation                             │
-│           (Controllers, Middlewares, HTTP DTOs)             │
-└────────┬────────────────────────────────────┬───────────────┘
-         │ depends on                         │ depends on
-         ▼                                    ▼
-      Application                         Infrastructure
-```
-
 ### 🏗️ Data Access Pattern
 The application uses the Repository + Unit of Work pattern for data access
 
-#### 📦 Repository Pattern
-- `IEventRepository` - Data access operations for events
-- `IBookingRepository` - Data access operations for bookings
-- `IUserRepository` - Data access operations for users
-- `IRepository<T>` - Generic repository interface with common operations
-- Provides a clean abstraction over the data source
-
-#### 🔄 Unit of Work Pattern
+#### 📦 Unit of Work Pattern
 - `IUnitOfWork` - Coordinates multiple repositories in a single transaction
 - Ensures atomic operations - all changes succeed or none are applied
 - Lifecycle: Scoped per HTTP request in web applications
@@ -803,10 +686,10 @@ The application uses the Repository + Unit of Work pattern for data access
 
 - .NET 10.0
 - ASP.NET Core Web API
-- Entity Framework Core
-- PostgreSQL
+- Background Services
 - JWT Authentication & Authorization
 - Swagger/OpenAPI
-- Docker & Testcontainers
-- xUnit, Moq
-- Background Services
+- Entity Framework Core
+- PostgreSQL
+- Kafka
+- Docker

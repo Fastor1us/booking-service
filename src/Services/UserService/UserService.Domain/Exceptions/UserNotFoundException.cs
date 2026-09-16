@@ -1,0 +1,8 @@
+using Domain.Exceptions;
+
+namespace UserService.Domain.Exceptions;
+
+public class UserNotFoundException(string login)
+    : NotFoundException($"User with Login '{login}' is not found.")
+{
+}

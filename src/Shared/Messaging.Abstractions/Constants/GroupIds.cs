@@ -1,0 +1,7 @@
+﻿namespace Messaging.Abstractions.Constants;
+
+public class GroupIds
+{
+    public const string EventGroup = "event.group.id";
+    public const string BookingGroup = "booking.group.id";
+}

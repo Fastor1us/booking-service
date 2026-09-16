@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Messaging.Abstractions\Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Inbox\Messaging.Inbox.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Kafka\Messaging.Kafka.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Outbox\Messaging.Outbox.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Persistence.EfCore\Messaging.Persistence.EfCore.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Security.Jwt\Security.Jwt.csproj" />
+    <ProjectReference Include="..\EventService.Application\EventService.Application.csproj" />
+    <ProjectReference Include="..\EventService.Domain\EventService.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Persistence\Migrations\" />
+  </ItemGroup>
+
+</Project>
