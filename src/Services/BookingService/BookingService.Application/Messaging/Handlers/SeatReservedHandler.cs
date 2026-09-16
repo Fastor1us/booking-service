@@ -22,7 +22,7 @@ public class SeatReservedHandler(IUnitOfWork unitOfWork) : HandlerBase(unitOfWor
             return;
         }
 
-        var cmd = DeserializePayload<SeatReleased>(payload);
+        var cmd = DeserializePayload<SeatReserved>(payload);
         var booking = await _unitOfWork.Bookings
             .FirstOrDefaultAsync(e => e.Id == cmd.BookingId, ct);
 

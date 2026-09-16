@@ -41,11 +41,17 @@ Solution provides Aspire technology to run all project at once with required dep
 
 ### Run project
 
+via Aspire:
+
 ```bash
 dotnet run --project "src/Aspire/AppHost/AppHost.csproj"
 ```
 
-After running, access by click at Dashboard URL at opened console
+via docker compose:
+
+```bash
+docker compose up
+```
 
 
 ## 🔐 Authentication & Authorization
