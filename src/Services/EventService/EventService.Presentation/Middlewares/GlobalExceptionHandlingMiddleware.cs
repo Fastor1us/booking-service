@@ -3,15 +3,14 @@ using Domain.Exceptions;
 using EventService.Domain.Exceptions;
 using EventService.Presentation.Dtos;
 using Microsoft.EntityFrameworkCore;
+using NLog;
 
 namespace EventService.Presentation.Middlewares;
 
-public class GlobalExceptionHandlingMiddleware(
-    RequestDelegate next,
-    ILogger<GlobalExceptionHandlingMiddleware> logger)
+public class GlobalExceptionHandlingMiddleware(RequestDelegate next)
 {
+    private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
     private readonly RequestDelegate _next = next;
-    private readonly ILogger<GlobalExceptionHandlingMiddleware> _logger = logger;
 
     public async Task InvokeAsync(HttpContext httpContext)
     {
@@ -32,7 +31,7 @@ public class GlobalExceptionHandlingMiddleware(
         // Full stack trace only for inner server errors
         if (statusCode == StatusCodes.Status500InternalServerError)
         {
-            _logger.LogError(
+            _logger.Error(
                 ex,
                 "Unhandled exception. Method={Method}, Path={Path}",
                 httpContext.Request.Method,

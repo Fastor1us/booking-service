@@ -1,10 +1,13 @@
 ﻿using Confluent.Kafka;
 using Confluent.Kafka.Admin;
 using Messaging.Abstractions;
+using Messaging.Abstractions.Inbox;
+using Messaging.Abstractions.Persistence;
 using Messaging.Kafka.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using NLog;
 using System.Text;
 
 namespace Messaging.Kafka;
@@ -14,6 +17,8 @@ public sealed class KafkaConsumerHost(
     KafkaConsumerRegistry registry,
     IServiceScopeFactory scopeFactory) : BackgroundService
 {
+    private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
+
     protected override async Task ExecuteAsync(CancellationToken st)
     {
         var tasks = registry.Workers
@@ -48,20 +53,36 @@ public sealed class KafkaConsumerHost(
                 {
                     var result = consumer.Consume(st);
 
-                    //var msgInfo = $"[{result.TopicPartitionOffset}] " +
-                    //              $"Key: {result.Message.Key} " +
-                    //              $"Value: {result.Message.Value}";
-                    //Console.WriteLine(msgInfo);
+                    var msgInfo = $"[{result.TopicPartitionOffset}] " +
+                                  $"Key: {result.Message.Key} " +
+                                  $"Value: {result.Message.Value}";
+                    _logger.Info(msgInfo);
 
                     var messageTypeHeader = result.Message.Headers
                         .FirstOrDefault(h => h.Key == Headers.MessageType);
                     var correlationIdHeader = result.Message.Headers
                         .FirstOrDefault(h => h.Key == Headers.CorrelationId);
 
+                    using var scope = scopeFactory.CreateScope();
+                    var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWorkBase>();
+
                     if (messageTypeHeader == null || correlationIdHeader == null)
                     {
-                        // TODO логируем Error
-                        return;
+                        unitOfWork.InboxMessages.Add(new InboxMessage
+                        {
+                            MessageType = messageTypeHeader != null
+                                ? Encoding.UTF8.GetString(messageTypeHeader.GetValueBytes()) : string.Empty,
+                            Payload = result.Message.Value,
+                            Id = Guid.NewGuid(),
+                            ReceivedAt = DateTimeOffset.UtcNow,
+                            CorrelationId = correlationIdHeader != null
+                                ? Guid.Parse(Encoding.UTF8.GetString(correlationIdHeader.GetValueBytes()))
+                                : Guid.NewGuid(),
+                        });
+
+                        _logger.Error($"Missing type of correlationId in hears: {result.Message.Headers}");
+                        consumer.Commit(result);
+                        continue;
                     }
 
                     var messageType = Encoding.UTF8
@@ -71,9 +92,12 @@ public sealed class KafkaConsumerHost(
 
                     if (worker.Handlers.TryGetValue(messageType, out var handlerType))
                     {
-                        using var scope = scopeFactory.CreateScope();
+
                         var handler = (IMessageHandler)scope.ServiceProvider
                             .GetRequiredService(handlerType.Value);
+
+
+
                         await handler.HandleAsync(
                             Guid.Parse(correlationId), result.Message.Value, st);
 
@@ -81,15 +105,14 @@ public sealed class KafkaConsumerHost(
                     }
                     else
                     {
-                        // TODO логируем Error
+                        _logger.Error($"Handler is not found for {messageType}");
 
                         consumer.Commit(result);
                     }
                 }
                 catch (ConsumeException ex)
                 {
-                    // send to DLQ
-                    Console.WriteLine($"Ошибка при получении сообщения: {ex.Error.Reason}");
+                    _logger.Error($"Error when receiving the message: {ex.Error.Reason}");
                 }
             }
         }

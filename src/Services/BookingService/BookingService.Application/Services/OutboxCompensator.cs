@@ -7,9 +7,7 @@ using System.Text.Json;
 
 namespace BookingService.Application.Services;
 
-public sealed class OutboxCompensator(
-    IUnitOfWork unitOfWork,
-    TimeProvider timeProvider)
+public sealed class OutboxCompensator(IUnitOfWork unitOfWork)
     : IOutboxCompensator
 {
     public async Task<bool> TryCompensateAsync(
@@ -26,13 +24,31 @@ public sealed class OutboxCompensator(
                         return false;
 
                     var booking = await unitOfWork.Bookings
-                        .FirstOrDefaultAsync(b => b.Id == cmd.BookingId, ct);
+                        .FirstOrDefaultAsync(e => e.Id == cmd.BookingId, ct);
 
                     if (booking is null)
-                        return true;
+                        return false;
 
                     booking.Status = BookingStatus.Rejected;
-                    booking.ProcessedAt = timeProvider.GetUtcNow();
+                    booking.ProcessedAt = DateTimeOffset.UtcNow;
+
+                    return true;
+                }
+            case Commands.ReleaseSeat:
+                {
+                    var cmd = JsonSerializer
+                        .Deserialize<ReleaseEventSeat>(message.Payload);
+                    if (cmd is null)
+                        return false;
+
+                    var booking = await unitOfWork.Bookings
+                        .FirstOrDefaultAsync(e => e.Id == cmd.BookingId, ct);
+
+                    if (booking is null)
+                        return false;
+
+                    booking.Status = BookingStatus.Confirmed;
+                    booking.ProcessedAt = DateTimeOffset.UtcNow;
 
                     return true;
                 }

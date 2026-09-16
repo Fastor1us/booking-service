@@ -1,10 +1,12 @@
 using BookingService.Application.Interfaces;
 using BookingService.Application.Messaging.Handlers;
+using BookingService.Infrastructure.BackgroundServices;
 using BookingService.Infrastructure.Persistence;
 using BookingService.Infrastructure.Repositories;
 using Messaging.Abstractions;
 using Messaging.Abstractions.Constants;
 using Messaging.Abstractions.Contracts.Constants;
+using Messaging.Inbox;
 using Messaging.Kafka;
 using Messaging.Kafka.Models;
 using Messaging.Outbox;
@@ -53,6 +55,9 @@ public static class Extensions
                 }
             ]
         });
+
+        services.AddHostedService<BookingMissingAnswerResolver>();
+        services.AddHostedService<InboxSweeper>();
 
         return services;
     }

@@ -7,7 +7,7 @@ public class Booking
     public required Guid UserId { get; init; }
     public required BookingStatus Status { get; set; }
     public required DateTimeOffset CreatedAt { get; init; }
-    public DateTimeOffset? ProcessedAt { get; set; }
+    public DateTimeOffset ProcessedAt { get; set; } = DateTimeOffset.UtcNow;
     public uint RowVersion { get; set; }
 }
 

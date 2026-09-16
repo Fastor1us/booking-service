@@ -49,11 +49,11 @@ public class ReserveSeatHandler(IUnitOfWork unitOfWork) : HandlerBase(unitOfWork
         {
             @event!.AvailableSeats--;
 
-            message = new SeatReserved(BookingId: cmd.BookingId);
+            message = new SeatReserved(cmd.BookingId, cmd.EventId);
         }
         else
         {
-            message = new SeatReservationRejected(BookingId: cmd.BookingId);
+            message = new SeatReservationRejected(cmd.BookingId, cmd.EventId);
         }
 
         _unitOfWork.OutboxMessages.Add(new OutboxMessage

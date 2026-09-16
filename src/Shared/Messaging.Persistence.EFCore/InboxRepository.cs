@@ -40,4 +40,13 @@ public sealed class InboxRepository<TContext>(TContext context)
     {
         context.InboxMessages.Remove(outboxMessage);
     }
+
+    public Task<int> ExecuteDeleteOutdatedAsync(
+       DateTimeOffset threshold,
+       CancellationToken ct = default)
+    {
+        return context.InboxMessages
+            .Where(e => e.ReceivedAt < threshold)
+            .ExecuteDeleteAsync(ct);
+    }
 }

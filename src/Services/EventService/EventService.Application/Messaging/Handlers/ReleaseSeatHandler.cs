@@ -45,11 +45,11 @@ public class ReleaseSeatHandler(IUnitOfWork unitOfWork) : HandlerBase(unitOfWork
         {
             @event!.AvailableSeats++;
 
-            message = new SeatReleased(BookingId: cmd.BookingId);
+            message = new SeatReleased(cmd.BookingId, cmd.EventId);
         }
         else
         {
-            message = new SeatReleasingRejected(BookingId: cmd.BookingId);
+            message = new SeatReleasingRejected(cmd.BookingId, cmd.EventId);
         }
 
         _unitOfWork.OutboxMessages.Add(new OutboxMessage

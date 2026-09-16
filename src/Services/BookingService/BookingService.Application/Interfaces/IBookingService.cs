@@ -14,7 +14,7 @@ public interface IBookingService
         Guid bookingId,
         CancellationToken ct);
 
-    public Task CancelAsync(
+    public Task<Booking> CancelAsync(
         Guid bookingId,
         Guid userId,
         UserRole userRole,

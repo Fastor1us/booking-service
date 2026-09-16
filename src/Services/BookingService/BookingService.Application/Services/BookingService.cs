@@ -63,7 +63,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
             ?? throw new BookingNotFoundException(bookingId);
     }
 
-    public async Task CancelAsync(
+    public async Task<Booking> CancelAsync(
         Guid bookingId,
         Guid userId,
         UserRole userRole,
@@ -89,6 +89,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
             EventId: booking.EventId);
 
         booking.Status = BookingStatus.Cancelling;
+        booking.ProcessedAt = DateTime.UtcNow; 
 
         Guid correlationId = Guid.NewGuid();
 
@@ -103,5 +104,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         });
 
         await unitOfWork.SaveChangesAsync(ct);
+
+        return booking;
     }
 }

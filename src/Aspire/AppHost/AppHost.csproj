@@ -9,6 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <PackageReference Include="Aspire.Hosting.Kafka" Version="13.5.4" />
 	  <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
 	  <PackageReference Include="Microsoft.Extensions.ServiceDiscovery" Version="10.9.0" />
 	</ItemGroup>
@@ -16,9 +17,9 @@
 	<ItemGroup>
 		<ProjectReference Include="..\ServiceDefaults\ServiceDefaults.csproj" />
 
-		<ProjectReference Include="..\Services\UserService\UserService.Presentation\UserService.Presentation.csproj" />
-		<ProjectReference Include="..\Services\EventService\EventService.Presentation\EventService.Presentation.csproj" />
-		<ProjectReference Include="..\Services\BookingService\BookingService.Presentation\BookingService.Presentation.csproj" />
+		<ProjectReference Include="..\..\Services\UserService\UserService.Presentation\UserService.Presentation.csproj" />
+		<ProjectReference Include="..\..\Services\EventService\EventService.Presentation\EventService.Presentation.csproj" />
+		<ProjectReference Include="..\..\Services\BookingService\BookingService.Presentation\BookingService.Presentation.csproj" />
 	</ItemGroup>
 
 </Project>

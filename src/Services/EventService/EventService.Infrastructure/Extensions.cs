@@ -4,6 +4,7 @@ using EventService.Infrastructure.Persistence;
 using Messaging.Abstractions;
 using Messaging.Abstractions.Constants;
 using Messaging.Abstractions.Contracts.Constants;
+using Messaging.Inbox;
 using Messaging.Kafka;
 using Messaging.Kafka.Models;
 using Messaging.Outbox;
@@ -50,6 +51,8 @@ public static class Extensions
                 }
             ]
         });
+
+        services.AddHostedService<InboxSweeper>();
 
         return services;
     }

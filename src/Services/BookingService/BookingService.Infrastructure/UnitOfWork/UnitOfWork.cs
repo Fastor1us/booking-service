@@ -9,8 +9,13 @@ public class UnitOfWork(
     AppDbContext context,
     IBookingRepository bookingRepository,
     IOutboxRepository outboxRepository,
-    IOutboxDeadLetterRepository outboxDeadLetterRepository)
-    : UnitOfWorkBase(context, outboxRepository, outboxDeadLetterRepository),
+    IOutboxDeadLetterRepository outboxDeadLetterRepository,
+    IInboxRepository inboxRepository)
+    : UnitOfWorkBase(
+        context,
+        outboxRepository,
+        outboxDeadLetterRepository,
+        inboxRepository),
       IUnitOfWork
 {
     public IBookingRepository Bookings => bookingRepository;

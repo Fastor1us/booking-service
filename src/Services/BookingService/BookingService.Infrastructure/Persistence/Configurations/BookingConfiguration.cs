@@ -37,8 +37,7 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .IsRequired();
 
         builder.Property(e => e.ProcessedAt)
-                   .HasColumnName("processed_at")
-                   .IsRequired(false);
+            .HasColumnName("processed_at");
 
         builder.Property(b => b.RowVersion)
             .HasColumnName("xmin")

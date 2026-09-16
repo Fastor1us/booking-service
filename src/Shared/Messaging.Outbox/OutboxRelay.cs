@@ -2,14 +2,17 @@
 using Messaging.Abstractions.Outbox;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NLog;
 
 namespace Messaging.Outbox;
 
 public sealed class OutboxRelay(
     IServiceScopeFactory scopeFactory) : BackgroundService
 {
-    public int BatchSize { get; init; } = 10;
-    public int MaxPublishAttempts { get; init; } = 3;
+    private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
+
+    public int BatchSize { private get; init; } = 10;
+    public int MaxPublishAttempts { private get; init; } = 3;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -34,7 +37,7 @@ public sealed class OutboxRelay(
             }
             catch (Exception ex)
             {
-                //logger.LogError(ex, "Unexpected error in {Relay}.", typeof(T).Name);
+                _logger.Error(ex, "Unexpected error in {Relay}.", typeof(OutboxRelay).Name);
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
@@ -59,7 +62,7 @@ public sealed class OutboxRelay(
                     message.Topic, message.Key, message.MessageType,
                     message.CorrelationId, message.Payload, ct);
 
-                //logger.LogInformation("Published outbox message {Id}", message.Id);
+                _logger.Info("Published outbox message {Id}", message.Id);
                 producedIds.Add(message.Id);
             }
             catch (Exception ex)
@@ -78,9 +81,9 @@ public sealed class OutboxRelay(
                         .TryCompensateAsync(message, ct);
                     if (!handled)
                     {
-                        //logger.LogError(
-                        //"No compensator handled message type '{Type}' (id {Id}).",
-                        //message.MessageType, message.Id);
+                        _logger.Error(
+                            "No compensator handled message type '{Type}' (id {Id}).",
+                            message.MessageType, message.Id);
                     }
 
                     await store.MoveToDeadLetterAsync(message, ct);

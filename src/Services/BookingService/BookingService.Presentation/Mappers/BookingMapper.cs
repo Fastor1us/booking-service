@@ -12,8 +12,6 @@ public static class BookingMapper
             Id = booking.Id,
             EventId = booking.EventId,
             Status = booking.Status,
-            CreatedAt = booking.CreatedAt,
-            ProcessedAt = booking.ProcessedAt,
         };
     }
 }

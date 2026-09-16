@@ -15,6 +15,7 @@ public class BookingController(IBookingService bookingService) : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(BookingResponseDto), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<BookingResponseDto>> Create(
         [FromBody] CreateBookingRequest request, CancellationToken ct)
     {
@@ -30,6 +31,8 @@ public class BookingController(IBookingService bookingService) : ControllerBase
 
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(BookingResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<BookingResponseDto>> GetById(
@@ -40,7 +43,7 @@ public class BookingController(IBookingService bookingService) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(BookingResponseDto), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> Cancel(
@@ -49,8 +52,11 @@ public class BookingController(IBookingService bookingService) : ControllerBase
         var userId = User.GetUserId();
         var userRole = User.GetUserRole();
 
-        await bookingService.CancelAsync(id, userId, userRole, ct);
+        var booking = await bookingService.CancelAsync(id, userId, userRole, ct);
 
-        return NoContent();
+        return AcceptedAtAction(
+            nameof(GetById),
+            new { id = booking.Id },
+            booking.MapToResponseDto());
     }
 }

@@ -14,6 +14,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Shared\Messaging.Abstractions\Messaging.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Messaging.Inbox\Messaging.Inbox.csproj" />
     <ProjectReference Include="..\..\..\Shared\Messaging.Kafka\Messaging.Kafka.csproj" />
     <ProjectReference Include="..\..\..\Shared\Messaging.Outbox\Messaging.Outbox.csproj" />
     <ProjectReference Include="..\..\..\Shared\Messaging.Persistence.EFCore\Messaging.Persistence.EfCore.csproj" />

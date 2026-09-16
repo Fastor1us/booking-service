@@ -2,6 +2,9 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var config = builder.Configuration;
 
+var kafka = builder.AddKafka("Kafka")
+    .WithDataVolume();
+
 var postgres = builder.AddPostgres("postgres",
     password: builder.AddParameter("postgres-password", "postgres"))
     .WithImage("postgres:16-alpine")
@@ -25,7 +28,8 @@ var userService = builder
     .WithEnvironment("Jwt__SigningKey", jwtSigningKey)
     .WithEnvironment("Jwt__ExpiryMinutes", jwtExpiryMinutes)
     .WithHttpEndpoint(port: 5001, name: "http")
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithReference(kafka);
 
 var eventService = builder
     .AddProject<Projects.EventService_Presentation>("eventservice")
@@ -35,7 +39,8 @@ var eventService = builder
     .WithEnvironment("Jwt__SigningKey", jwtSigningKey)
     .WithEnvironment("Jwt__ExpiryMinutes", jwtExpiryMinutes)
     .WithHttpEndpoint(port: 5002, name: "http")
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithReference(kafka);
 
 var bookingService = builder
     .AddProject<Projects.BookingService_Presentation>("bookingservice")
@@ -45,10 +50,11 @@ var bookingService = builder
     .WithEnvironment("Jwt__SigningKey", jwtSigningKey)
     .WithEnvironment("Jwt__ExpiryMinutes", jwtExpiryMinutes)
     .WithHttpEndpoint(port: 5003, name: "http")
-    .WithExternalHttpEndpoints();
+    .WithExternalHttpEndpoints()
+    .WithReference(kafka);
 
-userService.WaitFor(usersDb);
-eventService.WaitFor(eventsDb);
-bookingService.WaitFor(bookingsDb);
+userService.WaitFor(usersDb).WaitFor(kafka);
+eventService.WaitFor(eventsDb).WaitFor(kafka);
+bookingService.WaitFor(bookingsDb).WaitFor(kafka);
 
 builder.Build().Run();
