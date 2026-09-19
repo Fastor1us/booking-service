@@ -18,7 +18,7 @@ var bookingsDb = postgres.AddDatabase("bookingsdb");
 var jwtIssuer = config["Jwt:Issuer"] ?? "BookingPlatform";
 var jwtAudience = config["Jwt:Audience"] ?? "BookingPlatformClient";
 var jwtSigningKey = config["Jwt:SigningKey"] ?? "your-secure-signing-key-minimum-32-characters";
-var jwtExpiryMinutes = config["Jwt:ExpiryMinutes"] ?? "60";
+var jwtExpiryMinutes = config["Jwt:ExpiresInMinutes"] ?? "60";
 
 var userService = builder
     .AddProject<Projects.UserService_Presentation>("userservice")

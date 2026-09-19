@@ -13,12 +13,10 @@ Every service speak to each other sending messages via broker asynchronously
 ## 📑 Navigation
 
 - [🚀 Quick Start](#quick-start)
-- [🗄️ Database Migrations](#️-database-migrations)
 - [🔐 Authentication & Authorization](#-authentication--authorization)
   - [JWT Configuration](#jwt-configuration)
   - [Role Model](#role-model)
   - [Swagger JWT Setup](#swagger-jwt-setup)
-- [🧪 Testing](#testing)
 - [🌐 API Endpoints](#api-endpoints)
   - [🔑 Auth Controller](#auth-controller-apiauth)
   - [📅 Events Controller](#events-controller-apievents)
@@ -30,7 +28,6 @@ Every service speak to each other sending messages via broker asynchronously
   - [Booking Models](#booking-models)
   - [Error Models](#error-models)
 - [📋 HTTP Status Codes](#http-status-codes)
-- [🧠 Background Processing](#background-processing)
 - [🏗️ Architecture](#️architecture)
 - [🛠️ Technology Stack](#technology-stack)
 
@@ -68,7 +65,7 @@ The JWT settings are configured in `appsettings.json` at every service:
     "Issuer": "BookingApi",
     "Audience": "BookingApiClient",
     "SigningKey": "your-secure-signing-key-minimum-32-characters",
-    "ExpiryMinutes": 60
+    "ExpiresInMinutes": 60
   }
 }
 ```
