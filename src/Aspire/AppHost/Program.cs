@@ -5,6 +5,9 @@ var config = builder.Configuration;
 var kafka = builder.AddKafka("Kafka")
     .WithDataVolume();
 
+var redis = builder.AddRedis("redis")
+    .WithArgs("--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru");
+
 var postgres = builder.AddPostgres("postgres",
     password: builder.AddParameter("postgres-password", "postgres"))
     .WithImage("postgres:16-alpine")
@@ -40,7 +43,8 @@ var eventService = builder
     .WithEnvironment("Jwt__ExpiryMinutes", jwtExpiryMinutes)
     .WithHttpEndpoint(port: 5002, name: "http")
     .WithExternalHttpEndpoints()
-    .WithReference(kafka);
+    .WithReference(kafka)
+    .WithReference(redis);
 
 var bookingService = builder
     .AddProject<Projects.BookingService_Presentation>("bookingservice")

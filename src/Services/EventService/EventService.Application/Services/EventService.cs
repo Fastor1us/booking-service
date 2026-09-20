@@ -1,22 +1,44 @@
 using EventService.Application.Dtos;
 using EventService.Application.Interfaces;
+using EventService.Application.Options;
 using EventService.Domain.Constants;
 using EventService.Domain.Exceptions;
 using EventService.Domain.Models;
 using Messaging.Abstractions.Persistence;
+using Microsoft.Extensions.Options;
 
 namespace EventService.Application.Services;
 
-public class EventService(IUnitOfWork unitOfWork) : IEventService
+public class EventService(
+    IUnitOfWork unitOfWork,
+    IEventCache cache,
+    IOptions<EventCacheOptions> cacheOptions) : IEventService
 {
-    public async Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
+    public Task<List<Event>> GetTopAsync(CancellationToken ct)
     {
-        return await unitOfWork.Events
-            .FirstOrDefaultAsync(
-                QueryTrackerBehavior.NoTracking,
-                e => e.Id == id,
-                ct)
-            ?? throw new EventNotFoundException(id);
+        return cache.GetOrSetAsync(
+            key: "events:top10",
+            factory: () => unitOfWork.Events.ToListAsync(
+                unitOfWork.Events
+                    .GetQuery()
+                    .OrderBy(e => (e.TotalSeats - e.AvailableSeats) / e.TotalSeats)
+                    .Take(10)),
+            ttl: cacheOptions.Value.TopEventsTtl,
+            ct: ct)!;
+    }
+
+    public Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
+    {
+        return cache.GetOrSetAsync(
+            key: $"event:{id}",
+            factory: () => unitOfWork.Events
+                .FirstOrDefaultAsync(
+                    QueryTrackerBehavior.NoTracking,
+                    e => e.Id == id,
+                    ct)
+                ?? throw new EventNotFoundException(id),
+            ttl: cacheOptions.Value.EventTtl,
+            ct: ct)!;
     }
 
     public async Task<PagedEventsDto> GetAllAsync(
@@ -71,6 +93,7 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
 
         unitOfWork.Events.Add(@event);
         await unitOfWork.SaveChangesAsync(ct);
+        await cache.SetAsync($"event:{@event.Id}", @event, cacheOptions.Value.EventTtl);
 
         return @event;
     }
@@ -87,13 +110,23 @@ public class EventService(IUnitOfWork unitOfWork) : IEventService
             EndAt = dto.EndAt
         };
 
-        await unitOfWork.Events
-            .ExecuteUpdateByIdAsync(@event, ct);
+        var isRemoved = await unitOfWork.Events
+            .ExecuteUpdateByIdAsync(@event, ct) == 1;
+
+        if (isRemoved)
+        {
+            await cache.RemoveAsync($"event:{@event.Id}", ct);
+        }
     }
 
     public async Task RemoveAsync(Guid id, CancellationToken ct)
     {
-        await unitOfWork.Events
-            .ExecuteDeleteByIdAsync(id, ct);
+        var isRemoved = await unitOfWork.Events
+            .ExecuteDeleteByIdAsync(id, ct) == 1;
+
+        if (isRemoved)
+        {
+            await cache.RemoveAsync($"event:{id}", ct);
+        }
     }
 }
