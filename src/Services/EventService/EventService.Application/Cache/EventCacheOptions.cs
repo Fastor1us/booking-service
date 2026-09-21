@@ -1,4 +1,4 @@
-﻿namespace EventService.Application.Options;
+﻿namespace EventService.Application.Cache;
 
 public class EventCacheOptions
 {

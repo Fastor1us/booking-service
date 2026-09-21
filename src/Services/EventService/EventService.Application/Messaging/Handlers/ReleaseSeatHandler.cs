@@ -1,4 +1,5 @@
-﻿using EventService.Application.Interfaces;
+﻿using EventService.Application.Cache;
+using EventService.Application.Interfaces;
 using EventService.Domain.Exceptions;
 using Messaging.Abstractions.Constants;
 using Messaging.Abstractions.Contracts.Commands;
@@ -71,7 +72,7 @@ public class ReleaseSeatHandler(
 
         if (@event != null)
         {
-            await cache.RemoveAsync($"event:{@event.Id}", ct);
+            await cache.RemoveAsync(EventCacheKey.ForId(@event.Id), ct);
         }
     }
 }

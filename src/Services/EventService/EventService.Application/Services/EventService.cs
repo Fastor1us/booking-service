@@ -1,6 +1,6 @@
+using EventService.Application.Cache;
 using EventService.Application.Dtos;
 using EventService.Application.Interfaces;
-using EventService.Application.Options;
 using EventService.Domain.Constants;
 using EventService.Domain.Exceptions;
 using EventService.Domain.Models;
@@ -17,7 +17,7 @@ public class EventService(
     public Task<List<Event>> GetTopAsync(CancellationToken ct)
     {
         return cache.GetOrSetAsync(
-            key: "events:top10",
+            key: EventCacheKey.Top10,
             factory: async () => await unitOfWork.Events.ToListAsync(
                 unitOfWork.Events
                     .GetQuery()
@@ -30,7 +30,7 @@ public class EventService(
     public Task<Event> GetByIdAsync(Guid id, CancellationToken ct)
     {
         return cache.GetOrSetAsync(
-            key: $"event:{id}",
+            key: EventCacheKey.ForId(id),
             factory: async () => await unitOfWork.Events
                     .FirstOrDefaultAsync(
                         QueryTrackerBehavior.NoTracking,
@@ -93,7 +93,8 @@ public class EventService(
 
         unitOfWork.Events.Add(@event);
         await unitOfWork.SaveChangesAsync(ct);
-        await cache.SetAsync($"event:{@event.Id}", @event, cacheOptions.Value.EventTtl);
+        await cache.SetAsync(
+            EventCacheKey.ForId(@event.Id), @event, cacheOptions.Value.EventTtl);
 
         return @event;
     }
@@ -115,7 +116,7 @@ public class EventService(
 
         if (isRemoved)
         {
-            await cache.RemoveAsync($"event:{@event.Id}", ct);
+            await cache.RemoveAsync(EventCacheKey.ForId(@event.Id), ct);
         }
     }
 
@@ -126,7 +127,7 @@ public class EventService(
 
         if (isRemoved)
         {
-            await cache.RemoveAsync($"event:{id}", ct);
+            await cache.RemoveAsync(EventCacheKey.ForId(id), ct);
         }
         else
         {

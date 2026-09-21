@@ -12,6 +12,10 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
 
     private static readonly ConcurrentDictionary<string, LockEntry> Locks = new();
 
+    private static readonly TimeSpan CircuitBreakDuration = TimeSpan.FromSeconds(10);
+    private DateTime _circuitOpenedAt = DateTime.MinValue;
+    private volatile bool _circuitOpen;
+
     public async Task<T> GetOrSetAsync<T>(
         string key,
         Func<Task<T>> factory,
@@ -68,6 +72,8 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
 
     private async Task<T?> GetSafeAsync<T>(string key)
     {
+        if (IsCircuitOpen()) return default;
+
         try
         {
             var cache = cm.GetDatabase();
@@ -85,6 +91,9 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
         }
         catch (Exception ex)
         {
+            _circuitOpen = true;
+            _circuitOpenedAt = DateTime.UtcNow;
+
             _logger.Warn(ex, "Redis GET failed for key {Key}", key);
             return default;
         }
@@ -92,6 +101,8 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
 
     private async Task SetSafeAsync<T>(string key, T value, TimeSpan ttl)
     {
+        if (IsCircuitOpen()) return;
+
         try
         {
             var cache = cm.GetDatabase();
@@ -101,12 +112,17 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
         }
         catch (Exception ex)
         {
+            _circuitOpen = true;
+            _circuitOpenedAt = DateTime.UtcNow;
+
             _logger.Warn(ex, "Redis SET failed for key {Key}", key);
         }
     }
 
     private async Task RemoveSafeAsync(string key)
     {
+        if (IsCircuitOpen()) return;
+
         try
         {
             var cache = cm.GetDatabase();
@@ -115,8 +131,20 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
         }
         catch (Exception ex)
         {
+            _circuitOpen = true;
+            _circuitOpenedAt = DateTime.UtcNow;
+
             _logger.Warn(ex, "Redis REMOVE failed for key {Key}", key);
         }
+    }
+
+    private bool IsCircuitOpen()
+    {
+        if (_circuitOpen && DateTime.UtcNow - _circuitOpenedAt < CircuitBreakDuration)
+            return true;
+
+        _circuitOpen = false;
+        return false;
     }
 }
 

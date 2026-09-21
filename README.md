@@ -125,12 +125,12 @@ The API implements a role-based access control (RBAC) model:
 
 | Method | Endpoint                | Description                       | Success Response | Authorization |
 | ------ | ----------------------- | --------------------------------- | ---------------- | -------------- |
-| GET    | `/api/events/{id}`      | Get event by ID                   | 200 OK           | ❌ Anonymous   |
 | GET    | `/api/events`           | Get paginated events with filters | 200 OK           | ❌ Anonymous   |
+| GET    | `/api/events/{id}`      | Get event by ID                   | 200 OK           | ❌ Anonymous   |
+| GET    | `/api/events/top`       | Get top 10 events                 | 200 OK           | ❌ Anonymous   |
 | POST   | `/api/events`           | Create new event                  | 201 Created      | ✅ Admin       |
 | PUT    | `/api/events/{id}`      | Update existing event             | 204 No Content   | ✅ Admin       |
 | DELETE | `/api/events/{id}`      | Delete event                      | 204 No Content   | ✅ Admin       |
-
 
 ### 📖 Booking Controller (`/api/bookings`)
 
@@ -223,28 +223,6 @@ Authenticate user and receive JWT token.
 
 ---
 
-### 🎯 GET `/api/events/{id}`
-
-Get a single event by its unique identifier.
-
-**Parameters:**
-
-| Name | In   | Type   | Required | Description                    |
-| ---- | ---- | ------ | -------- | ------------------------------ |
-| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
-
-**Authorization:** ❌ Anonymous
-
-**Responses:**
-
-| Status Code | Description           | Response Type                           |
-| ----------- | --------------------- | --------------------------------------- |
-| 200         | Success               | [`EventResponseDto`](#eventresponsedto) |
-| 404         | Event not found       | [`ErrorResponseDto`](#errorresponsedto) |
-| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
-
----
-
 ### 📋 GET `/api/events`
 
 Get paginated list of events with optional filtering.
@@ -274,6 +252,43 @@ Get paginated list of events with optional filtering.
 | 200         | Success                                       | [`PaginatedEventsResponseDto`](#paginatedeventsresponsedto) |
 | 400         | Validation error or invalid filter/pagination | [`ErrorResponseDto`](#errorresponsedto)                     |
 | 500         | Internal server error                         | [`ErrorResponseDto`](#errorresponsedto)                     |
+
+---
+
+### 🎯 GET `/api/events/{id}`
+
+Get a single event by its unique identifier.
+
+**Parameters:**
+
+| Name | In   | Type   | Required | Description                    |
+| ---- | ---- | ------ | -------- | ------------------------------ |
+| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
+
+**Authorization:** ❌ Anonymous
+
+**Responses:**
+
+| Status Code | Description           | Response Type                           |
+| ----------- | --------------------- | --------------------------------------- |
+| 200         | Success               | [`EventResponseDto`](#eventresponsedto) |
+| 404         | Event not found       | [`ErrorResponseDto`](#errorresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
+
+---
+
+### 🔍 GET `/api/events/top`
+
+Get the 10 most-booked events, ranked by fill ratio: `(totalSeats - availableSeats) / totalSeats`. Result is cached with TTL, listed in appsettings 
+
+**Authorization:** ❌ Anonymous
+
+**Responses:**
+
+| Status Code | Description           | Response Type                                 |
+| ----------- | --------------------- | --------------------------------------------- |
+| 200         | Success               | [List<`EventResponseDto`>](#eventresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto)       |
 
 ---
 
@@ -677,6 +692,20 @@ The application uses the Repository + Unit of Work pattern for data access
 - `IUnitOfWork` - Coordinates multiple repositories in a single transaction
 - Ensures atomic operations - all changes succeed or none are applied
 - Lifecycle: Scoped per HTTP request in web applications
+
+### ⚡ Caching
+EventService caches two things in Redis via `IEventCache`: single events (`event:{id}`) and the top-10 list (`events:top10`)  
+TTLs are configured through `EventCacheOptions`: `EventTtl`, `TopEventsTtl`
+
+Invalidate cache just after the DB transaction commits (and, for messaging handlers, after the outbox message is persisted):
+
+### 🧪 Testing
+
+`EventService.Application.Tests` covers all three cache scenarios — **hit**, **miss**, **invalidation** — for both `GetByIdAsync` and `GetTopAsync`
+
+```bash
+dotnet test src/Services/EventService/EventService.Application.Tests
+```
 
 
 ## 🛠️ Technology Stack

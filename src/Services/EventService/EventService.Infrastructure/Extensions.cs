@@ -1,6 +1,6 @@
+using EventService.Application.Cache;
 using EventService.Application.Interfaces;
 using EventService.Application.Messaging.Handlers;
-using EventService.Application.Options;
 using EventService.Infrastructure.Caching;
 using EventService.Infrastructure.Persistence;
 using Messaging.Abstractions;
@@ -73,8 +73,9 @@ public static class Extensions
 
             var options = ConfigurationOptions.Parse(redisConnection);
 
-            options.ConnectTimeout = 5000;
-            options.SyncTimeout = 3000;
+            options.ConnectTimeout = 2000;
+            options.SyncTimeout = 500;
+            options.AsyncTimeout = 500;
             options.AbortOnConnectFail = false;
 
             return ConnectionMultiplexer.Connect(options);
