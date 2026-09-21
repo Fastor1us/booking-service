@@ -9,7 +9,9 @@ using System.Text.Json;
 
 namespace EventService.Application.Messaging.Handlers;
 
-public class ReleaseSeatHandler(IUnitOfWork unitOfWork) : HandlerBase(unitOfWork)
+public class ReleaseSeatHandler(
+    IUnitOfWork unitOfWork,
+    IEventCache cache) : HandlerBase(unitOfWork)
 {
     public override async Task HandleAsync(
         Guid correlationId,
@@ -66,5 +68,10 @@ public class ReleaseSeatHandler(IUnitOfWork unitOfWork) : HandlerBase(unitOfWork
 
         await _unitOfWork.SaveChangesAsync(ct);
         await _unitOfWork.CommitTransactionAsync(ct);
+
+        if (@event != null)
+        {
+            await cache.RemoveAsync($"event:{@event.Id}", ct);
+        }
     }
 }

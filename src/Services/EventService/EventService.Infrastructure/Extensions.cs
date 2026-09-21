@@ -82,24 +82,9 @@ public static class Extensions
         services.AddOptions<EventCacheOptions>()
             .Configure<IConfiguration>((options, configuration) =>
             {
-                var section = configuration.GetSection("EventCacheOptions");
-
-                Console.WriteLine($"[DIAG] Section exists: {section.Exists()}");
-                Console.WriteLine($"[DIAG] EventTtl raw: '{section["EventTtl"]}'");
-                Console.WriteLine($"[DIAG] TopEventsTtl raw: '{section["TopEventsTtl"]}'");
-                Console.WriteLine($"[DIAG] All keys: {string.Join(", ", section.AsEnumerable().Select(kv => $"{kv.Key}={kv.Value}"))}");
-
-                section.Bind(options);
-
-                Console.WriteLine($"[DIAG] Bound EventTtl: {options.EventTtl}");
-                Console.WriteLine($"[DIAG] Bound TopEventsTtl: {options.TopEventsTtl}");
+                var eventCacheOptions = configuration.GetSection("EventCacheOptions");
+                configuration.GetSection("EventCacheOptions").Bind(options);
             });
-        //services.AddOptions<EventCacheOptions>()
-        //    .Configure<IConfiguration>((options, configuration) =>
-        //    {
-        //        var eventCacheOptions = configuration.GetSection("EventCacheOptions");
-        //        configuration.GetSection("EventCacheOptions").Bind(options);
-        //    });
         services.AddSingleton<IEventCache, RedisCache>();
 
         return services;

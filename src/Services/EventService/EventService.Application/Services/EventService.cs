@@ -18,7 +18,7 @@ public class EventService(
     {
         return cache.GetOrSetAsync(
             key: "events:top10",
-            factory: () => unitOfWork.Events.ToListAsync(
+            factory: async () => await unitOfWork.Events.ToListAsync(
                 unitOfWork.Events
                     .GetQuery()
                     .OrderBy(e => (e.TotalSeats - e.AvailableSeats) / e.TotalSeats)
@@ -31,11 +31,11 @@ public class EventService(
     {
         return cache.GetOrSetAsync(
             key: $"event:{id}",
-            factory: () => unitOfWork.Events
-                .FirstOrDefaultAsync(
-                    QueryTrackerBehavior.NoTracking,
-                    e => e.Id == id,
-                    ct)
+            factory: async () => await unitOfWork.Events
+                    .FirstOrDefaultAsync(
+                        QueryTrackerBehavior.NoTracking,
+                        e => e.Id == id,
+                        ct) 
                 ?? throw new EventNotFoundException(id),
             ttl: cacheOptions.Value.EventTtl,
             ct: ct)!;
@@ -127,6 +127,10 @@ public class EventService(
         if (isRemoved)
         {
             await cache.RemoveAsync($"event:{id}", ct);
+        }
+        else
+        {
+            throw new EventNotFoundException(id);
         }
     }
 }

@@ -28,23 +28,22 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
         try
         {
             await entry.Semaphore.WaitAsync(ct);
-            try
-            {
-                cached = await GetSafeAsync<T>(key);
-                if (cached is not null)
-                    return cached;
 
-                var value = await factory();
-                await SetSafeAsync(key, value, ttl);
-                return value;
-            }
-            finally
-            {
-                entry.Semaphore.Release();
-            }
+            cached = await GetSafeAsync<T>(key);
+
+            if (cached is not null)
+                return cached;
+
+            var value = await factory();
+
+            await SetSafeAsync(key, value, ttl);
+
+            return value;
         }
         finally
         {
+            entry.Semaphore.Release();
+
             if (Interlocked.Decrement(ref entry.RefCount) == 0)
             {
                 Locks.Remove(key, out var _);
