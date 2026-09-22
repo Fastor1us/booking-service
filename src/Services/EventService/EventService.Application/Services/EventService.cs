@@ -106,7 +106,7 @@ public class EventService(
             Id = id,
             Title = dto.Title,
             Description = dto.Description,
-            TotalSeats = EventConstants.MinTotalSeats, // required
+            TotalSeats = EventConstants.MinTotalSeats, // placeholder, not updated
             StartAt = dto.StartAt,
             EndAt = dto.EndAt
         };

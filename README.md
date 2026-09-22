@@ -694,10 +694,50 @@ The application uses the Repository + Unit of Work pattern for data access
 - Lifecycle: Scoped per HTTP request in web applications
 
 ### ⚡ Caching
-EventService caches two things in Redis via `IEventCache`: single events (`event:{id}`) and the top-10 list (`events:top10`)  
-TTLs are configured through `EventCacheOptions`: `EventTtl`, `TopEventsTtl`
+EventService uses **Redis** as a distributed cache via `IEventCache` with implementation — `RedisCache`
 
-Invalidate cache just after the DB transaction commits (and, for messaging handlers, after the outbox message is persisted):
+#### What and why
+
+| Key            | Data                                                           | Why                                                       |
+|----------------|----------------------------------------------------------------|-----------------------------------------------------------|
+| `event:{id}`   | Single event                                                   | High cache hit                                            |
+| `events:top10` | Top 10 by formula `(totalSeats - availableSeats) / totalSeats` | Expensive sort over all events and ranking changes slowly |
+
+> Invalidation is best-effort: if Redis is unreachable, `Remove` is skipped and the entry lives until its TTL expires. Keep TTLs short for entities that change often
+
+`GET /api/events` is not cached — filter combinations make the key space unbounded.
+
+#### TTL
+
+Both TTLs come from `EventCacheOptions` (both short):
+- `event:{id}` key have invalidation system (invalidating after update and remove operations) with TTL as a safety way to prevent stuck cache
+- `events:top10` have only TTL because it is not neccessary to update it often
+
+#### Invalidation
+
+Cache is updating after the DB transaction commits (and, for Kafka handlers, after the outbox message is persisted):
+- on create we **set**, because the value is already correct and there is no stale-read risk
+- on update/delete we **remove** rather than overwrite: overwriting would race between concurrent writers, removing forces the next read to repopulate from the DB
+
+Ordering matters: DB first, cache second. If the transaction rolls back, the cache won't change  
+`Top10` is **not** invalidated on seat changes — the ranking is approximate, and the short `TopEventsTtl` fit well in this case
+
+#### Redis unavailable
+
+Redis is not a critical part of the event service, so, if it is not available at a moment, system should keeps on  
+If Redis is not available the service will try to connect until the connection is successfully established  
+Every method in `RedisCache` implementation working with Redis connection wrapped in `try/catch` to guarantee safe working with the system  
+`RedisCache` have a **circuit breaker** system to not press on net when Redis is unavailable. Circuit breaker close chain every 10 seconds to check if redis become available
+
+> ⚠️ **Stale reads during Redis outage.**  
+> While the circuit breaker is open, `RemoveAsync` is skipped: the cache cannot invalidate entries, so **stale data may be served until the entry's TTL expires**. This is an accepted trade-off — cache invalidation is best-effort, and short TTLs (see `EventCacheOptions`) bound the staleness window.
+
+#### Cache stampede
+
+Cache stampede happens when TTL becomes stale and many request going to access to DB at once because there is no actual cache key for an event
+
+To prevent it `RedisCache` makes thru pass only one call to cache for warming up the cache
+
 
 ### 🧪 Testing
 

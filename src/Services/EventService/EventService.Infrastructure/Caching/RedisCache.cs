@@ -12,9 +12,14 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
 
     private static readonly ConcurrentDictionary<string, LockEntry> Locks = new();
 
-    private static readonly TimeSpan CircuitBreakDuration = TimeSpan.FromSeconds(10);
-    private DateTime _circuitOpenedAt = DateTime.MinValue;
+    // Circuit breaker state is intentionally not synchronized.
+    // Races here can only shift when the circuit opens/closes by a few
+    // milliseconds, which is harmless for a 5-second cool-down.
+    private DateTimeOffset _circuitOpenedAt = DateTimeOffset.MinValue;
     private volatile bool _circuitOpen;
+    private static readonly TimeSpan CircuitBreakDuration = TimeSpan.FromSeconds(5);
+    private const int FailureThreshold = 5;
+    private int _consecutiveFailures;
 
     public async Task<T> GetOrSetAsync<T>(
         string key,
@@ -72,79 +77,98 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
 
     private async Task<T?> GetSafeAsync<T>(string key)
     {
-        if (IsCircuitOpen()) return default;
+        if (IsCircuitOpen($"GET {key}")) return default;
 
         try
         {
             var cache = cm.GetDatabase();
-
             RedisValue value = await cache.StringGetAsync(key);
 
-            if (value.HasValue)
-            {
-                return JsonSerializer.Deserialize<T>(value.ToString());
-            }
-            else
-            {
-                return default;
-            }
+            OnRedisSuccess();
+
+            return value.HasValue
+                ? JsonSerializer.Deserialize<T>(value.ToString())
+                : default;
         }
         catch (Exception ex)
         {
-            _circuitOpen = true;
-            _circuitOpenedAt = DateTime.UtcNow;
-
-            _logger.Warn(ex, "Redis GET failed for key {Key}", key);
+            OnRedisFailure(ex, $"GET {key}");
             return default;
         }
     }
 
     private async Task SetSafeAsync<T>(string key, T value, TimeSpan ttl)
     {
-        if (IsCircuitOpen()) return;
+        if (IsCircuitOpen($"SET {key}")) return;
 
         try
         {
             var cache = cm.GetDatabase();
-
             var json = JsonSerializer.Serialize(value);
             await cache.StringSetAsync(key, json, ttl);
+
+            OnRedisSuccess();
         }
         catch (Exception ex)
         {
-            _circuitOpen = true;
-            _circuitOpenedAt = DateTime.UtcNow;
-
-            _logger.Warn(ex, "Redis SET failed for key {Key}", key);
+            OnRedisFailure(ex, $"SET {key}");
         }
     }
 
     private async Task RemoveSafeAsync(string key)
     {
-        if (IsCircuitOpen()) return;
+        if (IsCircuitOpen($"REMOVE {key}")) return;
 
         try
         {
             var cache = cm.GetDatabase();
-
             await cache.KeyDeleteAsync(key);
+
+            OnRedisSuccess();
         }
         catch (Exception ex)
         {
-            _circuitOpen = true;
-            _circuitOpenedAt = DateTime.UtcNow;
-
-            _logger.Warn(ex, "Redis REMOVE failed for key {Key}", key);
+            OnRedisFailure(ex, $"REMOVE {key}");
         }
     }
 
-    private bool IsCircuitOpen()
+    private bool IsCircuitOpen(string operation)
     {
         if (_circuitOpen && DateTime.UtcNow - _circuitOpenedAt < CircuitBreakDuration)
+        {
+            _logger.Warn(
+                "Redis {Operation} skipped: circuit is open for {Remaining}s more.",
+                operation,
+                (int)(CircuitBreakDuration - (DateTime.UtcNow - _circuitOpenedAt)).TotalSeconds);
             return true;
+        }
 
         _circuitOpen = false;
         return false;
+    }
+
+    private void OnRedisFailure(Exception ex, string operation)
+    {
+        var failures = Interlocked.Increment(ref _consecutiveFailures);
+
+        if (failures >= FailureThreshold)
+        {
+            _circuitOpen = true;
+            _circuitOpenedAt = DateTimeOffset.UtcNow;
+            _logger.Error(ex, "Redis {Operation} failed {Count} times in a row. Opening circuit.",
+                operation, failures);
+        }
+        else
+        {
+            _logger.Warn(ex, "Redis {Operation} failed ({Count}/{Threshold}).",
+                operation, failures, FailureThreshold);
+        }
+    }
+
+    private void OnRedisSuccess()
+    {
+        if (Volatile.Read(ref _consecutiveFailures) != 0)
+            Interlocked.Exchange(ref _consecutiveFailures, 0);
     }
 }
 

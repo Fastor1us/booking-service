@@ -8,6 +8,9 @@ var kafka = builder.AddKafka("Kafka")
 var redis = builder.AddRedis("redis")
     .WithArgs("--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru");
 
+var eventTtl = config["EventCacheOptions:EventTtl"] ?? "00:05:00";
+var topEventsTtl = config["EventCacheOptions:TopEventsTtl"] ?? "00:10:00";
+
 var postgres = builder.AddPostgres("postgres",
     password: builder.AddParameter("postgres-password", "postgres"))
     .WithImage("postgres:16-alpine")
@@ -41,6 +44,8 @@ var eventService = builder
     .WithEnvironment("Jwt__Audience", jwtAudience)
     .WithEnvironment("Jwt__SigningKey", jwtSigningKey)
     .WithEnvironment("Jwt__ExpiryMinutes", jwtExpiryMinutes)
+    .WithEnvironment("EventCacheOptions__EventTtl", eventTtl)
+    .WithEnvironment("EventCacheOptions__TopEventsTtl", topEventsTtl)
     .WithHttpEndpoint(port: 5002, name: "http")
     .WithExternalHttpEndpoints()
     .WithReference(kafka)
