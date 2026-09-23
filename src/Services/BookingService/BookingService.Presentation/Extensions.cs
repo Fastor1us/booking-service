@@ -15,15 +15,6 @@ public static class Extensions
 
         services.AddJwtAuthentication(configuration);
 
-        services.Configure<KafkaOptions>(options =>
-        {
-            options.BootstrapServers = configuration
-                .GetConnectionString("Kafka")
-                ?? throw new InvalidOperationException(
-                    "Kafka connection string is not configured. " +
-                    "Expected ConnectionStrings:Kafka (injected by Aspire via WithReference).");
-        });
-
         services.AddControllers()
             .ConfigureApiBehaviorOptions(options =>
             {

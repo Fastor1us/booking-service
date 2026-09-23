@@ -5,6 +5,7 @@ namespace EventService.Application.Interfaces;
 
 public interface IEventService
 {
+    public Task<List<Event>> GetTopAsync(CancellationToken ct);
     public Task<Event> GetByIdAsync(Guid id, CancellationToken ct);
 
     public Task<PagedEventsDto> GetAllAsync(

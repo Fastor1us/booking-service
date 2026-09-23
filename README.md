@@ -13,12 +13,10 @@ Every service speak to each other sending messages via broker asynchronously
 ## 📑 Navigation
 
 - [🚀 Quick Start](#quick-start)
-- [🗄️ Database Migrations](#️-database-migrations)
 - [🔐 Authentication & Authorization](#-authentication--authorization)
   - [JWT Configuration](#jwt-configuration)
   - [Role Model](#role-model)
   - [Swagger JWT Setup](#swagger-jwt-setup)
-- [🧪 Testing](#testing)
 - [🌐 API Endpoints](#api-endpoints)
   - [🔑 Auth Controller](#auth-controller-apiauth)
   - [📅 Events Controller](#events-controller-apievents)
@@ -30,7 +28,6 @@ Every service speak to each other sending messages via broker asynchronously
   - [Booking Models](#booking-models)
   - [Error Models](#error-models)
 - [📋 HTTP Status Codes](#http-status-codes)
-- [🧠 Background Processing](#background-processing)
 - [🏗️ Architecture](#️architecture)
 - [🛠️ Technology Stack](#technology-stack)
 
@@ -68,7 +65,7 @@ The JWT settings are configured in `appsettings.json` at every service:
     "Issuer": "BookingApi",
     "Audience": "BookingApiClient",
     "SigningKey": "your-secure-signing-key-minimum-32-characters",
-    "ExpiryMinutes": 60
+    "ExpiresInMinutes": 60
   }
 }
 ```
@@ -128,12 +125,12 @@ The API implements a role-based access control (RBAC) model:
 
 | Method | Endpoint                | Description                       | Success Response | Authorization |
 | ------ | ----------------------- | --------------------------------- | ---------------- | -------------- |
-| GET    | `/api/events/{id}`      | Get event by ID                   | 200 OK           | ❌ Anonymous   |
 | GET    | `/api/events`           | Get paginated events with filters | 200 OK           | ❌ Anonymous   |
+| GET    | `/api/events/{id}`      | Get event by ID                   | 200 OK           | ❌ Anonymous   |
+| GET    | `/api/events/top`       | Get top 10 events                 | 200 OK           | ❌ Anonymous   |
 | POST   | `/api/events`           | Create new event                  | 201 Created      | ✅ Admin       |
 | PUT    | `/api/events/{id}`      | Update existing event             | 204 No Content   | ✅ Admin       |
 | DELETE | `/api/events/{id}`      | Delete event                      | 204 No Content   | ✅ Admin       |
-
 
 ### 📖 Booking Controller (`/api/bookings`)
 
@@ -226,28 +223,6 @@ Authenticate user and receive JWT token.
 
 ---
 
-### 🎯 GET `/api/events/{id}`
-
-Get a single event by its unique identifier.
-
-**Parameters:**
-
-| Name | In   | Type   | Required | Description                    |
-| ---- | ---- | ------ | -------- | ------------------------------ |
-| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
-
-**Authorization:** ❌ Anonymous
-
-**Responses:**
-
-| Status Code | Description           | Response Type                           |
-| ----------- | --------------------- | --------------------------------------- |
-| 200         | Success               | [`EventResponseDto`](#eventresponsedto) |
-| 404         | Event not found       | [`ErrorResponseDto`](#errorresponsedto) |
-| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
-
----
-
 ### 📋 GET `/api/events`
 
 Get paginated list of events with optional filtering.
@@ -277,6 +252,43 @@ Get paginated list of events with optional filtering.
 | 200         | Success                                       | [`PaginatedEventsResponseDto`](#paginatedeventsresponsedto) |
 | 400         | Validation error or invalid filter/pagination | [`ErrorResponseDto`](#errorresponsedto)                     |
 | 500         | Internal server error                         | [`ErrorResponseDto`](#errorresponsedto)                     |
+
+---
+
+### 🎯 GET `/api/events/{id}`
+
+Get a single event by its unique identifier.
+
+**Parameters:**
+
+| Name | In   | Type   | Required | Description                    |
+| ---- | ---- | ------ | -------- | ------------------------------ |
+| `id` | path | `guid` | ✅ Yes   | Unique identifier of the event |
+
+**Authorization:** ❌ Anonymous
+
+**Responses:**
+
+| Status Code | Description           | Response Type                           |
+| ----------- | --------------------- | --------------------------------------- |
+| 200         | Success               | [`EventResponseDto`](#eventresponsedto) |
+| 404         | Event not found       | [`ErrorResponseDto`](#errorresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto) |
+
+---
+
+### 🔍 GET `/api/events/top`
+
+Get the 10 most-booked events, ranked by fill ratio: `(totalSeats - availableSeats) / totalSeats`. Result is cached with TTL, listed in appsettings 
+
+**Authorization:** ❌ Anonymous
+
+**Responses:**
+
+| Status Code | Description           | Response Type                                 |
+| ----------- | --------------------- | --------------------------------------------- |
+| 200         | Success               | [List<`EventResponseDto`>](#eventresponsedto) |
+| 500         | Internal server error | [`ErrorResponseDto`](#errorresponsedto)       |
 
 ---
 
@@ -680,6 +692,60 @@ The application uses the Repository + Unit of Work pattern for data access
 - `IUnitOfWork` - Coordinates multiple repositories in a single transaction
 - Ensures atomic operations - all changes succeed or none are applied
 - Lifecycle: Scoped per HTTP request in web applications
+
+### ⚡ Caching
+EventService uses **Redis** as a distributed cache via `IEventCache` with implementation — `RedisCache`
+
+#### What and why
+
+| Key            | Data                                                           | Why                                                       |
+|----------------|----------------------------------------------------------------|-----------------------------------------------------------|
+| `event:{id}`   | Single event                                                   | High cache hit                                            |
+| `events:top10` | Top 10 by formula `(totalSeats - availableSeats) / totalSeats` | Expensive sort over all events and ranking changes slowly |
+
+> Invalidation is best-effort: if Redis is unreachable, `Remove` is skipped and the entry lives until its TTL expires. Keep TTLs short for entities that change often
+
+`GET /api/events` is not cached — filter combinations make the key space unbounded.
+
+#### TTL
+
+Both TTLs come from `EventCacheOptions` (both short):
+- `event:{id}` key have invalidation system (invalidating after update and remove operations) with TTL as a safety way to prevent stuck cache
+- `events:top10` have only TTL because it is not neccessary to update it often
+
+#### Invalidation
+
+Cache is updating after the DB transaction commits (and, for Kafka handlers, after the outbox message is persisted):
+- on create we **set**, because the value is already correct and there is no stale-read risk
+- on update/delete we **remove** rather than overwrite: overwriting would race between concurrent writers, removing forces the next read to repopulate from the DB
+
+Ordering matters: DB first, cache second. If the transaction rolls back, the cache won't change  
+`Top10` is **not** invalidated on seat changes — the ranking is approximate, and the short `TopEventsTtl` fit well in this case
+
+#### Redis unavailable
+
+Redis is not a critical part of the event service, so, if it is not available at a moment, system should keeps on  
+If Redis is not available the service will try to connect until the connection is successfully established  
+Every method in `RedisCache` implementation working with Redis connection wrapped in `try/catch` to guarantee safe working with the system  
+`RedisCache` have a **circuit breaker** system to not press on net when Redis is unavailable. Circuit breaker close chain every 10 seconds to check if redis become available
+
+> ⚠️ **Stale reads during Redis outage.**  
+> While the circuit breaker is open, `RemoveAsync` is skipped: the cache cannot invalidate entries, so **stale data may be served until the entry's TTL expires**. This is an accepted trade-off — cache invalidation is best-effort, and short TTLs (see `EventCacheOptions`) bound the staleness window.
+
+#### Cache stampede
+
+Cache stampede happens when TTL becomes stale and many request going to access to DB at once because there is no actual cache key for an event
+
+To prevent it `RedisCache` makes thru pass only one call to cache for warming up the cache
+
+
+### 🧪 Testing
+
+`EventService.Application.Tests` covers all three cache scenarios — **hit**, **miss**, **invalidation** — for both `GetByIdAsync` and `GetTopAsync`
+
+```bash
+dotnet test src/Services/EventService/EventService.Application.Tests
+```
 
 
 ## 🛠️ Technology Stack

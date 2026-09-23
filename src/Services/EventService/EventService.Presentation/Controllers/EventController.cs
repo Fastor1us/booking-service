@@ -14,6 +14,16 @@ public class EventController(
     IEventService eventService) : ControllerBase
 {
     [AllowAnonymous]
+    [HttpGet("top")]
+    [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<List<EventResponseDto>>> GetTop(CancellationToken ct)
+    {
+        var events = await eventService.GetTopAsync(ct);
+        return Ok(events.MapToResponseDto());
+    }
+
+    [AllowAnonymous]
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(EventResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status404NotFound)]

@@ -1,5 +1,7 @@
+using EventService.Application.Cache;
 using EventService.Application.Interfaces;
 using EventService.Application.Messaging.Handlers;
+using EventService.Infrastructure.Caching;
 using EventService.Infrastructure.Persistence;
 using Messaging.Abstractions;
 using Messaging.Abstractions.Constants;
@@ -12,6 +14,7 @@ using Messaging.Persistence.EfCore.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 
 namespace EventService.Infrastructure;
 
@@ -33,6 +36,13 @@ public static class Extensions
         services.AddScoped<IEventRepository, Repositories.EventRepository>();
         services.AddOutboxRepositories<AppDbContext>();
 
+        services.AddOptions<KafkaOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                options.BootstrapServers = configuration.GetConnectionString("Kafka")
+                    ?? throw new InvalidOperationException("Connection string is required");
+            });
+
         services.AddSingleton<IMessageProducer, KafkaProducer>();
         services.AddUnitOfWorkWithOutbox<IUnitOfWork, UnitOfWork.UnitOfWork>();
         services.AddKafkaConsumers(new KafkaConsumerRegistry
@@ -53,6 +63,30 @@ public static class Extensions
         });
 
         services.AddHostedService<InboxSweeper>();
+
+        services.AddSingleton<IConnectionMultiplexer>((serviceProvider) =>
+        {
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+
+            var redisConnection = configuration.GetConnectionString("Redis")
+                ?? throw new InvalidOperationException("Connection string is required");
+
+            var options = ConfigurationOptions.Parse(redisConnection);
+
+            options.ConnectTimeout = 2000;
+            options.SyncTimeout = 500;
+            options.AsyncTimeout = 500;
+            options.AbortOnConnectFail = false;
+
+            return ConnectionMultiplexer.Connect(options);
+        });
+        services.AddOptions<EventCacheOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                var eventCacheOptions = configuration.GetSection("EventCacheOptions");
+                configuration.GetSection("EventCacheOptions").Bind(options);
+            });
+        services.AddSingleton<IEventCache, RedisCache>();
 
         return services;
     }

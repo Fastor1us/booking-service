@@ -40,6 +40,19 @@ services:
       timeout: 10s
       retries: 15
     networks: [app-network]
+    
+  redis:
+    image: redis:7-alpine
+    container_name: eventapi-redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [app-network]
 
   # ─────────────────────────── Базы данных (по одной на сервис) ───────────────────────────
   users-db:
@@ -125,16 +138,21 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__eventsdb: "Host=events-db;Port=5432;Database=eventsdb;Username=postgres;Password=postgres"
       ConnectionStrings__DefaultConnection: "Host=events-db;Port=5432;Database=eventsdb;Username=postgres;Password=postgres"
       ConnectionStrings__Kafka: "kafka:29092"
+      ConnectionStrings__Redis: "redis:6379"
       Jwt__SigningKey: "Very_Secure_And_Vey_Long_Secret_JWT_Token"
       Jwt__Issuer: "BookingApi"
       Jwt__Audience: "BookingApi"
       Jwt__ExpiresInMinutes: "60"
+      EventCacheOptions__EventTtl: "00:05:00"
+      EventCacheOptions__TopEventsTtl: "00:10:00"
     ports:
       - "5002:8080"
     networks: [app-network]

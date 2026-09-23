@@ -35,6 +35,13 @@ public static class Extensions
         services.AddScoped<IBookingRepository, BookingRepository>();
         services.AddOutboxRepositories<AppDbContext>();
 
+        services.AddOptions<KafkaOptions>()
+            .Configure<IConfiguration>((options, configuration) =>
+            {
+                options.BootstrapServers = configuration.GetConnectionString("Kafka")
+                    ?? throw new InvalidOperationException("Connection string is required");
+            });
+
         services.AddSingleton<IMessageProducer, KafkaProducer>();
         services.AddUnitOfWorkWithOutbox<IUnitOfWork, UnitOfWork.UnitOfWork>();
         services.AddKafkaConsumers(new KafkaConsumerRegistry

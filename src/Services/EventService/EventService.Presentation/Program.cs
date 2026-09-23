@@ -7,6 +7,8 @@ using EventService.Presentation;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var options = builder.Configuration.GetSection("EventCacheOptions");
+
 builder.AddServiceDefaults();
 
 builder.Services.AddPresentation();
