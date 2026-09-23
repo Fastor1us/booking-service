@@ -2,6 +2,6 @@
 
 public class EventCacheOptions
 {
-    public TimeSpan EventTtl { get; set; } = TimeSpan.FromSeconds(5);
-    public TimeSpan TopEventsTtl { get; set; } = TimeSpan.FromSeconds(10);
+    public TimeSpan EventTtl { get; set; } = TimeSpan.FromMinutes(5);
+    public TimeSpan TopEventsTtl { get; set; } = TimeSpan.FromMinutes(10);
 }

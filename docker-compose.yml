@@ -124,8 +124,6 @@ services:
       Jwt__Issuer: "BookingApi"
       Jwt__Audience: "BookingApi"
       Jwt__ExpiresInMinutes: "60"
-      EventCacheOptions__EventTtl: "00:05:00"
-      EventCacheOptions__TopEventsTtl: "00:10:00"
     ports:
       - "5001:8080"
     networks: [app-network]
@@ -153,6 +151,8 @@ services:
       Jwt__Issuer: "BookingApi"
       Jwt__Audience: "BookingApi"
       Jwt__ExpiresInMinutes: "60"
+      EventCacheOptions__EventTtl: "00:05:00"
+      EventCacheOptions__TopEventsTtl: "00:10:00"
     ports:
       - "5002:8080"
     networks: [app-network]
