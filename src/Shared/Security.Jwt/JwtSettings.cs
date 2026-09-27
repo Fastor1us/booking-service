@@ -4,6 +4,8 @@ namespace Security.Jwt;
 
 public class JwtSettings
 {
+    public const string SectionName = "Jwt";
+
     public const int DefaultExpiresInMinutes = 15;
 
     [Required]
