@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -8,7 +10,7 @@ namespace Telemetry;
 
 public static class Extensions
 {
-    public static void AddTelemetry(
+    public static IServiceCollection AddTelemetry(
         this IServiceCollection services,
         IConfiguration configuration)
     {
@@ -24,51 +26,44 @@ public static class Extensions
             .WithTracing(tracing =>
             {
                 tracing
-                    // Задаём имя нашего сервиса в системе мониторинга
-                    //.SetResourceBuilder(
-                    //    ResourceBuilder
-                    //        .CreateDefault()
-                    //        .AddService("OtelDemoWebApi"))
-                    // Автоматически собираем все входящие HTTP-запросы к нашему API
+                    // Automaticly collect all incoming HTTP-request
                     .AddAspNetCoreInstrumentation(options =>
                     {
-                        // Исключаем системные запросы из трейсинга
+                        // Exclude system requests from tracking
                         options.Filter = httpContext =>
                         {
                             var path = httpContext.Request.Path;
 
-                            // Если запрос идёт на /health или /metrics, спан НЕ создаётся
+                            // To prevent creating spans at /metrics requests
                             return !path.StartsWithSegments("/health") &&
                                    !path.StartsWithSegments("/metrics");
                         };
                     })
-                    // Автоматически отслеживаем все исходящие HTTP-вызовы через HttpClient
-                    //.AddHttpClientInstrumentation()
-                    // Выводим результаты в консоль приложения для тестирования
-                    //.AddConsoleExporter();
-                    // Настраиваем экспорт по протоколу OTLP
-                    .AddOtlpExporter(options =>
-                    {
-                        // Указываем адрес, где запущен Jaeger
-                        //options.Endpoint = new Uri("http://localhost:4318/v1/traces");
-                        // Выбираем протокол (http или gRPC)
-                        //options.Protocol = OtlpExportProtocol.HttpProtobuf;
-                        // Настройка пакетного процессора
-                        // Отправка каждые 2 секунды (5 base)
-                        options.BatchExportProcessorOptions
-                            .ScheduledDelayMilliseconds = 2000;
-                        // Тайм-аут ответа 3 секунды (30 base)
-                        options.BatchExportProcessorOptions
-                            .ExporterTimeoutMilliseconds = 3000;
-                    });
+                    // URL and protocol should be setted in appsettings
+                    .AddOtlpExporter();
             })
             .WithMetrics(metrics =>
             {
                 metrics
-                    .AddAspNetCoreInstrumentation()    // Метрики HTTP-запросов
-                    .AddRuntimeInstrumentation()       // Метрики среды выполнения (CPU, память, GC)
-                    .AddPrometheusExporter();          // Экспорт в формате Prometheus
+                    .AddAspNetCoreInstrumentation()    // HTTP-request metrics
+                    .AddRuntimeInstrumentation()       // CPU, RAM and GC metrics
+                    .AddPrometheusExporter();
             })
             .WithLogging();
+
+        services.AddHealthChecks();
+        services.AddServiceDiscovery();
+
+        return services;
+    }
+
+    public static IEndpointRouteBuilder MapTelemetry(
+        this IEndpointRouteBuilder endpointRouteBuilder)
+    {
+        endpointRouteBuilder.MapHealthChecks("/health");
+
+        endpointRouteBuilder.MapPrometheusScrapingEndpoint();
+
+        return endpointRouteBuilder;
     }
 }

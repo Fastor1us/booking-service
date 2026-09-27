@@ -4,14 +4,15 @@ using UserService.Infrastructure;
 using UserService.Presentation;
 using UserService.Presentation.Middlewares;
 using Microsoft.EntityFrameworkCore;
+using Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.AddServiceDefaults();
 
 builder.Services.AddPresentation(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
+
+builder.Services.AddTelemetry(builder.Configuration);
 
 builder.Logging.AddConsole();
 
@@ -39,5 +40,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapTelemetry();
 
 app.Run();
