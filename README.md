@@ -773,6 +773,26 @@ It covers **metrics**, **traces**, and **logs** — nothing else to install.
 
 The monitoring tools start together with the rest of the solution
 
+```bash
+docker compose up
+```
+Then open:
+
+Grafana — http://localhost:3000 (admin / admin) → folder Booking → dashboard Service Overview. Use the Service dropdown to switch between services.
+
+Prometheus — http://localhost:9090 → Status → Targets to check scraping.
+
+Jaeger — http://localhost:16686 to search traces.
+
+#### Dashboard panels
+
+The pre-provisioned Service Overview dashboard shows, per selected service:
+- Throughput — requests per second.
+- Total Exceptions — accumulated exception count.
+- Active Requests — requests currently in flight.
+- Latency (p95) — 95th percentile of request duration.
+- Error Rate — share of 5xx responses.
+
 
 ## 🛠️ Technology Stack
 

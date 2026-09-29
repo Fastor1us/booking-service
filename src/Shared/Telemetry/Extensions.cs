@@ -22,7 +22,9 @@ public static class Extensions
         services
             .AddOpenTelemetry()
             .ConfigureResource(resource => resource
-                .AddService(options.ServiceName, options.ServiceVersion))
+                .AddService(
+                    serviceName: options.ServiceName,
+                    serviceVersion: options.ServiceVersion))
             .WithTracing(tracing =>
             {
                 tracing
@@ -40,8 +42,9 @@ public static class Extensions
                         };
                     })
                     .AddEntityFrameworkCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
                     .AddOtlpExporter(o => o.Endpoint =
-                        new Uri(configuration["Otlp:Endpoint"]!));
+                        new Uri(options.OtlpEndpoint));
             })
             .WithMetrics(metrics =>
             {
@@ -49,11 +52,9 @@ public static class Extensions
                     .AddAspNetCoreInstrumentation()    // HTTP-request metrics
                     .AddRuntimeInstrumentation()       // CPU, RAM and GC metrics
                     .AddPrometheusExporter();
-            })
-            .WithLogging();
+            });
 
         services.AddHealthChecks();
-        services.AddServiceDiscovery();
 
         return services;
     }
