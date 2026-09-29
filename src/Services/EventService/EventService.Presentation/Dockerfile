@@ -12,9 +12,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/Services/EventService/EventService.Presentation/EventService.Presentation.csproj", "src/Services/EventService/EventService.Presentation/"]
-COPY ["src/Aspire/ServiceDefaults/ServiceDefaults.csproj", "src/Aspire/ServiceDefaults/"]
 COPY ["src/Shared/Security.Jwt/Security.Jwt.csproj", "src/Shared/Security.Jwt/"]
 COPY ["src/Shared/Domain/Domain.csproj", "src/Shared/Domain/"]
+COPY ["src/Shared/Telemetry/Telemetry.csproj", "src/Shared/Telemetry/"]
 COPY ["src/Services/EventService/EventService.Application/EventService.Application.csproj", "src/Services/EventService/EventService.Application/"]
 COPY ["src/Shared/Messaging.Abstractions/Messaging.Abstractions.csproj", "src/Shared/Messaging.Abstractions/"]
 COPY ["src/Services/EventService/EventService.Domain/EventService.Domain.csproj", "src/Services/EventService/EventService.Domain/"]

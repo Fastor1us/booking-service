@@ -40,8 +40,8 @@ public static class Extensions
                         };
                     })
                     .AddEntityFrameworkCoreInstrumentation()
-                    // URL and protocol should be setted in appsettings
-                    .AddOtlpExporter();
+                    .AddOtlpExporter(o => o.Endpoint =
+                        new Uri(configuration["Otlp:Endpoint"]!));
             })
             .WithMetrics(metrics =>
             {
