@@ -2,15 +2,14 @@
 using Messaging.Abstractions.Outbox;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using NLog;
+using Microsoft.Extensions.Logging;
 
 namespace Messaging.Outbox;
 
 public sealed class OutboxRelay(
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    ILogger<OutboxRelay> logger) : BackgroundService
 {
-    private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
-
     public int BatchSize { private get; init; } = 10;
     public int MaxPublishAttempts { private get; init; } = 3;
 
@@ -37,7 +36,7 @@ public sealed class OutboxRelay(
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "Unexpected error in {Relay}.", typeof(OutboxRelay).Name);
+                logger.LogError(ex, "Unexpected error in {Relay}.", typeof(OutboxRelay).Name);
                 await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
         }
@@ -62,7 +61,7 @@ public sealed class OutboxRelay(
                     message.Topic, message.Key, message.MessageType,
                     message.CorrelationId, message.Payload, ct);
 
-                _logger.Info("Published outbox message {Id}", message.Id);
+                logger.LogInformation("Published outbox message {Id}", message.Id);
                 producedIds.Add(message.Id);
             }
             catch (Exception ex)
@@ -81,7 +80,7 @@ public sealed class OutboxRelay(
                         .TryCompensateAsync(message, ct);
                     if (!handled)
                     {
-                        _logger.Error(
+                        logger.LogError(
                             "No compensator handled message type '{Type}' (id {Id}).",
                             message.MessageType, message.Id);
                     }

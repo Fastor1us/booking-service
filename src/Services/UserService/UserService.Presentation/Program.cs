@@ -5,6 +5,8 @@ using UserService.Presentation;
 using UserService.Presentation.Middlewares;
 using Microsoft.EntityFrameworkCore;
 using Telemetry;
+using Serilog;
+using Serilog.Formatting.Compact;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +16,10 @@ builder.Services.AddInfrastructure();
 
 builder.Services.AddTelemetry(builder.Configuration);
 
-builder.Logging.AddConsole();
+builder.Services.AddSerilog((services, cfg) => cfg
+    .ReadFrom.Configuration(builder.Configuration)
+    .ReadFrom.Services(services)
+    .WriteTo.Console(new CompactJsonFormatter()));
 
 var app = builder.Build();
 

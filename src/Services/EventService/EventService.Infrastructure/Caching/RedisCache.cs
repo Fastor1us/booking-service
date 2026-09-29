@@ -1,15 +1,14 @@
 ﻿using EventService.Application.Interfaces;
-using NLog;
+using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using System.Collections.Concurrent;
 using System.Text.Json;
 
 namespace EventService.Infrastructure.Caching;
 
-public class RedisCache(IConnectionMultiplexer cm) : IEventCache
+public class RedisCache(
+    IConnectionMultiplexer cm, ILogger<RedisCache> logger) : IEventCache
 {
-    private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
-
     private static readonly ConcurrentDictionary<string, LockEntry> Locks = new();
 
     // Circuit breaker state is intentionally not synchronized.
@@ -136,7 +135,7 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
     {
         if (_circuitOpen && DateTime.UtcNow - _circuitOpenedAt < CircuitBreakDuration)
         {
-            _logger.Warn(
+            logger.LogWarning(
                 "Redis {Operation} skipped: circuit is open for {Remaining}s more.",
                 operation,
                 (int)(CircuitBreakDuration - (DateTime.UtcNow - _circuitOpenedAt)).TotalSeconds);
@@ -155,12 +154,12 @@ public class RedisCache(IConnectionMultiplexer cm) : IEventCache
         {
             _circuitOpen = true;
             _circuitOpenedAt = DateTimeOffset.UtcNow;
-            _logger.Error(ex, "Redis {Operation} failed {Count} times in a row. Opening circuit.",
+            logger.LogError(ex, "Redis {Operation} failed {Count} times in a row. Opening circuit.",
                 operation, failures);
         }
         else
         {
-            _logger.Warn(ex, "Redis {Operation} failed ({Count}/{Threshold}).",
+            logger.LogWarning(ex, "Redis {Operation} failed ({Count}/{Threshold}).",
                 operation, failures, FailureThreshold);
         }
     }

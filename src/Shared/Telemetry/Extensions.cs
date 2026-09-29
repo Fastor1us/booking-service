@@ -39,6 +39,7 @@ public static class Extensions
                                    !path.StartsWithSegments("/metrics");
                         };
                     })
+                    .AddEntityFrameworkCoreInstrumentation()
                     // URL and protocol should be setted in appsettings
                     .AddOtlpExporter();
             })

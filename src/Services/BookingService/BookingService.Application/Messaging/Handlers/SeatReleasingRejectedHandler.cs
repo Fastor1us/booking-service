@@ -2,11 +2,16 @@
 using BookingService.Domain.Models;
 using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Abstractions.Contracts.Events;
+using Microsoft.Extensions.Logging;
 
 namespace BookingService.Application.Messaging.Handlers;
 
-public class SeatReleasingRejectedHandler(IUnitOfWork unitOfWork) : HandlerBase(unitOfWork)
+public class SeatReleasingRejectedHandler(
+    IUnitOfWork unitOfWork,
+    ILogger<SeatReleasingRejectedHandler> logger) : HandlerBase(unitOfWork)
 {
+    protected override ILogger Logger => logger;
+
     public override async Task HandleAsync(
         Guid correlationId,
         string payload,
@@ -15,19 +20,25 @@ public class SeatReleasingRejectedHandler(IUnitOfWork unitOfWork) : HandlerBase(
         await _unitOfWork.BeginTransactionAsync(ct);
 
         var isNew = await TryRegisterInboxMessageAsync(
-           correlationId, Events.SeatReleasingRejected, payload, ct);
+            correlationId, Events.SeatReleasingRejected, payload, ct);
 
         if (!isNew)
         {
+            logger.LogDebug(
+                "Duplicate message ignored. CorrelationId={CorrelationId}, MessageType={MessageType}",
+                correlationId, Events.SeatReleasingRejected);
             return;
         }
 
-        var cmd = DeserializePayload<SeatReleasingRejected>(payload);
+        var cmd = DeserializePayload<SeatReleasingRejected>(payload, correlationId);
         var booking = await _unitOfWork.Bookings
             .FirstOrDefaultAsync(e => e.Id == cmd.BookingId, ct);
 
         if (booking == null)
         {
+            logger.LogWarning(
+                "Booking not found for SeatReleasingRejected. BookingId={BookingId}, CorrelationId={CorrelationId}",
+                cmd.BookingId, correlationId);
             return;
         }
 
@@ -35,5 +46,9 @@ public class SeatReleasingRejectedHandler(IUnitOfWork unitOfWork) : HandlerBase(
 
         await _unitOfWork.SaveChangesAsync(ct);
         await _unitOfWork.CommitTransactionAsync(ct);
+
+        logger.LogInformation(
+            "Booking re-confirmed (seat releasing rejected). BookingId={BookingId}, EventId={EventId}, CorrelationId={CorrelationId}",
+            booking.Id, cmd.EventId, correlationId);
     }
 }

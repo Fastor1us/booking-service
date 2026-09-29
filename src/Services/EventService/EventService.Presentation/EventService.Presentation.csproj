@@ -17,13 +17,15 @@
       <PrivateAssets>all</PrivateAssets>
 	</PackageReference>
 	<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.24.2-preview.1" />
-	<PackageReference Include="NLog" Version="6.2.1" />
+	<PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+	<PackageReference Include="Serilog.Formatting.Compact" Version="3.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Aspire\ServiceDefaults\ServiceDefaults.csproj" />
     <ProjectReference Include="..\..\..\Shared\Security.Jwt\Security.Jwt.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Telemetry\Telemetry.csproj" />
     <ProjectReference Include="..\EventService.Application\EventService.Application.csproj" />
     <ProjectReference Include="..\EventService.Infrastructure\EventService.Infrastructure.csproj" />
   </ItemGroup>
