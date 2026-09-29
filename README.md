@@ -788,10 +788,10 @@ Jaeger — http://localhost:16686 to search traces.
 
 The pre-provisioned Service Overview dashboard shows, per selected service:
 - Throughput — requests per second.
-- Total Exceptions — accumulated exception count.
+- Exception Rate — exceptions per second.
 - Active Requests — requests currently in flight.
 - Latency (p95) — 95th percentile of request duration.
-- Error Rate — share of 5xx responses.
+- HTTP Error Rate — share of 5xx and 4xx responses over total requests.
 
 
 ## 🛠️ Technology Stack
