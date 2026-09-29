@@ -5,6 +5,7 @@ using EventService.Domain.Constants;
 using EventService.Domain.Exceptions;
 using EventService.Domain.Models;
 using Messaging.Abstractions.Persistence;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace EventService.Application.Services;
@@ -12,7 +13,8 @@ namespace EventService.Application.Services;
 public class EventService(
     IUnitOfWork unitOfWork,
     IEventCache cache,
-    IOptions<EventCacheOptions> cacheOptions) : IEventService
+    IOptions<EventCacheOptions> cacheOptions,
+    ILogger<EventService> logger) : IEventService
 {
     public Task<List<Event>> GetTopAsync(CancellationToken ct)
     {
@@ -35,7 +37,7 @@ public class EventService(
                     .FirstOrDefaultAsync(
                         QueryTrackerBehavior.NoTracking,
                         e => e.Id == id,
-                        ct) 
+                        ct)
                 ?? throw new EventNotFoundException(id),
             ttl: cacheOptions.Value.EventTtl,
             ct: ct)!;
@@ -93,6 +95,11 @@ public class EventService(
 
         unitOfWork.Events.Add(@event);
         await unitOfWork.SaveChangesAsync(ct);
+
+        logger.LogInformation(
+            "Event created. Id={EventId}, Title={Title}, StartAt={StartAt}",
+            @event.Id, @event.Title, @event.StartAt);
+
         await cache.SetAsync(
             EventCacheKey.ForId(@event.Id), @event, cacheOptions.Value.EventTtl);
 
@@ -111,12 +118,18 @@ public class EventService(
             EndAt = dto.EndAt
         };
 
-        var isRemoved = await unitOfWork.Events
+        var isUpdated = await unitOfWork.Events
             .ExecuteUpdateByIdAsync(@event, ct) == 1;
 
-        if (isRemoved)
+        if (isUpdated)
         {
+            logger.LogInformation("Event updated. Id={EventId}", id);
             await cache.RemoveAsync(EventCacheKey.ForId(@event.Id), ct);
+        }
+        else
+        {
+            logger.LogWarning("Event not found for update. Id={EventId}", id);
+            throw new EventNotFoundException(id);
         }
     }
 
@@ -127,10 +140,12 @@ public class EventService(
 
         if (isRemoved)
         {
+            logger.LogInformation("Event deleted. Id={EventId}", id);
             await cache.RemoveAsync(EventCacheKey.ForId(id), ct);
         }
         else
         {
+            logger.LogInformation("Event not found for delete. Id={EventId}", id);
             throw new EventNotFoundException(id);
         }
     }

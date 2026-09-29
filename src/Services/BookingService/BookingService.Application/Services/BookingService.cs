@@ -8,11 +8,14 @@ using Messaging.Abstractions.Contracts.Commands;
 using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Abstractions.Outbox;
 using Messaging.Abstractions.Persistence;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace BookingService.Application.Services;
 
-public class BookingService(IUnitOfWork unitOfWork) : IBookingService
+public class BookingService(
+    IUnitOfWork unitOfWork,
+    ILogger<BookingService> logger) : IBookingService
 {
     public async Task<Booking> AddAsync(
         Guid eventId,
@@ -48,6 +51,10 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
 
         await unitOfWork.SaveChangesAsync(ct);
 
+        logger.LogInformation(
+            "Booking created. BookingId={BookingId}, EventId={EventId}, UserId={UserId}, CorrelationId={CorrelationId}",
+            booking.Id, booking.EventId, booking.UserId, correlationId);
+
         return booking;
     }
 
@@ -55,12 +62,21 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         Guid bookingId,
         CancellationToken ct)
     {
-        return await unitOfWork.Bookings
+        var booking = await unitOfWork.Bookings
             .FirstOrDefaultAsync(
                 QueryTrackerBehavior.NoTracking,
                 e => e.Id == bookingId,
-                ct)
-            ?? throw new BookingNotFoundException(bookingId);
+                ct);
+
+        if (booking is null)
+        {
+            logger.LogWarning(
+                "Booking not found. BookingId={BookingId}", bookingId);
+
+            throw new BookingNotFoundException(bookingId);
+        }
+
+        return booking;
     }
 
     public async Task<Booking> CancelAsync(
@@ -70,17 +86,35 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         CancellationToken ct)
     {
         var booking = await unitOfWork.Bookings
-            .FirstOrDefaultAsync(b => b.Id == bookingId, ct)
-            ?? throw new BookingNotFoundException(bookingId);
+            .FirstOrDefaultAsync(b => b.Id == bookingId, ct);
+
+        if (booking is null)
+        {
+            logger.LogWarning(
+                "Booking not found for cancel. BookingId={BookingId}, UserId={UserId}",
+                bookingId, userId);
+
+            throw new BookingNotFoundException(bookingId);
+        }
 
         var isOwner = booking.UserId == userId;
         var isAdmin = userRole == UserRole.Admin;
 
         if (!isOwner && !isAdmin)
+        {
+            logger.LogWarning(
+                "Cancel forbidden: user is not owner or admin. BookingId={BookingId}, UserId={UserId}, OwnerId={OwnerId}, Role={Role}",
+                bookingId, userId, booking.UserId, userRole);
+
             throw new ForbiddenException();
+        }
 
         if (booking.Status != BookingStatus.Confirmed)
         {
+            logger.LogWarning(
+                "Cancel rejected: booking is not confirmed. BookingId={BookingId}, CurrentStatus={Status}",
+                bookingId, booking.Status);
+
             throw new CancelNotConfirmedBookingException(bookingId);
         }
 
@@ -89,7 +123,7 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
             EventId: booking.EventId);
 
         booking.Status = BookingStatus.Cancelling;
-        booking.ProcessedAt = DateTime.UtcNow; 
+        booking.ProcessedAt = DateTime.UtcNow;
 
         Guid correlationId = Guid.NewGuid();
 
@@ -104,6 +138,10 @@ public class BookingService(IUnitOfWork unitOfWork) : IBookingService
         });
 
         await unitOfWork.SaveChangesAsync(ct);
+
+        logger.LogInformation(
+            "Booking cancellation started. BookingId={BookingId}, EventId={EventId}, UserId={UserId}, Role={Role}, CorrelationId={CorrelationId}",
+            booking.Id, booking.EventId, userId, userRole, correlationId);
 
         return booking;
     }

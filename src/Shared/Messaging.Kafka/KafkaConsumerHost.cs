@@ -6,8 +6,8 @@ using Messaging.Abstractions.Persistence;
 using Messaging.Kafka.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NLog;
 using System.Text;
 
 namespace Messaging.Kafka;
@@ -15,10 +15,9 @@ namespace Messaging.Kafka;
 public sealed class KafkaConsumerHost(
     IOptions<KafkaOptions> options,
     KafkaConsumerRegistry registry,
-    IServiceScopeFactory scopeFactory) : BackgroundService
+    IServiceScopeFactory scopeFactory,
+    ILogger<KafkaConsumerHost> logger) : BackgroundService
 {
-    private readonly NLog.Logger _logger = LogManager.GetCurrentClassLogger();
-
     protected override async Task ExecuteAsync(CancellationToken st)
     {
         var tasks = registry.Workers
@@ -56,7 +55,7 @@ public sealed class KafkaConsumerHost(
                     var msgInfo = $"[{result.TopicPartitionOffset}] " +
                                   $"Key: {result.Message.Key} " +
                                   $"Value: {result.Message.Value}";
-                    _logger.Info(msgInfo);
+                    logger.LogInformation(msgInfo);
 
                     var messageTypeHeader = result.Message.Headers
                         .FirstOrDefault(h => h.Key == Headers.MessageType);
@@ -80,7 +79,7 @@ public sealed class KafkaConsumerHost(
                                 : Guid.NewGuid(),
                         });
 
-                        _logger.Error($"Missing type of correlationId in hears: {result.Message.Headers}");
+                        logger.LogError($"Missing type of correlationId in hears: {result.Message.Headers}");
                         consumer.Commit(result);
                         continue;
                     }
@@ -105,14 +104,14 @@ public sealed class KafkaConsumerHost(
                     }
                     else
                     {
-                        _logger.Error($"Handler is not found for {messageType}");
+                        logger.LogError($"Handler is not found for {messageType}");
 
                         consumer.Commit(result);
                     }
                 }
                 catch (ConsumeException ex)
                 {
-                    _logger.Error($"Error when receiving the message: {ex.Error.Reason}");
+                    logger.LogError($"Error when receiving the message: {ex.Error.Reason}");
                 }
             }
         }

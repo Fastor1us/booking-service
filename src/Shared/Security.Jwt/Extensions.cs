@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Security.Claims;
@@ -17,7 +16,7 @@ public static class Extensions
         IConfiguration configuration)
     {
         services.AddOptions<JwtSettings>()
-            .Bind(configuration.GetSection("Jwt"))
+            .Bind(configuration.GetSection(JwtSettings.SectionName))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -27,9 +26,10 @@ public static class Extensions
                 JwtBearerDefaults.AuthenticationScheme,
                 options =>
                 {
-                    var serviceProvider = services.BuildServiceProvider();
-                    var jwtSettings = serviceProvider
-                        .GetRequiredService<IOptions<JwtSettings>>().Value;
+                    var jwtSettings = configuration
+                        .GetSection(JwtSettings.SectionName)
+                        .Get<JwtSettings>()
+                            ?? throw new InvalidOperationException();
 
                     options.TokenValidationParameters = new()
                     {

@@ -12,9 +12,9 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["src/Services/UserService/UserService.Presentation/UserService.Presentation.csproj", "src/Services/UserService/UserService.Presentation/"]
-COPY ["src/Aspire/ServiceDefaults/ServiceDefaults.csproj", "src/Aspire/ServiceDefaults/"]
 COPY ["src/Shared/Security.Jwt/Security.Jwt.csproj", "src/Shared/Security.Jwt/"]
 COPY ["src/Shared/Domain/Domain.csproj", "src/Shared/Domain/"]
+COPY ["src/Shared/Telemetry/Telemetry.csproj", "src/Shared/Telemetry/"]
 COPY ["src/Services/UserService/UserService.Application/UserService.Application.csproj", "src/Services/UserService/UserService.Application/"]
 COPY ["src/Services/UserService/UserService.Domain/UserService.Domain.csproj", "src/Services/UserService/UserService.Domain/"]
 COPY ["src/Services/UserService/UserService.Infrastructure/UserService.Infrastructure.csproj", "src/Services/UserService/UserService.Infrastructure/"]

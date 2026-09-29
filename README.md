@@ -29,6 +29,7 @@ Every service speak to each other sending messages via broker asynchronously
   - [Error Models](#error-models)
 - [📋 HTTP Status Codes](#http-status-codes)
 - [🏗️ Architecture](#️architecture)
+- [📊 Observability](#observability)
 - [🛠️ Technology Stack](#technology-stack)
 
 
@@ -746,6 +747,51 @@ To prevent it `RedisCache` makes thru pass only one call to cache for warming up
 ```bash
 dotnet test src/Services/EventService/EventService.Application.Tests
 ```
+
+
+## 📊 Observability
+
+The solution ships with a lightweight observability stack that runs together with the services via `docker compose`.  
+It covers **metrics**, **traces**, and **logs** — nothing else to install.
+
+### What's included
+
+| Tool           | Purpose                                       | URL                     |
+| -------------- | --------------------------------------------- | ----------------------- |
+| **Prometheus** | Scrapes and stores metrics from all services  | http://localhost:9090   |
+| **Jaeger**     | Collects and visualizes distributed traces    | http://localhost:16686  |
+| **Grafana**    | Dashboards on top of Prometheus               | http://localhost:3000   |
+
+### How it works
+
+- Every service exposes OpenTelemetry metrics on `/metrics` and pushes traces to Jaeger via OTLP (`http://jaeger:4317`).
+- Prometheus scrapes all three services (`userservice`, `eventservice`, `bookingservice`) on port `8080` inside the Docker network.
+- Grafana is provisioned automatically: datasources and dashboards are loaded from `telemetry/grafana/`. No manual setup is required.
+- `/health` and `/metrics` endpoints are excluded from tracing so they don't pollute the spans.
+
+### Running the stack
+
+The monitoring tools start together with the rest of the solution
+
+```bash
+docker compose up
+```
+Then open:
+
+Grafana — http://localhost:3000 (admin / admin) → folder Booking → dashboard Service Overview. Use the Service dropdown to switch between services.
+
+Prometheus — http://localhost:9090 → Status → Targets to check scraping.
+
+Jaeger — http://localhost:16686 to search traces.
+
+#### Dashboard panels
+
+The pre-provisioned Service Overview dashboard shows, per selected service:
+- Throughput — requests per second.
+- Exception Rate — exceptions per second.
+- Active Requests — requests currently in flight.
+- Latency (p95) — 95th percentile of request duration.
+- HTTP Error Rate — share of 5xx and 4xx responses over total requests.
 
 
 ## 🛠️ Technology Stack

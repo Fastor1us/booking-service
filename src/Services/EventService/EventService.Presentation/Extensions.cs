@@ -1,5 +1,4 @@
 using Domain.Exceptions;
-using Messaging.Kafka;
 using Security.Jwt;
 using System.Text.Json.Serialization;
 
@@ -7,12 +6,10 @@ namespace EventService.Presentation;
 
 public static class Extensions
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services)
+    public static IServiceCollection AddPresentation(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        var configuration = services
-            .BuildServiceProvider()
-            .GetRequiredService<IConfiguration>();
-
         services.AddJwtAuthentication(configuration);
 
         services.AddControllers()

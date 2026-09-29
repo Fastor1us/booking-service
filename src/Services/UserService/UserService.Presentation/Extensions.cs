@@ -6,12 +6,10 @@ namespace UserService.Presentation;
 
 public static class Extensions
 {
-    public static IServiceCollection AddPresentation(this IServiceCollection services)
+    public static IServiceCollection AddPresentation(
+        this IServiceCollection services,
+        IConfiguration configuration)
     {
-        var configuration = services
-            .BuildServiceProvider()
-            .GetRequiredService<IConfiguration>();
-
         services.AddJwtAuthentication(configuration);
 
         services.AddControllers()

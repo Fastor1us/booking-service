@@ -1,4 +1,5 @@
 using Domain.Models;
+using Microsoft.Extensions.Logging;
 using UserService.Application.Dtos;
 using UserService.Application.Interfaces;
 using UserService.Domain.Exceptions;
@@ -9,7 +10,8 @@ namespace UserService.Application.Services;
 public class UserService(
     IUnitOfWork unitOfWork,
     IPasswordHasher passwordHasher,
-    ITokenGenerator tokenGenerator) : IUserService
+    ITokenGenerator tokenGenerator,
+    ILogger<UserService> logger) : IUserService
 {
     public async Task<User> RegisterAsync(
         CreateUserDto dto,
@@ -37,6 +39,11 @@ public class UserService(
         unitOfWork.UserRepository.Add(user);
         await unitOfWork.SaveChangesAsync(ct);
 
+        logger.LogInformation(
+            "User {login} with role {role} have been registered",
+            user.Login,
+            user.Role);
+
         return user;
     }
 
@@ -52,6 +59,11 @@ public class UserService(
         {
             throw new UserIncorrectPasswordException();
         }
+
+        logger.LogDebug(
+            "User {login} with role {role} have been logined",
+            user.Login,
+            user.Role);
 
         return tokenGenerator.Generate(user.Id, user.Role);
     }

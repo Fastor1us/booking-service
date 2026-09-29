@@ -5,6 +5,7 @@ using EventService.Application.Tests.Helpes;
 using EventService.Domain.Exceptions;
 using EventService.Domain.Models;
 using Messaging.Abstractions.Persistence;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using System.Linq.Expressions;
@@ -233,6 +234,7 @@ public class EventServiceTests
     {
         // Arrange
         var id = Guid.NewGuid();
+        var expectedException = new EventNotFoundException(id);
         var dto = EventFactory.Generate<UpdateEventDto>();
 
         _events
@@ -244,9 +246,13 @@ public class EventServiceTests
         var es = CreateEventService();
 
         // Act
-        await es.UpdateAsync(id, dto, CancellationToken.None);
+        var exception = await Record.ExceptionAsync(
+            () => es.UpdateAsync(id, dto, CancellationToken.None));
 
         // Assert
+        Assert.IsType<EventNotFoundException>(exception);
+        Assert.Equal(expectedException.Message, exception.Message);
+
         _cache.Verify(c => c.RemoveAsync(
             It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.Never);
@@ -298,8 +304,11 @@ public class EventServiceTests
 
     #region Helpers
 
-    private Services.EventService CreateEventService() =>
-        new(_uow.Object, _cache.Object, Options.Create(_options));
+    private Services.EventService CreateEventService() => new(
+        _uow.Object,
+        _cache.Object,
+        Options.Create(_options),
+        NullLogger<Services.EventService>.Instance);
 
     private void SetupCacheMiss<T>(string key, TimeSpan ttl) where T : class?
     {

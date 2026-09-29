@@ -6,14 +6,18 @@ using Messaging.Abstractions.Contracts.Commands;
 using Messaging.Abstractions.Contracts.Constants;
 using Messaging.Abstractions.Contracts.Events;
 using Messaging.Abstractions.Outbox;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace EventService.Application.Messaging.Handlers;
 
 public class ReleaseSeatHandler(
     IUnitOfWork unitOfWork,
-    IEventCache cache) : HandlerBase(unitOfWork)
+    IEventCache cache,
+    ILogger<ReleaseSeatHandler> logger) : HandlerBase(unitOfWork)
 {
+    protected override ILogger Logger => logger;
+
     public override async Task HandleAsync(
         Guid correlationId,
         string payload,
@@ -26,10 +30,13 @@ public class ReleaseSeatHandler(
 
         if (!isNew)
         {
+            logger.LogDebug(
+                "Duplicate message ignored. CorrelationId={CorrelationId}, Command={Command}",
+                correlationId, Commands.ReleaseSeat);
             return;
         }
 
-        var cmd = DeserializePayload<ReleaseEventSeat>(payload);
+        var cmd = DeserializePayload<ReleaseEventSeat>(payload, correlationId);
         var @event = await _unitOfWork.Events
             .FirstOrDefaultAsync(e => e.Id == cmd.EventId, ct);
 
@@ -48,10 +55,18 @@ public class ReleaseSeatHandler(
         {
             @event!.AvailableSeats++;
 
+            logger.LogInformation(
+                "Seat released. CorrelationId={CorrelationId}, BookingId={BookingId}, EventId={EventId}, AvailableSeats={AvailableSeats}, ErrorMessage={errorMessage}",
+                correlationId, cmd.BookingId, cmd.EventId, @event.AvailableSeats, errorMessage);
+
             message = new SeatReleased(cmd.BookingId, cmd.EventId);
         }
         else
         {
+            logger.LogWarning(
+                "Seat releasing rejected. CorrelationId={CorrelationId}, BookingId={BookingId}, EventId={EventId}, Reason={Reason}",
+                correlationId, cmd.BookingId, cmd.EventId, errorMessage);
+
             message = new SeatReleasingRejected(cmd.BookingId, cmd.EventId);
         }
 

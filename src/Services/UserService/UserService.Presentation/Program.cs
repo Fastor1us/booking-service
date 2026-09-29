@@ -4,16 +4,22 @@ using UserService.Infrastructure;
 using UserService.Presentation;
 using UserService.Presentation.Middlewares;
 using Microsoft.EntityFrameworkCore;
+using Telemetry;
+using Serilog;
+using Serilog.Formatting.Compact;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.AddServiceDefaults();
-
-builder.Services.AddPresentation();
+builder.Services.AddPresentation(builder.Configuration);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 
-builder.Logging.AddConsole();
+builder.Services.AddTelemetry(builder.Configuration);
+
+builder.Services.AddSerilog((services, cfg) => cfg
+    .ReadFrom.Configuration(builder.Configuration)
+    .ReadFrom.Services(services)
+    .WriteTo.Console(new CompactJsonFormatter()));
 
 var app = builder.Build();
 
@@ -39,5 +45,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapTelemetry();
 
 app.Run();
